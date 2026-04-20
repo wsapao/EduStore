@@ -3,6 +3,7 @@
 import React, { useState, useTransition, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { usePostHog } from 'posthog-js/react'
 import { useCart } from '@/components/loja/CartProvider'
 import { createOrderAction } from '@/app/actions/orders'
 import { validarVoucherAction } from '@/app/actions/vouchers'
@@ -40,6 +41,7 @@ const CAT_ICONS: Record<string, string> = {
 
 export function CheckoutClient() {
   const router = useRouter()
+  const posthog = usePostHog()
   const { items, total, clear, hydrated } = useCart()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
@@ -75,6 +77,15 @@ export function CheckoutClient() {
   useEffect(() => {
     if (hydrated && items.length === 0 && !navigatingToOrderRef.current) router.replace('/loja')
   }, [hydrated, items.length, router])
+
+  useEffect(() => {
+    if (hydrated && items.length > 0) {
+      posthog?.capture('checkout_iniciado', {
+        valor_total: total,
+        quantidade_items: items.length
+      })
+    }
+  }, [hydrated]) // Run once when hydrated
 
   function handleApplyVoucher() {
     if (!voucherCode.trim()) return

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import type { Produto, Aluno } from '@/types/database'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -81,6 +82,7 @@ export function useCart(): CartContextValue {
 const STORAGE_KEY = 'loja_cart'
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const posthog = usePostHog()
   const [state, dispatch] = useReducer(cartReducer, { items: [], isOpen: false, hydrated: false })
 
   // Hydrate from localStorage on mount
@@ -117,7 +119,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     isOpen: state.isOpen,
     hydrated: state.hydrated,
     total,
-    add: (produto, aluno, varianteId, variante) => dispatch({ type: 'ADD', produto, aluno, varianteId, variante }),
+    add: (produto, aluno, varianteId, variante) => {
+      posthog?.capture('add_to_cart', {
+        produto_id: produto.id,
+        produto_nome: produto.titulo,
+        preco: produto.preco_promocional ?? produto.preco,
+      })
+      dispatch({ type: 'ADD', produto, aluno, varianteId, variante })
+    },
     remove: (id) => dispatch({ type: 'REMOVE', id }),
     clear: () => dispatch({ type: 'CLEAR' }),
     open: () => dispatch({ type: 'OPEN' }),

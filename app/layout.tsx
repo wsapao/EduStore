@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google'
 import { Toaster } from 'sonner'
 import './globals.css'
 import { CookieBanner } from '@/components/CookieBanner'
+import { PostHogProvider } from '@/components/providers/PostHogProvider'
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta' })
 
@@ -40,9 +41,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`h-full ${jakarta.variable}`} style={{ scrollBehavior: 'smooth' }}>
       <body className="min-h-full flex flex-col bg-[var(--bg)] text-[var(--text-1)] antialiased font-sans">
-        {children}
-        <CookieBanner />
-        <Toaster position="bottom-center" richColors theme="light" />
+        <PostHogProvider>
+          {children}
+          <CookieBanner />
+          <Toaster position="bottom-center" richColors theme="light" />
+        </PostHogProvider>
       </body>
     </html>
   )
