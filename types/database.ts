@@ -57,6 +57,7 @@ export interface Produto {
   imagem_url: string | null
   preco_promocional: number | null
   aceita_vouchers: boolean
+  estoque: number | null
   ativo: boolean
   esgotado: boolean
   created_at: string
@@ -81,6 +82,7 @@ export interface Voucher {
   usos_atuais: number
   compra_minima: number | null
   data_validade: string | null
+  produto_id: string | null
   ativo: boolean
   created_at: string
 }

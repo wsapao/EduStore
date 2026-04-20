@@ -284,6 +284,7 @@ function parseProdutoForm(formData: FormData, escolaId?: string) {
     series:         series.length ? series : null,
     variantes:      variantes.length ? variantes : null,
     icon:           (formData.get('icon') as string || '').trim() || null,
+    estoque:        (formData.get('estoque') as string) ? parseInt(formData.get('estoque') as string) : null,
     ativo:          formData.get('ativo') === 'on',
     // imagem_url is added directly in the action handler
   } as any // Use any because the return type can be mixed before inferring the DB schema correctly
@@ -537,6 +538,8 @@ export async function criarVoucherAction(formData: FormData) {
   const compra_minima = compraMinimaRaw ? parseFloat(compraMinimaRaw.replace(',', '.')) : null
   const validadeRaw = formData.get('data_validade') as string
   const data_validade = validadeRaw ? new Date(validadeRaw).toISOString() : null
+  const produtoIdRaw = formData.get('produto_id') as string
+  const produto_id = produtoIdRaw || null
 
   const { error } = await supabase.from('vouchers').insert({
     escola_id: resp.escola_id,
@@ -546,6 +549,7 @@ export async function criarVoucherAction(formData: FormData) {
     limite_usos,
     compra_minima,
     data_validade,
+    produto_id,
     ativo: true,
   })
 

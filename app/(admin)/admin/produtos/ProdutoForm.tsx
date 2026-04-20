@@ -171,41 +171,17 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias }: Props)
       {/* ── Seção: Identificação ── */}
       <Section title="Identificação do produto">
 
-        {/* Ícone + Nome */}
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-          <div style={{ width: 90, flexShrink: 0 }}>
-            <Label>ÍCONE</Label>
-            <input
-              name="icon"
-              value={iconVal}
-              onChange={e => setIconVal(e.target.value)}
-              placeholder="🎉"
-              maxLength={4}
-              style={{ ...inputStyle, textAlign: 'center', fontSize: 22, height: 52 }}
-            />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-              {ICONS_SUGESTOES.map(ic => (
-                <button key={ic} type="button" onClick={() => setIconVal(ic)}
-                  style={{
-                    fontSize: 16, background: iconVal === ic ? '#ede9fe' : 'var(--surface-2)',
-                    border: iconVal === ic ? '1.5px solid #a78bfa' : '1.5px solid var(--border)',
-                    borderRadius: 6, cursor: 'pointer', width: 30, height: 30,
-                  }}
-                >{ic}</button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ flex: 1 }}>
-            <Label req>NOME DO PRODUTO</Label>
-            <input
-              name="nome"
-              defaultValue={produto?.nome}
-              required
-              placeholder="Ex: Festa Junina 2026"
-              style={{ ...inputStyle, height: 52, fontSize: 15, fontWeight: 600 }}
-            />
-          </div>
+        {/* Nome */}
+        <input type="hidden" name="icon" value={iconVal} />
+        <div>
+          <Label req>NOME DO PRODUTO</Label>
+          <input
+            name="nome"
+            defaultValue={produto?.nome}
+            required
+            placeholder="Ex: Festa Junina 2026"
+            style={{ ...inputStyle, height: 52, fontSize: 15, fontWeight: 600 }}
+          />
         </div>
 
         {/* Descrição */}
@@ -446,11 +422,27 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias }: Props)
           </div>
 
           {variantesState.length === 0 && (
-            <div style={{
-              padding:'14px 16px', borderRadius:12, border:'1.5px dashed var(--border)',
-              color:'var(--text-3)', fontSize:13, background:'var(--surface-2)',
-            }}>
-              Nenhuma variante cadastrada. Adicione tamanhos como P, M, G ou numerações.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{
+                padding:'14px 16px', borderRadius:12, border:'1.5px dashed var(--border)',
+                color:'var(--text-3)', fontSize:13, background:'var(--surface-2)',
+              }}>
+                Nenhuma variante cadastrada. Adicione tamanhos como P, M, G ou numerações.
+              </div>
+              <div style={{ maxWidth: 240 }}>
+                <Label>ESTOQUE DO PRODUTO</Label>
+                <input
+                  name="estoque"
+                  type="number"
+                  min="0"
+                  defaultValue={produto?.estoque ?? ''}
+                  placeholder="Deixe em branco para ilimitado"
+                  style={inputStyle}
+                />
+                <p style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
+                  Controle de estoque para produto sem variantes. Estoque 0 bloqueia a compra.
+                </p>
+              </div>
             </div>
           )}
 

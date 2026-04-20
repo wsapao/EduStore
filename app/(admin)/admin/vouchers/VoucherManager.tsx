@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { criarVoucherAction, toggleVoucherAction, excluirVoucherAction } from '@/app/actions/admin'
-import type { Voucher } from '@/types/database'
+import type { Voucher, Produto } from '@/types/database'
 
-export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
+export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; produtos: Pick<Produto, 'id' | 'nome'>[] }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
 
@@ -150,6 +150,28 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
           </div>
         </div>
 
+        {/* Produto vinculado */}
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 6 }}>
+            RESTRINGIR AO PRODUTO
+          </label>
+          <select
+            name="produto_id"
+            style={{
+              width: '100%', height: 44, padding: '0 14px', borderRadius: 10,
+              border: '1.5px solid var(--border)', background: 'var(--surface-2)', fontSize: 14, fontWeight: 600
+            }}
+          >
+            <option value="">Válido para qualquer produto</option>
+            {produtos.map(p => (
+              <option key={p.id} value={p.id}>{p.nome}</option>
+            ))}
+          </select>
+          <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+            Se selecionado, o cupom só funciona para esse produto específico.
+          </p>
+        </div>
+
         {error && <div style={{ color: '#ef4444', fontSize: 13, fontWeight: 600 }}>{error}</div>}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
@@ -206,10 +228,15 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
                       <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>
                         {v.tipo_desconto === 'percentual' ? `${v.valor}% de desconto` : `R$ ${v.valor.toFixed(2)} de desconto`}
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4, display: 'flex', gap: 12 }}>
+                      <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                         <span>Usados: {v.usos_atuais}{v.limite_usos ? ` / ${v.limite_usos}` : ''}</span>
                         {v.compra_minima && <span>Mínimo: R$ {v.compra_minima.toFixed(2)}</span>}
                         {v.data_validade && <span>Validade: {new Date(v.data_validade).toLocaleDateString('pt-BR')}</span>}
+                        {v.produto_id && (
+                          <span style={{ color: '#4338ca', fontWeight: 700 }}>
+                            🔒 {produtos.find(p => p.id === v.produto_id)?.nome ?? 'Produto específico'}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

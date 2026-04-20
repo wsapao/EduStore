@@ -8,10 +8,10 @@ export default async function VouchersPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
 
-  const { data: vouchers } = await supabase
-    .from('vouchers')
-    .select('*')
-    .order('created_at', { ascending: false })
+  const [{ data: vouchers }, { data: produtos }] = await Promise.all([
+    supabase.from('vouchers').select('*').order('created_at', { ascending: false }),
+    supabase.from('produtos').select('id, nome').eq('ativo', true).order('nome'),
+  ])
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', paddingBottom: 80 }}>
@@ -35,7 +35,7 @@ export default async function VouchersPage() {
         </div>
       </div>
 
-      <VoucherManager vouchers={vouchers ?? []} />
+      <VoucherManager vouchers={vouchers ?? []} produtos={produtos ?? []} />
     </div>
   )
 }
