@@ -6,6 +6,10 @@ import Image from 'next/image'
 import type { Produto, Aluno } from '@/types/database'
 import { useCart } from './CartProvider'
 
+function fmtBRL(v: number) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
 // ── Category styles ───────────────────────────────────────────────────────────
 
 const CAT_BG: Record<string, string> = {

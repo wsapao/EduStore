@@ -28,7 +28,7 @@ type PedidoRecente = PedidoResumo & {
   itens: Array<{ id: string; produto: { nome: string } | { nome: string }[] | null }> | null
 }
 
-type ItemVendido = Pick<ItemPedido, 'id' | 'pedido_id' | 'produto_id' | 'preco_unitario'> & {
+type ItemVendido = Pick<ItemPedido, 'id' | 'pedido_id' | 'produto_id' | 'preco_unitario' | 'aluno_id'> & {
   produto: Pick<Produto, 'nome' | 'categoria'> | Pick<Produto, 'nome' | 'categoria'>[] | null
 }
 

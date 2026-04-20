@@ -122,7 +122,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     add: (produto, aluno, varianteId, variante) => {
       posthog?.capture('add_to_cart', {
         produto_id: produto.id,
-        produto_nome: produto.titulo,
+        produto_nome: produto.nome,
         preco: produto.preco_promocional ?? produto.preco,
       })
       dispatch({ type: 'ADD', produto, aluno, varianteId, variante })

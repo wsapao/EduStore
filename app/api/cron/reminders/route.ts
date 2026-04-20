@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { adminClient } from '@/lib/supabase/admin'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +12,7 @@ export async function GET(req: Request) {
   }
 
   try {
+    const adminClient = createAdminClient()
     // 1. Target Date = Hoje + 2 dias
     const targetDate = new Date()
     targetDate.setDate(targetDate.getDate() + 2)
