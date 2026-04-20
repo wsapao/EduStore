@@ -263,6 +263,7 @@ export function PerfilClient({ responsavel, totalAlunos, totalPedidos }: Props) 
           <MenuLink href="/perfil/senha" icon="🔑" label="Alterar senha" />
           <MenuLink href="/perfil/alunos" icon="👨‍👩‍👧‍👦" label="Meus filhos" border />
           <MenuLink href="/pedidos" icon="🧾" label="Meus pedidos" border />
+          <MenuLink href="/perfil/privacidade" icon="🛡️" label="Privacidade e dados (LGPD)" border />
         </div>
 
         {/* Sair */}

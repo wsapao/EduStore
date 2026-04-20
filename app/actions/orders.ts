@@ -22,6 +22,7 @@ export interface CreateOrderInput {
   metodo: MetodoPagamento
   parcelas?: number
   dadosCartao?: DadosCartao
+  voucher_codigo?: string
 }
 
 export type CreateOrderResult =
@@ -47,8 +48,53 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
 
   if (!responsavel) return { success: false, error: 'Responsável não encontrado.' }
 
-  const total = input.items.reduce((sum, i) => sum + i.preco_unitario, 0)
-  const itensComVariante = input.items.filter((item) => item.variante_id)
+  // Busca preços reais e vouchers do DB (Segurança)
+  const productIds = Array.from(new Set(input.items.map(i => i.produto_id)))
+  const { data: dbProdutos } = await supabase.from('produtos').select('id, preco, preco_promocional, aceita_vouchers').in('id', productIds)
+  const produtosMap = new Map((dbProdutos ?? []).map(p => [p.id, p]))
+
+  // Validação do carrinho vs DB
+  let subtotalElegivel = 0
+  let totalCalculado = 0
+  const safeItems = input.items.map(item => {
+    const dbProd = produtosMap.get(item.produto_id)
+    if (!dbProd) throw new Error('Produto não encontrado.')
+    
+    const precoReal = dbProd.preco_promocional ?? dbProd.preco
+    totalCalculado += precoReal
+    if (dbProd.aceita_vouchers) subtotalElegivel += precoReal
+
+    return { ...item, preco_unitario: precoReal }
+  })
+
+  // Lógica do Voucher
+  let voucherIdParaSalvar: string | null = null
+  let descontoAplicado = 0
+
+  if (input.voucher_codigo) {
+    const { data: voucher, error: voucherErr } = await supabase
+      .from('vouchers')
+      .select('*')
+      .eq('codigo', input.voucher_codigo.toUpperCase())
+      .eq('escola_id', responsavel.escola_id)
+      .single()
+
+    if (voucherErr || !voucher) return { success: false, error: 'Cupom inválido.' }
+    if (!voucher.ativo) return { success: false, error: 'Cupom inativo.' }
+    if (voucher.data_validade && new Date(voucher.data_validade) < new Date()) return { success: false, error: 'Cupom expirado.' }
+    if (voucher.limite_usos !== null && voucher.usos_atuais >= voucher.limite_usos) return { success: false, error: 'Cupom esgotado.' }
+    if (voucher.compra_minima !== null && subtotalElegivel < voucher.compra_minima) return { success: false, error: 'O valor elegível não atinge a compra mínima do cupom.' }
+
+    if (voucher.tipo_desconto === 'percentual') {
+      descontoAplicado = subtotalElegivel * (voucher.valor / 100)
+    } else {
+      descontoAplicado = Math.min(voucher.valor, subtotalElegivel)
+    }
+    voucherIdParaSalvar = voucher.id
+  }
+
+  const finalTotal = Math.max(0, totalCalculado - descontoAplicado)
+  const itensComVariante = safeItems.filter((item) => item.variante_id)
 
   if (itensComVariante.length > 0) {
     const varianteIds = Array.from(new Set(itensComVariante.map((item) => item.variante_id!).filter(Boolean)))
@@ -81,7 +127,9 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
       escola_id: responsavel.escola_id,
       status: 'pendente',
       metodo_pagamento: input.metodo,
-      total,
+      total: finalTotal,
+      voucher_id: voucherIdParaSalvar,
+      desconto_aplicado: descontoAplicado > 0 ? descontoAplicado : undefined,
     })
     .select()
     .single()
@@ -91,7 +139,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
   }
 
   // 2. Cria itens do pedido
-  const itens = input.items.map(i => ({
+  const itens = safeItems.map(i => ({
     pedido_id: pedido.id,
     produto_id: i.produto_id,
     aluno_id: i.aluno_id,
@@ -105,6 +153,14 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     // Rollback: remove pedido
     await supabase.from('pedidos').delete().eq('id', pedido.id)
     return { success: false, error: 'Erro ao salvar itens do pedido.' }
+  }
+
+  // Registra uso do voucher
+  if (voucherIdParaSalvar) {
+    const { data: v } = await supabase.from('vouchers').select('usos_atuais').eq('id', voucherIdParaSalvar).single()
+    if (v) {
+      await supabase.from('vouchers').update({ usos_atuais: v.usos_atuais + 1 }).eq('id', voucherIdParaSalvar)
+    }
   }
 
   for (const item of itensComVariante) {
@@ -124,7 +180,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
   try {
     resultado = await getGateway().criarPagamento({
       metodo: input.metodo,
-      total,
+      total: finalTotal,
       parcelas: input.parcelas ?? 1,
       dadosCartao: input.dadosCartao,
       responsavel: {
@@ -145,7 +201,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     pedido_id: pedido.id,
     metodo: input.metodo,
     gateway_id: resultado.gateway_id,
-    total,
+    total: finalTotal,
     parcelas: input.parcelas ?? 1,
     status: resultado.status,
   }
@@ -180,9 +236,9 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
   void enviarEmailPedido(responsavel.email, {
     responsavelNome: responsavel.nome,
     numeroPedido: pedido.numero,
-    total,
+    total: finalTotal,
     metodoPagamento: input.metodo,
-    itens: input.items.map(i => ({
+    itens: safeItems.map(i => ({
       nome: i.nome,
       aluno: i.variante ? `Tamanho ${i.variante}` : '',
       preco: i.preco_unitario,

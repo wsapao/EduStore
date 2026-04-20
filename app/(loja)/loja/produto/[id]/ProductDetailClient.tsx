@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import type { Produto, Aluno, ProdutoVariante } from '@/types/database'
 import { useCart } from '@/components/loja/CartProvider'
 
@@ -101,10 +102,16 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
       }}>
         {/* Hero */}
         <div style={{
-          height:160, background:bg,
+          height:produto.imagem_url ? 280 : 160, background: bg,
           display:'flex', alignItems:'center', justifyContent:'center',
-          position:'relative',
+          position:'relative', overflow: 'hidden'
         }}>
+          {produto.imagem_url && (
+            <Image src={produto.imagem_url} alt={produto.nome} fill sizes="(max-width: 600px) 100vw, 560px" style={{ objectFit: 'cover' }} priority />
+          )}
+          {produto.imagem_url && (
+            <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.4), transparent)' }} />
+          )}
           {produto.esgotado && (
             <div style={{
               position:'absolute', top:12, left:12,
@@ -115,9 +122,11 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
               Esgotado
             </div>
           )}
-          <span style={{ fontSize:64, filter:'drop-shadow(0 4px 8px rgba(0,0,0,.15))' }}>
-            {icon}
-          </span>
+          {!produto.imagem_url && (
+            <span style={{ fontSize:64, filter:'drop-shadow(0 4px 8px rgba(0,0,0,.15))' }}>
+              {icon}
+            </span>
+          )}
         </div>
 
         {/* Body */}
@@ -258,6 +267,11 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
               <div style={{ fontSize:12, color:'var(--text-3)', fontWeight:500, marginBottom:2 }}>
                 Valor
               </div>
+              {produto.preco_promocional && (
+                <div style={{ fontSize: 13, color: 'var(--text-3)', textDecoration: 'line-through', fontWeight: 600, marginBottom: 2 }}>
+                  {produto.preco.toLocaleString('pt-BR', { style:'currency', currency:'BRL' })}
+                </div>
+              )}
               {selectedVariante && (
                 <div style={{ fontSize:12, color:'var(--text-2)', fontWeight:700, marginBottom:4 }}>
                   Tamanho {selectedVariante}
@@ -268,8 +282,8 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
                   {selectedVarianteDetalhe.estoque > 0 ? `${selectedVarianteDetalhe.estoque} unidade(s) disponíveis` : 'Sem estoque disponível'}
                 </div>
               )}
-              <div style={{ fontSize:28, fontWeight:800, color:'var(--text-1)', letterSpacing:'-.03em' }}>
-                {produto.preco.toLocaleString('pt-BR', { style:'currency', currency:'BRL' })}
+              <div style={{ fontSize:28, fontWeight:800, color: produto.preco_promocional ? 'var(--brand)' : 'var(--text-1)', letterSpacing:'-.03em' }}>
+                {(produto.preco_promocional ?? produto.preco).toLocaleString('pt-BR', { style:'currency', currency:'BRL' })}
               </div>
             </div>
             <button

@@ -4,8 +4,9 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { ChildSelector } from '@/components/loja/ChildSelector'
 import { CategoryFilter } from '@/components/loja/CategoryFilter'
-import { ProductCard } from '@/components/loja/ProductCard'
 import { StoreSearch } from '@/components/loja/StoreSearch'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { ProductCard } from '@/components/loja/ProductCard'
 import type {
   Aluno,
   CantinaCarteira,
@@ -444,71 +445,39 @@ export default async function LojaPage({
       )}
 
       {!selectedAluno && (
-        <div
-          style={{
-            margin: '40px 20px',
-            textAlign: 'center',
-            background: 'var(--surface)',
-            border: '1.5px solid var(--border)',
-            borderRadius: 'var(--r-xl)',
-            padding: 40,
-            boxShadow: 'var(--shadow-sm)',
-          }}
-        >
-          <div style={{ fontSize: 56, marginBottom: 16 }}>👨‍👩‍👧‍👦</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)', marginBottom: 8 }}>Nenhum aluno cadastrado</div>
-          <p style={{ fontSize: 14, color: 'var(--text-3)', lineHeight: 1.6, marginBottom: 24 }}>
-            Adicione seus filhos para liberar a home personalizada, a cantina e os produtos da serie correta.
-          </p>
-          <a
-            href="/perfil/alunos?onboarding=1"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '14px 28px',
-              borderRadius: 'var(--r-md)',
-              background: 'var(--brand)',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 14,
-              textDecoration: 'none',
-            }}
-          >
-            ➕ Adicionar meu filho
-          </a>
+        <div style={{ padding: '40px 20px' }}>
+          <EmptyState
+            icon="👨‍👩‍👧‍👦"
+            title="Nenhum aluno cadastrado"
+            description="Adicione seus filhos para liberar a home personalizada, a cantina e os produtos da serie correta."
+            actionLabel="➕ Adicionar meu filho"
+            actionHref="/perfil/alunos?onboarding=1"
+          />
         </div>
       )}
 
       {selectedAluno && (
         <section style={{ padding: '20px 20px 0' }}>
           {sortedProdutos.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                background: 'var(--surface)',
-                border: '1.5px solid var(--border)',
-                borderRadius: 'var(--r-xl)',
-                boxShadow: 'var(--shadow-xs)',
-              }}
-            >
-              <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.4 }}>📭</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-2)' }}>Nenhum produto disponivel</div>
-              <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.6, marginTop: 8 }}>
-                {normalizedQuery
+            <EmptyState
+              icon="📭"
+              title="Nenhum produto disponivel"
+              description={
+                normalizedQuery
                   ? `Nenhum produto encontrado para "${q}".`
                   : minPrice !== null || maxPrice !== null
                     ? 'Nenhum produto ficou dentro da faixa de preco escolhida.'
                     : categoria
                       ? 'Nenhum produto nesta categoria para o aluno selecionado.'
-                      : 'A escola ainda nao publicou itens para este perfil.'}
-              </p>
-            </div>
+                      : 'A escola ainda nao publicou itens para este perfil.'
+              }
+              actionLabel={normalizedQuery || categoria || minPrice !== null || maxPrice !== null ? "Limpar filtros" : undefined}
+              actionHref={normalizedQuery || categoria || minPrice !== null || maxPrice !== null ? "/loja" : undefined}
+            />
           ) : shouldShowFlatResults ? (
             <div style={{ display: 'grid', gap: 14 }}>
-              {sortedProdutos.map((produto) => (
-                <ProductCard key={produto.id} produto={produto} aluno={selectedAluno} vagasRestantes={vagasMap[produto.id] ?? null} />
+              {sortedProdutos.map((produto, i) => (
+                <ProductCard key={produto.id} produto={produto} aluno={selectedAluno} index={i} vagasRestantes={vagasMap[produto.id] ?? null} />
               ))}
             </div>
           ) : (
@@ -533,8 +502,8 @@ export default async function LojaPage({
                   </div>
 
                   <div style={{ display: 'grid', gap: 14 }}>
-                    {produtosCategoria.map((produto) => (
-                      <ProductCard key={produto.id} produto={produto} aluno={selectedAluno} vagasRestantes={vagasMap[produto.id] ?? null} />
+                    {produtosCategoria.map((produto, i) => (
+                      <ProductCard key={produto.id} produto={produto} aluno={selectedAluno} index={i} vagasRestantes={vagasMap[produto.id] ?? null} />
                     ))}
                   </div>
                 </section>

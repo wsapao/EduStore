@@ -22,6 +22,12 @@ export default async function EditarProdutoPage({ params }: Props) {
     .eq('id', id)
     .single()
 
+  const { data: categorias } = await supabase
+    .from('categorias_produto')
+    .select('*')
+    .eq('ativo', true)
+    .order('nome')
+
   if (!data) notFound()
 
   const produto = normalizarProduto(data as Produto & { variantes_rel?: ProdutoVariante[] | null })
@@ -67,7 +73,7 @@ export default async function EditarProdutoPage({ params }: Props) {
         </span>
       </div>
 
-      <ProdutoForm produto={produto} variantesDetalhadas={variantesDetalhadas} />
+      <ProdutoForm produto={produto} variantesDetalhadas={variantesDetalhadas} categorias={categorias ?? []} />
     </div>
   )
 }

@@ -2,7 +2,18 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
+import { ratelimit } from '@/lib/ratelimit'
+
+async function getClientIp() {
+  const h = await headers()
+  return (
+    h.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    h.get('x-real-ip') ??
+    'unknown'
+  )
+}
 
 // ── Helpers ──
 function limparCPF(cpf: string) {
@@ -35,9 +46,25 @@ export async function loginAction(formData: FormData) {
     return { error: 'Preencha todos os campos.' }
   }
 
+  const cpfLimpo = limparCPF(cpfRaw)
+
+  // Rate limit: 5 tentativas por CPF/minuto + 20 por IP/minuto
+  const ip = await getClientIp()
+  const [byCpf, byIp] = await Promise.all([
+    ratelimit.check(`login:cpf:${cpfLimpo}`, 5, 60),
+    ratelimit.check(`login:ip:${ip}`, 20, 60),
+  ])
+
+  if (!byCpf.allowed || !byIp.allowed) {
+    const retry = Math.max(byCpf.retryAfter, byIp.retryAfter)
+    return {
+      error: `Muitas tentativas. Tente novamente em ${retry}s.`,
+    }
+  }
+
   // Busca email pelo CPF via RPC
   const { data: email, error: rpcError } = await supabase
-    .rpc('get_email_by_cpf', { p_cpf: limparCPF(cpfRaw) })
+    .rpc('get_email_by_cpf', { p_cpf: cpfLimpo })
 
   if (rpcError || !email) {
     return { error: 'CPF não encontrado. Verifique ou crie uma conta.' }
@@ -65,11 +92,12 @@ export async function cadastroAction(formData: FormData) {
   const nomeLast  = (formData.get('nome_last')  as string)?.trim()
   const nome      = [nomeFirst, nomeLast].filter(Boolean).join(' ')
   const cpfRaw    = formData.get('cpf') as string
+  const telefone  = formData.get('telefone') as string
   const email     = (formData.get('email') as string)?.trim().toLowerCase()
   const senha     = formData.get('senha') as string
 
   // Validações
-  if (!nomeFirst || !cpfRaw || !email || !senha) {
+  if (!nomeFirst || !cpfRaw || !email || !senha || !telefone) {
     return { error: 'Preencha todos os campos.' }
   }
 
@@ -96,7 +124,7 @@ export async function cadastroAction(formData: FormData) {
     email,
     password: senha,
     options: {
-      data: { nome, cpf },
+      data: { nome, cpf, telefone },
     },
   })
 
@@ -109,6 +137,52 @@ export async function cadastroAction(formData: FormData) {
 
   if (!authData.user) {
     return { error: 'Erro inesperado. Tente novamente.' }
+  }
+
+  // ==========================================
+  // [INTEGRAÇÃO ONDA 3] Onboarding Mágico CRM
+  // ==========================================
+  try {
+    const educrmUrl = process.env.EDUCRM_API_URL
+    const educrmKey = process.env.EDUCRM_API_KEY
+    const responsavelId = authData.user.id
+
+    if (educrmUrl && educrmKey) {
+      const res = await fetch(`${educrmUrl}/api/webhooks/loja/onboarding?cpf=${cpf}`, {
+        headers: { 'x-webhook-secret': educrmKey }
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        
+        if (data.students && data.students.length > 0) {
+          // Insere alunos com os mesmos IDs do CRM
+          const { error: alunosError } = await supabase.from('alunos').upsert(
+            data.students.map((s: any) => ({
+              id: s.id, // Mantém o ID original do CRM
+              nome: s.name,
+              serie: s.serie || 'Não informada',
+              escola_id: null,
+              ativo: true
+            }))
+          )
+
+          if (!alunosError) {
+            // Vincula os alunos ao responsável recém-criado
+            await supabase.from('responsavel_aluno').upsert(
+              data.students.map((s: any) => ({
+                responsavel_id: responsavelId,
+                aluno_id: s.id,
+                parentesco: 'Responsável'
+              }))
+            )
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Erro no onboarding mágico:', err)
+    // Não trava o cadastro se a integração falhar
   }
 
   // O perfil em responsaveis é criado automaticamente via trigger
@@ -134,8 +208,21 @@ export async function recuperarSenhaAction(formData: FormData) {
 
   if (!cpfRaw) return { error: 'Informe seu CPF.' }
 
+  const cpfLimpo = limparCPF(cpfRaw)
+
+  // Rate limit: 3 pedidos de reset por CPF/hora + 10 por IP/hora
+  const ip = await getClientIp()
+  const [byCpf, byIp] = await Promise.all([
+    ratelimit.check(`reset:cpf:${cpfLimpo}`, 3, 3600),
+    ratelimit.check(`reset:ip:${ip}`, 10, 3600),
+  ])
+  if (!byCpf.allowed || !byIp.allowed) {
+    // Mantém mensagem genérica de sucesso para não expor rate limit em enumeração
+    return { success: true }
+  }
+
   const { data: email } = await supabase
-    .rpc('get_email_by_cpf', { p_cpf: limparCPF(cpfRaw) })
+    .rpc('get_email_by_cpf', { p_cpf: cpfLimpo })
 
   if (!email) {
     // Retorna mensagem genérica para não expor quais CPFs existem

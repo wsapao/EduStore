@@ -164,7 +164,23 @@ export async function criarProdutoAction(formData: FormData) {
     .from('responsaveis').select('escola_id').eq('id', user!.id).single()
   if (!resp?.escola_id) return { success: false, error: 'Admin sem escola vinculada.' }
 
+  let imagem_url: string | null = null
+  const imgFile = formData.get('imagem_arquivo') as File | null
+  if (imgFile && imgFile.size > 0) {
+    const ext = imgFile.name.split('.').pop() || 'png'
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('produtos-imagens')
+      .upload(fileName, imgFile)
+    if (!uploadError && uploadData) {
+      const { data: publicUrlData } = supabase.storage.from('produtos-imagens').getPublicUrl(uploadData.path)
+      imagem_url = publicUrlData.publicUrl
+    }
+  }
+
   const payload = parseProdutoForm(formData, resp.escola_id)
+  if (imagem_url) payload.imagem_url = imagem_url
+
   const { data, error } = await supabase.from('produtos').insert(payload).select('id').single()
   if (error) return { success: false, error: error.message }
 
@@ -179,7 +195,23 @@ export async function criarProdutoAction(formData: FormData) {
 export async function editarProdutoAction(produtoId: string, formData: FormData) {
   const { supabase } = await verificarAdmin()
 
+  let imagem_url: string | null = null
+  const imgFile = formData.get('imagem_arquivo') as File | null
+  if (imgFile && imgFile.size > 0) {
+    const ext = imgFile.name.split('.').pop() || 'png'
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('produtos-imagens')
+      .upload(fileName, imgFile)
+    if (!uploadError && uploadData) {
+      const { data: publicUrlData } = supabase.storage.from('produtos-imagens').getPublicUrl(uploadData.path)
+      imagem_url = publicUrlData.publicUrl
+    }
+  }
+
   const payload = parseProdutoForm(formData)
+  if (imagem_url) payload.imagem_url = imagem_url
+
   const { error } = await supabase.from('produtos').update(payload).eq('id', produtoId)
   if (error) return { success: false, error: error.message }
 
@@ -220,8 +252,12 @@ function parseProdutoForm(formData: FormData, escolaId?: string) {
   // Converte preço: "25,90" ou "25.90" → 25.90
   const precoRaw = (formData.get('preco') as string ?? '0').replace(',', '.')
   const preco    = parseFloat(precoRaw)
+  
+  const precoPromocionalRaw = (formData.get('preco_promocional') as string ?? '').replace(',', '.')
+  const preco_promocional = precoPromocionalRaw ? parseFloat(precoPromocionalRaw) : null
 
   const gera_ingresso = formData.get('gera_ingresso') === 'on'
+  const aceita_vouchers = formData.get('aceita_vouchers') === 'on'
   const capacidadeRaw = formData.get('capacidade') as string
   const capacidade    = gera_ingresso && capacidadeRaw ? parseInt(capacidadeRaw) || null : null
 
@@ -234,6 +270,7 @@ function parseProdutoForm(formData: FormData, escolaId?: string) {
     nome:           (formData.get('nome') as string).trim(),
     descricao:      (formData.get('descricao') as string || '').trim() || null,
     preco,
+    preco_promocional,
     categoria:      formData.get('categoria') as string,
     metodos_aceitos: metodos.length ? metodos : ['pix'],
     max_parcelas:   parseInt(formData.get('max_parcelas') as string) || 1,
@@ -242,12 +279,14 @@ function parseProdutoForm(formData: FormData, escolaId?: string) {
     hora_evento:    hora_evento  || null,
     local_evento:   (formData.get('local_evento') as string || '').trim() || null,
     gera_ingresso,
+    aceita_vouchers,
     capacidade,
     series:         series.length ? series : null,
     variantes:      variantes.length ? variantes : null,
     icon:           (formData.get('icon') as string || '').trim() || null,
     ativo:          formData.get('ativo') === 'on',
-  }
+    // imagem_url is added directly in the action handler
+  } as any // Use any because the return type can be mixed before inferring the DB schema correctly
 }
 
 function parseVariantesForm(formData: FormData): VariantePayload[] {
@@ -442,4 +481,91 @@ export async function resetSenhaResponsavelAction(formData: FormData) {
   })
 
   revalidatePath('/admin/responsaveis')
+}
+
+// ── Categorias ────────────────────────────────────────────────────────────────
+export async function criarCategoriaAction(formData: FormData) {
+  const { supabase } = await verificarAdmin()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: resp } = await supabase.from('responsaveis').select('escola_id').eq('id', user!.id).single()
+  if (!resp?.escola_id) return { success: false, error: 'Admin sem escola vinculada.' }
+
+  const nome = (formData.get('nome') as string).trim()
+  const icone = (formData.get('icone') as string).trim() || '🏷️'
+
+  const { error } = await supabase.from('categorias_produto').insert({
+    escola_id: resp.escola_id,
+    nome,
+    icone,
+    ativo: true,
+  })
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/admin/produtos/categorias')
+  return { success: true }
+}
+
+export async function toggleCategoriaAction(id: string, ativo: boolean) {
+  const { supabase } = await verificarAdmin()
+  const { error } = await supabase.from('categorias_produto').update({ ativo: !ativo }).eq('id', id)
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/admin/produtos/categorias')
+  return { success: true }
+}
+
+export async function excluirCategoriaAction(id: string) {
+  const { supabase } = await verificarAdmin()
+  const { error } = await supabase.from('categorias_produto').delete().eq('id', id)
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/admin/produtos/categorias')
+  return { success: true }
+}
+
+// ── Vouchers ──────────────────────────────────────────────────────────────────
+export async function criarVoucherAction(formData: FormData) {
+  const { supabase } = await verificarAdmin()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: resp } = await supabase.from('responsaveis').select('escola_id').eq('id', user!.id).single()
+  if (!resp?.escola_id) return { success: false, error: 'Admin sem escola vinculada.' }
+
+  const codigo = (formData.get('codigo') as string).trim().toUpperCase()
+  const tipo_desconto = formData.get('tipo_desconto') as 'percentual' | 'fixo'
+  const valor = parseFloat((formData.get('valor') as string).replace(',', '.'))
+  const limiteRaw = formData.get('limite_usos') as string
+  const limite_usos = limiteRaw ? parseInt(limiteRaw) : null
+  const compraMinimaRaw = formData.get('compra_minima') as string
+  const compra_minima = compraMinimaRaw ? parseFloat(compraMinimaRaw.replace(',', '.')) : null
+  const validadeRaw = formData.get('data_validade') as string
+  const data_validade = validadeRaw ? new Date(validadeRaw).toISOString() : null
+
+  const { error } = await supabase.from('vouchers').insert({
+    escola_id: resp.escola_id,
+    codigo,
+    tipo_desconto,
+    valor,
+    limite_usos,
+    compra_minima,
+    data_validade,
+    ativo: true,
+  })
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/admin/vouchers')
+  return { success: true }
+}
+
+export async function toggleVoucherAction(id: string, ativo: boolean) {
+  const { supabase } = await verificarAdmin()
+  const { error } = await supabase.from('vouchers').update({ ativo: !ativo }).eq('id', id)
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/admin/vouchers')
+  return { success: true }
+}
+
+export async function excluirVoucherAction(id: string) {
+  const { supabase } = await verificarAdmin()
+  const { error } = await supabase.from('vouchers').delete().eq('id', id)
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/admin/vouchers')
+  return { success: true }
 }

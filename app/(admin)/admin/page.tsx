@@ -8,6 +8,7 @@ import type {
   Produto,
   StatusPedido,
 } from '@/types/database'
+import { SalesChart } from '@/components/admin/SalesChart'
 
 type PeriodoDashboard = '7d' | '30d' | 'mes' | 'custom'
 
@@ -100,16 +101,29 @@ export default async function AdminDashboard({
     { data: produtosAll },
     { data: alunosAll },
     { data: responsaveisAll },
+    { data: pixPendentesData },
+    { data: cantinaCarteiras },
   ] = await Promise.all([
     pedidosResumoQuery,
     pedidosRecentesQuery,
     supabase.from('produtos').select('id, nome, categoria, ativo, esgotado, capacidade, prazo_compra, data_evento'),
-    supabase.from('alunos').select('id'),
+    supabase.from('alunos').select('id, turma'),
     supabase.from('responsaveis').select('id'),
+    supabase
+      .from('pedidos')
+      .select('id, numero, total, created_at, responsavel:responsaveis(nome, telefone)')
+      .eq('status', 'pendente')
+      .eq('metodo_pagamento', 'pix')
+      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .order('created_at', { ascending: false }),
+    supabase.from('cantina_carteira').select('saldo'),
   ])
 
   const pedidos = (pedidosTodos ?? []) as PedidoResumo[]
   const produtos = (produtosAll ?? []) as Array<Pick<Produto, 'id' | 'nome' | 'categoria' | 'ativo' | 'esgotado' | 'capacidade' | 'prazo_compra' | 'data_evento'>>
+  const alunos = alunosAll ?? []
+  const pixPendentes = pixPendentesData ?? []
+  const cantinaSaldoTotal = (cantinaCarteiras ?? []).reduce((acc, c) => acc + Number(c.saldo), 0)
 
   const pedidosIds = pedidos.map((pedido) => pedido.id)
   const produtosComCapacidade = produtos.filter((produto) => produto.capacidade !== null)
@@ -121,7 +135,7 @@ export default async function AdminDashboard({
     pedidosIds.length > 0
       ? supabase
           .from('itens_pedido')
-          .select('id, pedido_id, produto_id, preco_unitario, produto:produtos(nome, categoria)')
+          .select('id, pedido_id, produto_id, preco_unitario, aluno_id, produto:produtos(nome, categoria)')
           .in('pedido_id', pedidosIds)
       : Promise.resolve({ data: [] }),
     produtosComCapacidade.length > 0
@@ -158,10 +172,24 @@ export default async function AdminDashboard({
   const capacidadeMap = buildCapacityMap(ingressosEmitidos ?? [], produtosComCapacidade)
   const alertas = buildAlerts({ aguardando, esgotados, urgenciasPrazo, capacidadeMap })
 
+  // Adesão
+  const eventosAtivos = produtos.filter((p) => p.ativo && !p.esgotado && (p.categoria === 'eventos' || p.categoria === 'passeios'))
+  const adesaoEventos = eventosAtivos.map((evento) => {
+    const itensDoEvento = itemRows.filter((i) => i.produto_id === evento.id)
+    const alunosPagantesIds = new Set(itensDoEvento.map((i) => i.aluno_id))
+    const adesao = alunos.length > 0 ? (alunosPagantesIds.size / alunos.length) * 100 : 0
+    return {
+      evento,
+      pagantes: alunosPagantesIds.size,
+      total: alunos.length,
+      adesao: Math.round(adesao)
+    }
+  }).sort((a, b) => b.adesao - a.adesao).slice(0, 3)
+
   const periodoLinks: Array<{ key: PeriodoDashboard; label: string }> = [
     { key: '7d', label: '7 dias' },
     { key: '30d', label: '30 dias' },
-    { key: 'mes', label: 'Mes atual' },
+    { key: 'mes', label: 'Mês atual' },
   ]
 
   return (
@@ -221,7 +249,7 @@ export default async function AdminDashboard({
                 <div style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,.64)', fontWeight: 700 }}>
                   Estado geral
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 800, marginTop: 3 }}>Saude da operacao</div>
+                <div style={{ fontSize: 18, fontWeight: 800, marginTop: 3 }}>Saúde da operação</div>
               </div>
               <div
                 style={{
@@ -385,38 +413,112 @@ export default async function AdminDashboard({
         ))}
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(320px, 1fr)', gap: 16 }}>
-        <article style={panelStyle}>
-          <PanelHeader
-            eyebrow="Performance"
-            title="Receita diaria confirmada"
-            description="Leitura rapida para perceber dias mortos, picos e queda de recorrencia."
-          />
+      {/* WIDGETS AVANÇADOS */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recuperação PIX */}
+        <div className="glass-panel rounded-[24px] p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-[15px] font-bold text-slate-800">Recuperação de PIX</h3>
+              <p className="text-xs text-slate-500">Nas últimas 24h</p>
+            </div>
+            <span className="text-2xl">💸</span>
+          </div>
+          <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1">
+            {pixPendentes.length > 0 ? (
+              pixPendentes.map(pix => {
+                const resp = Array.isArray(pix.responsavel) ? pix.responsavel[0] : pix.responsavel
+                const fone = resp?.telefone ? resp.telefone.replace(/\D/g, '') : ''
+                const nomeResp = resp?.nome || 'Sem nome'
+                return (
+                  <div key={pix.id} className="bg-white border border-slate-100 rounded-xl p-3 shadow-sm flex items-center justify-between transition-transform hover:-translate-y-0.5">
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">{fmtBRL(pix.total)}</p>
+                      <p className="text-[11px] text-slate-500 truncate max-w-[120px]">{nomeResp}</p>
+                    </div>
+                    {fone ? (
+                      <a
+                        href={`https://wa.me/55${fone}?text=${encodeURIComponent(`Olá ${nomeResp}! Vimos que você gerou um PIX de ${fmtBRL(pix.total)} na Loja Escolar e ainda não foi pago. Precisando de ajuda, estamos à disposição!`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
+                      >
+                        Lembrar
+                      </a>
+                    ) : (
+                      <span className="text-[10px] text-slate-400">Sem fone</span>
+                    )}
+                  </div>
+                )
+              })
+            ) : (
+              <div className="text-xs text-slate-400 text-center my-auto py-6">Nenhum PIX pendente recente.</div>
+            )}
+          </div>
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 10, alignItems: 'end', minHeight: 208 }}>
-            {salesSeries.map((point) => (
-              <div key={point.label} style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0f172a' }}>{point.orders}</div>
-                <div
-                  style={{
-                    width: '100%',
-                    borderRadius: 16,
-                    background: 'linear-gradient(180deg, #1d4ed8, #60a5fa)',
-                    minHeight: 18,
-                    height: `${Math.max(18, point.height)}px`,
-                    boxShadow: 'inset 0 -1px 0 rgba(255,255,255,.2)',
-                  }}
-                />
-                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>{point.label}</div>
-                <div style={{ fontSize: 10, color: '#94a3b8' }}>{fmtCompactBRL(point.value)}</div>
+        {/* Adesão de Eventos */}
+        <div className="glass-panel rounded-[24px] p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-[15px] font-bold text-slate-800">Adesão de Eventos</h3>
+              <p className="text-xs text-slate-500">Engajamento nas compras</p>
+            </div>
+            <span className="text-2xl">🎟️</span>
+          </div>
+          <div className="flex flex-col gap-4">
+            {adesaoEventos.length > 0 ? adesaoEventos.map(({ evento, pagantes, total, adesao }) => (
+              <div key={evento.id}>
+                <div className="flex justify-between items-end text-xs mb-1.5">
+                  <span className="font-bold text-slate-700 truncate mr-2">{evento.nome}</span>
+                  <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">{adesao}%</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className="bg-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${adesao}%` }} />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">{pagantes} de {total} alunos aderiram</p>
               </div>
-            ))}
+            )) : (
+              <div className="text-xs text-slate-400 text-center py-6">Nenhum evento ativo.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Saúde da Cantina */}
+        <div className="glass-panel rounded-[24px] p-6 flex flex-col bg-gradient-to-br from-amber-50 to-orange-50 border-orange-100">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="text-[15px] font-bold text-orange-900">Saúde da Cantina</h3>
+              <p className="text-xs text-orange-700/70">Saldos depositados</p>
+            </div>
+            <span className="text-2xl">🍔</span>
+          </div>
+          <div className="mt-auto">
+            <p className="text-[10px] font-bold tracking-widest uppercase text-orange-800/60 mb-1">Passivo de Carteiras</p>
+            <p className="text-3xl font-black text-orange-900 tracking-tight">{fmtBRL(cantinaSaldoTotal)}</p>
+            <p className="text-xs text-orange-800/70 mt-3 leading-relaxed">
+              Valor total "guardado" pela escola nas carteiras digitais dos alunos da cantina.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(320px, 1fr)', gap: 16 }}>
+        <article className="glass-panel rounded-[24px] p-6 flex flex-col min-h-[340px]">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 tracking-tight">Receita confirmada</h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">Visão consolidada de vendas diárias pagas</p>
+            </div>
+          </div>
+          <div className="flex-1 w-full min-h-0">
+            <SalesChart data={salesSeries} />
           </div>
         </article>
 
         <article style={panelStyle}>
           <PanelHeader
-            eyebrow="Acoes"
+            eyebrow="Ações"
             title="Atalhos de gestor"
             description="Atalhos pensados para operacao diaria em vez de menu puro."
           />
@@ -424,9 +526,9 @@ export default async function AdminDashboard({
           <div style={{ display: 'grid', gap: 10 }}>
             {[
               { href: '/admin/pedidos', title: 'Acompanhar pedidos', desc: 'Filtrar pagamentos, checar fila e destravar atendimento.' },
-              { href: '/admin/produtos', title: 'Gerenciar catalogo', desc: 'Ativar, pausar, ajustar capacidade e corrigir estoque.' },
+              { href: '/admin/produtos', title: 'Gerenciar catálogo', desc: 'Ativar, pausar, ajustar capacidade e corrigir estoque.' },
               { href: '/admin/checkin', title: 'Validar ingressos', desc: 'Ir direto para o fluxo de check-in em eventos.' },
-              { href: '/admin/cantina', title: 'Operacao da cantina', desc: 'Carteiras, consumo e status dos pedidos em um unico lugar.' },
+              { href: '/admin/cantina', title: 'Operação da cantina', desc: 'Carteiras, consumo e status dos pedidos em um unico lugar.' },
             ].map((action) => (
               <Link
                 key={action.href}
@@ -565,7 +667,7 @@ export default async function AdminDashboard({
           >
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#94a3b8' }}>
-                Operacao recente
+                Operação recente
               </div>
               <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', margin: '5px 0 0' }}>
                 Pedidos que merecem contexto
@@ -859,8 +961,8 @@ function buildAlerts({
       : null,
     esgotados > 0
       ? {
-          title: 'Catalogo rompido',
-          value: `${esgotados} itens`,
+          title: 'Catálogo rompido',
+          value: `${esgotados} item(ns)`,
           description: 'Produtos esgotados merecem decisao: reabrir, ocultar ou comunicar com clareza.',
         }
       : null,

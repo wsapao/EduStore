@@ -110,7 +110,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return () => { document.body.style.overflow = '' }
   }, [state.isOpen])
 
-  const total = state.items.reduce((sum, i) => sum + i.produto.preco, 0)
+  const total = state.items.reduce((sum, i) => sum + (i.produto.preco_promocional ?? i.produto.preco), 0)
 
   const value: CartContextValue = {
     items: state.items,

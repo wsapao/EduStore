@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   AuthCard, AuthCardFooter,
   Field, IconInput, ErrorMsg, BtnPrimary,
-  UserIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon,
+  UserIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon, PhoneIcon
 } from '@/components/auth/AuthCard'
 
 export default function CadastroPage() {
@@ -32,6 +32,13 @@ export default function CadastroPage() {
     v = v.replace(/(\d{3})(\d)/, '$1.$2')
     v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
     e.target.value = v
+  }
+
+  function maskTel(e: React.ChangeEvent<HTMLInputElement>) {
+    let d = e.target.value.replace(/\D/g, '').slice(0, 11)
+    if (d.length <= 10) d = d.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
+    else d = d.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
+    e.target.value = d
   }
 
   return (
@@ -97,6 +104,19 @@ export default function CadastroPage() {
           />
         </Field>
 
+        {/* Telefone (WhatsApp) */}
+        <Field label="WhatsApp" hint="Para receber recibos e alertas da escola">
+          <IconInput
+            icon={<PhoneIcon />}
+            name="telefone"
+            type="tel"
+            placeholder="(11) 99999-9999"
+            maxLength={15}
+            onChange={maskTel}
+            required
+          />
+        </Field>
+
         {/* Senha */}
         <div style={{ marginBottom:20 }}>
           <Field label="Senha">
@@ -122,9 +142,9 @@ export default function CadastroPage() {
                  style={{ width:18, height:18, borderRadius:5, accentColor:'var(--brand)', flexShrink:0, marginTop:1 }} />
           <span style={{ fontSize:13, color:'var(--text-2)', lineHeight:1.5 }}>
             Concordo com os{' '}
-            <a href="#" style={{ color:'var(--accent)', fontWeight:700, textDecoration:'none' }}>Termos de Uso</a>
+            <Link href="/termos" target="_blank" style={{ color:'var(--accent)', fontWeight:700, textDecoration:'none' }}>Termos de Uso</Link>
             {' '}e a{' '}
-            <a href="#" style={{ color:'var(--accent)', fontWeight:700, textDecoration:'none' }}>Política de Privacidade</a>
+            <Link href="/privacidade" target="_blank" style={{ color:'var(--accent)', fontWeight:700, textDecoration:'none' }}>Política de Privacidade</Link>
           </span>
         </label>
 

@@ -57,7 +57,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div style={{ flex: 1 }} />
 
         {/* Nav links — desktop */}
-        <nav style={{ display: 'flex', gap: 4 }}>
+        <nav className="hidden md:flex gap-1">
           {[
             { href: '/admin', label: 'Dashboard', icon: '📊' },
             { href: '/admin/pedidos', label: 'Pedidos', icon: '🧾' },
@@ -103,16 +103,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </header>
 
       {/* Conteúdo */}
-      <main style={{ flex: 1, padding: '24px 20px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+      <main className="flex-1 w-full max-w-[1200px] mx-auto p-6 pb-24 md:pb-6">
         {children}
       </main>
 
       {/* Bottom nav — mobile */}
-      <nav style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
-        background: '#0f172a', borderTop: '1px solid #1e293b',
-        display: 'flex', height: 60,
-      }}>
+      <nav 
+        className="md:hidden fixed bottom-0 left-0 right-0 z-[100] flex h-[60px] bg-slate-900 border-t border-slate-800"
+      >
         {[
           { href: '/admin', label: 'Dashboard', icon: '📊' },
           { href: '/admin/pedidos', label: 'Pedidos', icon: '🧾' },

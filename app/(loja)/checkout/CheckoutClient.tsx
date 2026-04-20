@@ -2,9 +2,11 @@
 
 import React, { useState, useTransition, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useCart } from '@/components/loja/CartProvider'
 import { createOrderAction } from '@/app/actions/orders'
-import type { MetodoPagamento } from '@/types/database'
+import { validarVoucherAction } from '@/app/actions/vouchers'
+import type { MetodoPagamento, Voucher } from '@/types/database'
 import type { DadosCartao } from '@/lib/pagamentos/types'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -59,9 +61,40 @@ export function CheckoutClient() {
   )
 
   const navigatingToOrderRef = useRef(false)
+
+  // Voucher state
+  const [voucherCode, setVoucherCode] = useState('')
+  const [appliedVoucher, setAppliedVoucher] = useState<{ voucher: Voucher, valorDesconto: number } | null>(null)
+  const [voucherError, setVoucherError] = useState('')
+  const [isApplyingVoucher, startVoucherTransition] = useTransition()
+
+  // Calcula subtotal elegivel e recalcula desconto em tempo real se carrinho mudar
+  const subtotalElegivel = items.filter(i => i.produto.aceita_vouchers).reduce((sum, i) => sum + (i.produto.preco_promocional ?? i.produto.preco), 0)
+  const totalGeral = total - (appliedVoucher?.valorDesconto ?? 0)
+
   useEffect(() => {
     if (hydrated && items.length === 0 && !navigatingToOrderRef.current) router.replace('/loja')
   }, [hydrated, items.length, router])
+
+  function handleApplyVoucher() {
+    if (!voucherCode.trim()) return
+    setVoucherError('')
+    startVoucherTransition(async () => {
+      const res = await validarVoucherAction(voucherCode, subtotalElegivel)
+      if (res.success && res.voucher) {
+        setAppliedVoucher({ voucher: res.voucher, valorDesconto: res.valorDesconto! })
+      } else {
+        setVoucherError(res.error || 'Erro ao validar cupom')
+        setAppliedVoucher(null)
+      }
+    })
+  }
+
+  function handleRemoveVoucher() {
+    setAppliedVoucher(null)
+    setVoucherCode('')
+    setVoucherError('')
+  }
 
   if (!hydrated || items.length === 0) {
     return (
@@ -89,12 +122,13 @@ export function CheckoutClient() {
           aluno_id: i.aluno.id,
           variante_id: i.variante_id,
           variante: i.variante,
-          preco_unitario: i.produto.preco,
+          preco_unitario: i.produto.preco_promocional ?? i.produto.preco,
           nome: i.produto.nome,
         })),
         metodo,
         parcelas: cartao.parcelas,
         dadosCartao: metodo === 'cartao' ? cartao : undefined,
+        voucher_codigo: appliedVoucher?.voucher.codigo,
       })
       if (!result.success) {
         setError(result.error)
@@ -157,14 +191,24 @@ export function CheckoutClient() {
               display:'flex', alignItems:'center', gap:12, padding:'14px 16px',
               borderTop: i > 0 ? '1px solid var(--border)' : 'none',
             }}>
-              <div style={{
-                width:44, height:44, borderRadius:'var(--r-sm)',
-                background:'var(--surface-2)',
-                display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:20, flexShrink:0,
-              }}>
-                {item.produto.icon ?? CAT_ICONS[item.produto.categoria] ?? '📦'}
-              </div>
+              {item.produto.imagem_url ? (
+                <div style={{
+                  width:44, height:44, borderRadius:'var(--r-sm)',
+                  position: 'relative', overflow: 'hidden',
+                  flexShrink:0, border: '1px solid var(--border)'
+                }}>
+                  <Image src={item.produto.imagem_url} alt={item.produto.nome} fill sizes="44px" style={{ objectFit: 'cover' }} />
+                </div>
+              ) : (
+                <div style={{
+                  width:44, height:44, borderRadius:'var(--r-sm)',
+                  background:'var(--surface-2)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:20, flexShrink:0,
+                }}>
+                  {item.produto.icon ?? CAT_ICONS[item.produto.categoria] ?? '📦'}
+                </div>
+              )}
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:'var(--text-1)' }}>
                   {item.produto.nome}
@@ -179,27 +223,83 @@ export function CheckoutClient() {
                 )}
               </div>
               <div style={{ fontSize:16, fontWeight:800, color:'var(--text-1)', whiteSpace:'nowrap' }}>
-                {fmtBRL(item.produto.preco)}
+                {fmtBRL(item.produto.preco_promocional ?? item.produto.preco)}
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Voucher */}
+        <div style={{ marginBottom: 24 }}>
+          {appliedVoucher ? (
+            <div style={{
+              background:'#f0fdf4', border:'1.5px solid #a7f3d0', borderRadius:'var(--r-md)', padding:'12px 16px',
+              display:'flex', alignItems:'center', justifyContent:'space-between',
+            }}>
+              <div style={{ display:'flex', alignItems:'center', gap: 10 }}>
+                <span style={{ fontSize:18 }}>🎉</span>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#047857' }}>Cupom {appliedVoucher.voucher.codigo} aplicado</div>
+                  <div style={{ fontSize:12, color:'#065f46' }}>-{fmtBRL(appliedVoucher.valorDesconto)} no pedido</div>
+                </div>
+              </div>
+              <button type="button" onClick={handleRemoveVoucher} style={{
+                background:'none', border:'none', color:'#047857', fontSize:12, fontWeight:700, cursor:'pointer', textDecoration:'underline'
+              }}>Remover</button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ display:'flex', gap:8 }}>
+                <input
+                  placeholder="Cupom de desconto"
+                  value={voucherCode}
+                  onChange={e => setVoucherCode(e.target.value)}
+                  style={{
+                    flex:1, height:46, borderRadius:'var(--r-md)', border:'1.5px solid var(--border)', background:'var(--surface)',
+                    padding:'0 14px', fontFamily:'inherit', fontSize:14, color:'var(--text-1)', textTransform:'uppercase'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyVoucher}
+                  disabled={isApplyingVoucher || !voucherCode.trim()}
+                  style={{
+                    height:46, padding:'0 20px', background: isApplyingVoucher || !voucherCode.trim() ? '#94a3b8' : 'var(--text-1)',
+                    color:'white', border:'none', borderRadius:'var(--r-md)', fontSize:13, fontWeight:700, cursor:'pointer'
+                  }}
+                >
+                  {isApplyingVoucher ? '...' : 'Aplicar'}
+                </button>
+              </div>
+              {voucherError && <div style={{ fontSize:12, color:'var(--danger)', fontWeight:600, marginTop:6 }}>{voucherError}</div>}
+            </div>
+          )}
         </div>
 
         {/* Total */}
         <div style={{
           background:'var(--surface)', border:'1.5px solid var(--border)',
           borderRadius:'var(--r-lg)', padding:16, marginBottom:24,
-          display:'flex', alignItems:'center', justifyContent:'space-between',
+          display:'flex', flexDirection:'column', gap:8,
           boxShadow:'var(--shadow-xs)',
         }}>
-          <div>
-            <div style={{ fontSize:14, fontWeight:600, color:'var(--text-2)' }}>Total</div>
-            <div style={{ fontSize:11, color:'var(--text-3)', marginTop:2 }}>
-              {items.length} {items.length === 1 ? 'item' : 'itens'}
-            </div>
+          <div style={{ display:'flex', justifyContent:'space-between', fontSize:14, color:'var(--text-2)', fontWeight:600 }}>
+            <span>Subtotal ({items.length} {items.length === 1 ? 'item' : 'itens'})</span>
+            <span>{fmtBRL(total)}</span>
           </div>
-          <div style={{ fontSize:28, fontWeight:800, color:'var(--text-1)', letterSpacing:'-.03em' }}>
-            {fmtBRL(total)}
+          
+          {appliedVoucher && (
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:14, color:'var(--success)', fontWeight:700 }}>
+              <span>Desconto ({appliedVoucher.voucher.codigo})</span>
+              <span>-{fmtBRL(appliedVoucher.valorDesconto)}</span>
+            </div>
+          )}
+          
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', borderTop:'1px dashed var(--border)', paddingTop:8, marginTop:4 }}>
+            <span style={{ fontSize:16, fontWeight:700, color:'var(--text-1)' }}>Total a Pagar</span>
+            <span style={{ fontSize:28, fontWeight:800, color:'var(--text-1)', letterSpacing:'-.03em', lineHeight: 1 }}>
+              {fmtBRL(Math.max(0, totalGeral))}
+            </span>
           </div>
         </div>
 
@@ -340,7 +440,7 @@ export function CheckoutClient() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                 </svg>
-                {metodo === 'pix' ? 'Gerar código PIX' : metodo === 'boleto' ? 'Gerar boleto' : `Pagar ${fmtBRL(total)}`}
+                {metodo === 'pix' ? 'Gerar código PIX' : metodo === 'boleto' ? 'Gerar boleto' : `Pagar ${fmtBRL(Math.max(0, totalGeral))}`}
               </>
             )}
           </button>

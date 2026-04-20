@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { criarAlunoAction, editarAlunoAction, toggleAlunoAtivoAction } from '@/app/actions/alunos'
+import { EmptyState } from '@/components/ui/EmptyState'
 import type { Aluno } from '@/types/database'
 
 // Séries disponíveis
@@ -327,6 +328,19 @@ export function AlunosClient({ alunos: initialAlunos, isOnboarding }: Props) {
                 )}
               </div>
             </form>
+          </div>
+        )}
+
+        {/* Empty state para alunos (se não estiver adicionando) */}
+        {ativos.length === 0 && mode === 'none' && !isOnboarding && (
+          <div style={{ marginBottom: 20 }}>
+            <EmptyState
+              icon="🎒"
+              title="Nenhum aluno cadastrado"
+              description="Adicione um aluno para acessar a loja e visualizar os itens disponíveis para a série dele."
+              actionLabel="➕ Adicionar aluno"
+              actionOnClick={abrirNovo}
+            />
           </div>
         )}
 

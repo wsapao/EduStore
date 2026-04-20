@@ -80,6 +80,7 @@ export default function LoginPage() {
               placeholder="000.000.000-00"
               maxLength={14}
               onChange={maskCPF}
+              autoComplete="username"
               required
             />
           </Field>
@@ -95,6 +96,7 @@ export default function LoginPage() {
               name="senha"
               type={showSenha ? 'text' : 'password'}
               placeholder="Sua senha"
+              autoComplete="current-password"
               required
             />
           </Field>

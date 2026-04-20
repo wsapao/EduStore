@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useCart } from './CartProvider'
 
 export function CartDrawer() {
@@ -99,15 +100,25 @@ export function CartDrawer() {
               background:'var(--surface)', border:'1.5px solid var(--border)',
               borderRadius:'var(--r-md)', padding:12, boxShadow:'var(--shadow-xs)',
             }}>
-              {/* Icon */}
-              <div style={{
-                width:44, height:44, borderRadius:'var(--r-sm)',
-                background:'var(--surface-2)',
-                display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:20, flexShrink:0,
-              }}>
-                {item.produto.icon ?? getCatIcon(item.produto.categoria)}
-              </div>
+              {/* Icon / Image */}
+              {item.produto.imagem_url ? (
+                <div style={{
+                  width:44, height:44, borderRadius:'var(--r-sm)',
+                  position: 'relative', overflow: 'hidden',
+                  flexShrink:0, border: '1px solid var(--border)'
+                }}>
+                  <Image src={item.produto.imagem_url} alt={item.produto.nome} fill sizes="44px" style={{ objectFit: 'cover' }} />
+                </div>
+              ) : (
+                <div style={{
+                  width:44, height:44, borderRadius:'var(--r-sm)',
+                  background:'var(--surface-2)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:20, flexShrink:0,
+                }}>
+                  {item.produto.icon ?? getCatIcon(item.produto.categoria)}
+                </div>
+              )}
 
               {/* Info */}
               <div style={{ flex:1, minWidth:0 }}>
@@ -129,7 +140,7 @@ export function CartDrawer() {
 
               {/* Price */}
               <div style={{ fontSize:15, fontWeight:800, color:'var(--text-1)', whiteSpace:'nowrap' }}>
-                {formatPrice(item.produto.preco)}
+                {formatPrice(item.produto.preco_promocional ?? item.produto.preco)}
               </div>
 
               {/* Remove */}

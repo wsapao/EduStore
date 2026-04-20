@@ -3,18 +3,9 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { criarProdutoAction, editarProdutoAction } from '@/app/actions/admin'
-import type { Produto, CategoriaProduto, MetodoPagamento, ProdutoVariante } from '@/types/database'
+import type { Produto, CategoriaProduto, MetodoPagamento, ProdutoVariante, Categoria } from '@/types/database'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
-const CATEGORIAS: { value: CategoriaProduto; label: string; icon: string }[] = [
-  { value: 'eventos',         label: 'Eventos',       icon: '🎉' },
-  { value: 'passeios',        label: 'Passeios',      icon: '🚌' },
-  { value: 'segunda_chamada', label: '2ª Chamada',    icon: '📝' },
-  { value: 'materiais',       label: 'Materiais',     icon: '📚' },
-  { value: 'uniforme',        label: 'Uniforme',      icon: '👕' },
-  { value: 'outros',          label: 'Outros',        icon: '📦' },
-]
-
 const METODOS: { value: MetodoPagamento; label: string; icon: string }[] = [
   { value: 'pix',    label: 'PIX',    icon: '⚡' },
   { value: 'cartao', label: 'Cartão', icon: '💳' },
@@ -50,22 +41,25 @@ function toDateLocal(iso: string | null) {
 interface Props {
   produto?: Produto   // undefined = criação, definido = edição
   variantesDetalhadas: ProdutoVariante[]
+  categorias: Categoria[]
 }
 
-export function ProdutoForm({ produto, variantesDetalhadas }: Props) {
+export function ProdutoForm({ produto, variantesDetalhadas, categorias }: Props) {
   const router  = useRouter()
   const isEdit  = !!produto
   const [isPending, startTransition] = useTransition()
   const [error, setError]   = useState('')
 
   // Estado do formulário
-  const [categoria,    setCategoria]    = useState<CategoriaProduto>(produto?.categoria ?? 'eventos')
+  const [categoria,    setCategoria]    = useState<string>(produto?.categoria ?? categorias[0]?.nome ?? 'Outros')
   const [metodos,      setMetodos]      = useState<MetodoPagamento[]>(produto?.metodos_aceitos ?? ['pix'])
   const [series,       setSeries]       = useState<string[]>(produto?.series ?? [])
   const [geraIngresso, setGeraIngresso] = useState(produto?.gera_ingresso ?? false)
+  const [aceitaVouchers, setAceitaVouchers] = useState(produto?.aceita_vouchers ?? true)
   const [temCartao,    setTemCartao]    = useState(produto?.metodos_aceitos?.includes('cartao') ?? false)
   const [iconVal,      setIconVal]      = useState(produto?.icon ?? '')
   const [ativo,        setAtivo]        = useState(produto?.ativo ?? true)
+  const [previewImg,   setPreviewImg]   = useState<string | null>(produto?.imagem_url ?? null)
   const [variantesState, setVariantesState] = useState<Array<{
     id?: string
     nome: string
@@ -131,6 +125,13 @@ export function ProdutoForm({ produto, variantesDetalhadas }: Props) {
     setError('')
 
     const fd = new FormData(e.currentTarget)
+    
+    // Tratamento da imagem
+    const imgFile = fd.get('imagem_arquivo') as File | null
+    if (imgFile && imgFile.size === 0) {
+      fd.delete('imagem_arquivo')
+    }
+
     // Adiciona os estados controlados
     fd.delete('metodos_aceitos')
     metodos.forEach(m => fd.append('metodos_aceitos', m))
@@ -149,6 +150,8 @@ export function ProdutoForm({ produto, variantesDetalhadas }: Props) {
     ))
     if (geraIngresso) fd.set('gera_ingresso', 'on')
     else fd.delete('gera_ingresso')
+    if (aceitaVouchers) fd.set('aceita_vouchers', 'on')
+    else fd.delete('aceita_vouchers')
     if (ativo) fd.set('ativo', 'on')
     else fd.delete('ativo')
 
@@ -223,34 +226,74 @@ export function ProdutoForm({ produto, variantesDetalhadas }: Props) {
         {/* Categoria */}
         <div>
           <Label req>CATEGORIA</Label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-            {CATEGORIAS.map(c => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+            {categorias.length > 0 ? categorias.map(c => (
               <button
-                key={c.value} type="button"
-                onClick={() => setCategoria(c.value)}
+                key={c.id} type="button"
+                onClick={() => setCategoria(c.nome)}
                 style={{
                   padding: '10px 8px', borderRadius: 10, cursor: 'pointer',
-                  border: categoria === c.value ? '2px solid var(--brand)' : '1.5px solid var(--border)',
-                  background: categoria === c.value ? '#eff6ff' : 'var(--surface-2)',
-                  fontWeight: 700, fontSize: 13, color: categoria === c.value ? 'var(--brand)' : 'var(--text-2)',
+                  border: categoria === c.nome ? '2px solid var(--brand)' : '1.5px solid var(--border)',
+                  background: categoria === c.nome ? '#eff6ff' : 'var(--surface-2)',
+                  fontWeight: 700, fontSize: 13, color: categoria === c.nome ? 'var(--brand)' : 'var(--text-2)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
               >
-                <span>{c.icon}</span> {c.label}
+                <span>{c.icone}</span> {c.nome}
               </button>
-            ))}
+            )) : (
+              <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Nenhuma categoria cadastrada nas configurações.</p>
+            )}
           </div>
           <input type="hidden" name="categoria" value={categoria} />
+        </div>
+
+        {/* Imagem do Produto */}
+        <div>
+          <Label>IMAGEM DO PRODUTO</Label>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <div style={{
+              width: 120, height: 120, borderRadius: 12, backgroundColor: 'var(--surface-2)',
+              border: '1.5px dashed var(--border)', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', overflow: 'hidden', flexShrink: 0
+            }}>
+              {previewImg ? (
+                <img src={previewImg} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ fontSize: 32, opacity: 0.2 }}>📷</span>
+              )}
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input
+                type="file"
+                name="imagem_arquivo"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) setPreviewImg(URL.createObjectURL(file))
+                  else setPreviewImg(produto?.imagem_url ?? null)
+                }}
+                style={{
+                  ...inputStyle, padding: '9px 14px', cursor: 'pointer',
+                  background: '#fff', fontSize: 13,
+                }}
+              />
+              <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.4 }}>
+                Envie uma foto em formato quadrado (1:1) com até 2MB.<br />
+                {produto?.imagem_url && 'Ao enviar uma nova imagem, a atual será substituída.'}
+              </p>
+            </div>
+          </div>
         </div>
       </Section>
 
       {/* ── Seção: Preço e Pagamento ── */}
-      <Section title="Preço e pagamento">
+      <Section title="Preço e Promoções">
 
-        {/* Preço + Parcelas */}
+        {/* Preço + Parcelas + Promocional */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
-            <Label req>PREÇO (R$)</Label>
+            <Label req>PREÇO PADRÃO (R$)</Label>
             <div style={{ position: 'relative' }}>
               <span style={{
                 position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
@@ -268,6 +311,27 @@ export function ProdutoForm({ produto, variantesDetalhadas }: Props) {
               />
             </div>
           </div>
+          <div>
+            <Label>PREÇO PROMOCIONAL (R$)</Label>
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+                fontSize: 13, fontWeight: 700, color: 'var(--text-3)',
+              }}>R$</span>
+              <input
+                name="preco_promocional"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={produto?.preco_promocional ?? ''}
+                placeholder="0,00 (opcional)"
+                style={{ ...inputStyle, paddingLeft: 36, borderColor: '#a78bfa' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
           <div style={{ opacity: temCartao ? 1 : .4 }}>
             <Label>MAX. PARCELAS</Label>
             <select
@@ -280,6 +344,17 @@ export function ProdutoForm({ produto, variantesDetalhadas }: Props) {
                 <option key={n} value={n}>{n === 1 ? 'À vista' : `${n}x`}</option>
               ))}
             </select>
+          </div>
+          <div>
+            <Label>VOUCHERS DE DESCONTO</Label>
+            <div style={{ marginTop: 8 }}>
+              <Toggle
+                checked={aceitaVouchers}
+                onChange={setAceitaVouchers}
+                label="Aceita Vouchers"
+                desc="Permitir que usem cupons neste produto."
+              />
+            </div>
           </div>
         </div>
 

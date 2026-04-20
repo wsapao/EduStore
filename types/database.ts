@@ -1,5 +1,5 @@
 export type MetodoPagamento = 'pix' | 'cartao' | 'boleto'
-export type CategoriaProduto = 'eventos' | 'passeios' | 'segunda_chamada' | 'materiais' | 'uniforme' | 'outros'
+export type CategoriaProduto = string
 export type StatusPedido = 'pendente' | 'pago' | 'cancelado' | 'reembolsado'
 export type StatusPagamento = 'aguardando' | 'confirmado' | 'falhou' | 'expirado' | 'reembolsado'
 
@@ -21,6 +21,8 @@ export interface Responsavel {
   cpf: string
   telefone: string | null
   escola_id: string | null
+  ativo: boolean
+  excluido_em: string | null
   created_at: string
 }
 
@@ -52,8 +54,34 @@ export interface Produto {
   series: string[] | null
   variantes: string[] | null
   icon: string | null
+  imagem_url: string | null
+  preco_promocional: number | null
+  aceita_vouchers: boolean
   ativo: boolean
   esgotado: boolean
+  created_at: string
+}
+
+export interface Categoria {
+  id: string
+  escola_id: string
+  nome: string
+  icone: string
+  ativo: boolean
+  created_at: string
+}
+
+export interface Voucher {
+  id: string
+  escola_id: string
+  codigo: string
+  tipo_desconto: 'percentual' | 'fixo'
+  valor: number
+  limite_usos: number | null
+  usos_atuais: number
+  compra_minima: number | null
+  data_validade: string | null
+  ativo: boolean
   created_at: string
 }
 

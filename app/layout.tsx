@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
+import { Toaster } from 'sonner'
 import './globals.css'
+import { CookieBanner } from '@/components/CookieBanner'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta' })
 
 const escolaNome = process.env.NEXT_PUBLIC_ESCOLA_NOME ?? 'Loja Escolar'
 const escolaCor  = process.env.NEXT_PUBLIC_ESCOLA_COR  ?? '#1a2f5a'
@@ -36,9 +38,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR" className={`h-full ${inter.variable}`}>
+    <html lang="pt-BR" className={`h-full ${jakarta.variable}`} style={{ scrollBehavior: 'smooth' }}>
       <body className="min-h-full flex flex-col bg-[var(--bg)] text-[var(--text-1)] antialiased font-sans">
         {children}
+        <CookieBanner />
+        <Toaster position="bottom-center" richColors theme="light" />
       </body>
     </html>
   )

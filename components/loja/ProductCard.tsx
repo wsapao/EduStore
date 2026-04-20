@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import type { Produto, Aluno } from '@/types/database'
 import { useCart } from './CartProvider'
 
@@ -132,10 +133,12 @@ export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props
       </div>
 
       {/* Body */}
-      <div style={{ padding:'12px 14px', flex:1, display:'flex', flexDirection:'column', gap:6 }}>
-        <div style={{ fontSize:13, fontWeight:700, color:'var(--text-1)', lineHeight:1.3, letterSpacing:'-.01em' }}>
-          {produto.nome}
-        </div>
+      <div style={{ padding:'12px 14px', flex:1, display:'flex', gap:12 }}>
+        {/* Texts */}
+        <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, minWidth:0 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'var(--text-1)', lineHeight:1.3, letterSpacing:'-.01em' }}>
+            {produto.nome}
+          </div>
         {produto.descricao && (
           <div style={{
             fontSize:11, color:'var(--text-3)', lineHeight:1.5, fontWeight:500, flex:1,
@@ -145,27 +148,39 @@ export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props
           </div>
         )}
 
-        {/* Meta tags */}
-        <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:2 }}>
-          {produto.variantes && produto.variantes.length > 0 && (
-            <MetaTag>
-              <ShirtIcon />
-              {produto.variantes.length} tamanhos
-            </MetaTag>
-          )}
-          {produto.data_evento && (
-            <MetaTag>
-              <CalendarIcon />
-              {formatDate(produto.data_evento)}
-            </MetaTag>
-          )}
-          {produto.prazo_compra && (
-            <MetaTag urgent={urgent}>
-              <ClockIcon />
-              Prazo {formatDate(produto.prazo_compra)}
-            </MetaTag>
-          )}
+          {/* Meta tags */}
+          <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:2 }}>
+            {produto.variantes && produto.variantes.length > 0 && (
+              <MetaTag>
+                <ShirtIcon />
+                {produto.variantes.length} tamanhos
+              </MetaTag>
+            )}
+            {produto.data_evento && (
+              <MetaTag>
+                <CalendarIcon />
+                {formatDate(produto.data_evento)}
+              </MetaTag>
+            )}
+            {produto.prazo_compra && (
+              <MetaTag urgent={urgent}>
+                <ClockIcon />
+                Prazo {formatDate(produto.prazo_compra)}
+              </MetaTag>
+            )}
+          </div>
         </div>
+        
+        {/* Thumbnail Image */}
+        {produto.imagem_url && (
+           <div style={{
+             width: 64, height: 64, borderRadius: 8, flexShrink: 0,
+             position: 'relative', overflow: 'hidden',
+             border: '1px solid var(--border)'
+           }}>
+             <Image src={produto.imagem_url} alt={produto.nome} fill sizes="64px" style={{ objectFit: 'cover' }} />
+           </div>
+        )}
       </div>
 
       {/* Payment methods */}
@@ -186,15 +201,22 @@ export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props
       {/* Footer */}
       <div style={{
         padding:'10px 14px 14px', display:'flex',
-        alignItems:'center', justifyContent:'space-between', gap:8,
+        alignItems:'flex-end', justifyContent:'space-between', gap:8,
         borderTop:'1px solid var(--border)',
       }}>
-        <div style={{ fontSize:17, fontWeight:800, color:'var(--text-1)', letterSpacing:'-.02em' }}>
-          <span style={{ fontSize:10, fontWeight:600, color:'var(--text-3)', verticalAlign:'super', marginRight:1 }}>R$</span>
-          {Math.floor(produto.preco).toLocaleString('pt-BR')}
-          {produto.preco % 1 !== 0 && (
-            <span style={{ fontSize:12 }}>,{String(Math.round((produto.preco % 1) * 100)).padStart(2,'0')}</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {produto.preco_promocional && (
+            <div style={{ fontSize: 11, color: 'var(--text-3)', textDecoration: 'line-through', fontWeight: 600 }}>
+              {fmtBRL(produto.preco)}
+            </div>
           )}
+          <div style={{ fontSize:17, fontWeight:800, color: produto.preco_promocional ? 'var(--brand)' : 'var(--text-1)', letterSpacing:'-.02em', lineHeight: 1.1 }}>
+            <span style={{ fontSize:10, fontWeight:600, color:'var(--text-3)', verticalAlign:'super', marginRight:1 }}>R$</span>
+            {Math.floor(produto.preco_promocional ?? produto.preco).toLocaleString('pt-BR')}
+            {((produto.preco_promocional ?? produto.preco) % 1) !== 0 && (
+              <span style={{ fontSize:12 }}>,{String(Math.round(((produto.preco_promocional ?? produto.preco) % 1) * 100)).padStart(2,'0')}</span>
+            )}
+          </div>
         </div>
 
         <button

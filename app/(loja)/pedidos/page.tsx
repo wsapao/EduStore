@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { sincronizarPixsExpiradosResponsavel } from '@/lib/pagamentos/pix'
+import { EmptyState } from '@/components/ui/EmptyState'
 import type { Pedido, ItemPedido, Produto, Aluno, Pagamento, StatusPedido, MetodoPagamento } from '@/types/database'
 
 // ── tipos ────────────────────────────────────────────────────────────────────
@@ -124,29 +125,13 @@ export default async function PedidosPage() {
 
         {/* Empty state */}
         {pedidos.length === 0 && (
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', padding: '80px 20px', textAlign: 'center', gap: 16,
-          }}>
-            <div style={{ fontSize: 56, lineHeight: 1 }}>🛍️</div>
-            <div>
-              <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)', margin: '0 0 6px' }}>
-                Nenhum pedido ainda
-              </p>
-              <p style={{ fontSize: 14, color: 'var(--text-3)', margin: 0 }}>
-                Seus pedidos vão aparecer aqui depois da compra.
-              </p>
-            </div>
-            <Link href="/loja" style={{
-              marginTop: 8,
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '12px 24px', borderRadius: 'var(--r-md)',
-              background: 'var(--brand)', color: '#fff',
-              fontWeight: 700, fontSize: 14, textDecoration: 'none',
-            }}>
-              🏪 Ver produtos
-            </Link>
-          </div>
+          <EmptyState
+            icon="🛍️"
+            title="Nenhum pedido ainda"
+            description="Seus pedidos vão aparecer aqui depois da compra."
+            actionLabel="🏪 Ver produtos"
+            actionHref="/loja"
+          />
         )}
 
         {/* Lista de pedidos */}
