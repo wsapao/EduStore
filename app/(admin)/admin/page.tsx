@@ -185,47 +185,48 @@ export default async function AdminDashboard({
   ]
 
   return (
-    <div className="flex flex-col gap-6 pb-20 animate-fade-in">
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 80 }}>
       {/* HEADER HERO */}
-      <section className="relative overflow-hidden rounded-[28px] p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white shadow-2xl">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-pulse" />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-40" />
+      <section style={{
+        position: 'relative', overflow: 'hidden', borderRadius: 28, padding: 32,
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e1b4b 100%)',
+        color: '#fff', boxShadow: '0 25px 50px -12px rgba(0,0,0,.35)',
+      }}>
+        <div style={{ position: 'absolute', inset: 0, opacity: .2, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
 
-        <div className="relative grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-8 items-stretch">
-          
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-[11px] font-bold tracking-widest uppercase backdrop-blur-md">
+        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 32, alignItems: 'stretch' }}>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+              <span style={{ padding: '6px 12px', borderRadius: 999, background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
                 Central de Gestão
               </span>
-              <span className="text-xs font-semibold text-white/70">
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.7)' }}>
                 {interval.label ? `Período analisado: ${interval.label}` : 'Últimos 30 dias'}
               </span>
             </div>
 
             <div>
-              <h1 className="text-3xl md:text-4xl lg:text-[40px] leading-tight font-black tracking-tight max-w-2xl text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
+              <h1 style={{ fontSize: 38, lineHeight: 1.1, fontWeight: 900, letterSpacing: '-.03em', color: '#fff', margin: 0 }}>
                 Cockpit da Operação
               </h1>
-              <p className="text-[15px] leading-relaxed text-white/80 max-w-2xl mt-3">
+              <p style={{ fontSize: 15, lineHeight: 1.65, color: 'rgba(255,255,255,.8)', marginTop: 10, maxWidth: 520 }}>
                 Acompanhe o fluxo de caixa, pendências urgentes e a saúde das vendas em tempo real.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 4 }}>
               {[
                 { label: 'Receita confirmada', value: fmtBRL(receitaConfirmada) },
                 { label: 'Ticket médio', value: fmtBRL(ticketMedio) },
                 { label: 'Aguardando', value: String(aguardando) },
                 { label: 'Ativos', value: `${produtosAtivos}` },
               ].map((item) => (
-                <div key={item.label} className="glass-panel-dark rounded-2xl p-4 transition-transform hover:-translate-y-1">
-                  <div className="text-[10px] font-bold tracking-widest uppercase text-white/60">
+                <div key={item.label} style={{ background: 'rgba(255,255,255,.08)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 16, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', marginBottom: 6 }}>
                     {item.label}
                   </div>
-                  <div className="text-xl md:text-2xl font-black tracking-tight mt-1">
+                  <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-.02em' }}>
                     {item.value}
                   </div>
                 </div>
@@ -233,9 +234,7 @@ export default async function AdminDashboard({
             </div>
           </div>
 
-          <div className="glass-panel-dark rounded-[22px] p-6 flex flex-col gap-4 self-stretch border-white/10 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl -z-10" />
-
+          <div style={{ background: 'rgba(255,255,255,.08)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 22, padding: 24, display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <div>
                 <div style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,.64)', fontWeight: 700 }}>
@@ -311,7 +310,7 @@ export default async function AdminDashboard({
       </section>
 
       {/* FILTROS E CONTROLES */}
-      <section className="glass-panel rounded-3xl p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-end z-10 relative">
+      <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 20, display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative', zIndex: 10 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {periodoLinks.map(({ key, label }) => (
             <Link
@@ -353,52 +352,56 @@ export default async function AdminDashboard({
       </section>
 
       {/* CARDS DE DESTAQUE */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         {[
           {
             label: 'Receita confirmada',
             value: fmtBRL(receitaConfirmada),
             note: `${pedidosPagos.length} pedidos pagos`,
-            bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200/50',
-            textColor: 'text-emerald-950',
-            accent: 'text-emerald-700'
+            bg: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
+            border: 'rgba(167,243,208,.6)',
+            textColor: '#022c22',
+            accent: '#065f46',
           },
           {
             label: 'Ticket médio',
             value: fmtBRL(ticketMedio),
             note: aguardando > 0 ? `${aguardando} pedidos ainda aguardando` : 'Sem fila de pagamentos',
-            bg: 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200/50',
-            textColor: 'text-blue-950',
-            accent: 'text-blue-700'
+            bg: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+            border: 'rgba(191,219,254,.6)',
+            textColor: '#172554',
+            accent: '#1d4ed8',
           },
           {
             label: 'Base ativa',
             value: `${(alunosAll ?? []).length} alunos`,
             note: `${(responsaveisAll ?? []).length} responsáveis cadastrados`,
-            bg: 'bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200/50',
-            textColor: 'text-violet-950',
-            accent: 'text-violet-700'
+            bg: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+            border: 'rgba(221,214,254,.6)',
+            textColor: '#2e1065',
+            accent: '#6d28d9',
           },
           {
             label: 'Catálogo',
             value: `${produtosAtivos} ativos`,
             note: `${esgotados} esgotados · ${urgenciasPrazo} prazo crítico`,
-            bg: 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200/50',
-            textColor: 'text-orange-950',
-            accent: 'text-orange-700'
+            bg: 'linear-gradient(135deg, #fff7ed, #fed7aa)',
+            border: 'rgba(254,215,170,.6)',
+            textColor: '#431407',
+            accent: '#c2410c',
           },
         ].map((card) => (
           <article
             key={card.label}
-            className={`rounded-[22px] p-5 border ${card.bg} shadow-sm transition-transform hover:-translate-y-1`}
+            style={{ borderRadius: 22, padding: 20, border: `1px solid ${card.border}`, background: card.bg, boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}
           >
-            <div className={`text-[11px] uppercase tracking-widest font-bold ${card.accent}`}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 700, color: card.accent }}>
               {card.label}
             </div>
-            <div className={`text-3xl font-black tracking-tight mt-2 ${card.textColor}`}>
+            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-.02em', marginTop: 8, color: card.textColor }}>
               {card.value}
             </div>
-            <div className={`text-sm mt-2 opacity-80 font-medium ${card.textColor}`}>
+            <div style={{ fontSize: 13, marginTop: 6, opacity: .8, fontWeight: 500, color: card.textColor }}>
               {card.note}
             </div>
           </article>
@@ -406,89 +409,89 @@ export default async function AdminDashboard({
       </section>
 
       {/* WIDGETS AVANÇADOS */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
         {/* Recuperação PIX */}
-        <div className="glass-panel rounded-[24px] p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <h3 className="text-[15px] font-bold text-slate-800">Recuperação de PIX</h3>
-              <p className="text-xs text-slate-500">Nas últimas 24h</p>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', margin: 0 }}>Recuperação de PIX</h3>
+              <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>Nas últimas 24h</p>
             </div>
-            <span className="text-2xl">💸</span>
+            <span style={{ fontSize: 24 }}>💸</span>
           </div>
-          <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1">
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
             {pixPendentes.length > 0 ? (
               pixPendentes.map(pix => {
                 const resp = Array.isArray(pix.responsavel) ? pix.responsavel[0] : pix.responsavel
                 const fone = resp?.telefone ? resp.telefone.replace(/\D/g, '') : ''
                 const nomeResp = resp?.nome || 'Sem nome'
                 return (
-                  <div key={pix.id} className="bg-white border border-slate-100 rounded-xl p-3 shadow-sm flex items-center justify-between transition-transform hover:-translate-y-0.5">
+                  <div key={pix.id} style={{ background: '#fff', border: '1px solid #f1f5f9', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
                     <div>
-                      <p className="text-sm font-bold text-slate-800">{fmtBRL(pix.total)}</p>
-                      <p className="text-[11px] text-slate-500 truncate max-w-[120px]">{nomeResp}</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: '#1e293b', margin: 0 }}>{fmtBRL(pix.total)}</p>
+                      <p style={{ fontSize: 11, color: '#64748b', margin: '2px 0 0', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeResp}</p>
                     </div>
                     {fone ? (
                       <a
                         href={`https://wa.me/55${fone}?text=${encodeURIComponent(`Olá ${nomeResp}! Vimos que você gerou um PIX de ${fmtBRL(pix.total)} na Loja Escolar e ainda não foi pago. Precisando de ajuda, estamos à disposição!`)}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
+                        style={{ background: '#ecfdf5', color: '#059669', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}
                       >
                         Lembrar
                       </a>
                     ) : (
-                      <span className="text-[10px] text-slate-400">Sem fone</span>
+                      <span style={{ fontSize: 10, color: '#94a3b8' }}>Sem fone</span>
                     )}
                   </div>
                 )
               })
             ) : (
-              <div className="text-xs text-slate-400 text-center my-auto py-6">Nenhum PIX pendente recente.</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', padding: '24px 0' }}>Nenhum PIX pendente recente.</div>
             )}
           </div>
         </div>
 
         {/* Adesão de Eventos */}
-        <div className="glass-panel rounded-[24px] p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <h3 className="text-[15px] font-bold text-slate-800">Adesão de Eventos</h3>
-              <p className="text-xs text-slate-500">Engajamento nas compras</p>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', margin: 0 }}>Adesão de Eventos</h3>
+              <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>Engajamento nas compras</p>
             </div>
-            <span className="text-2xl">🎟️</span>
+            <span style={{ fontSize: 24 }}>🎟️</span>
           </div>
-          <div className="flex flex-col gap-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {adesaoEventos.length > 0 ? adesaoEventos.map(({ evento, pagantes, total, adesao }) => (
               <div key={evento.id}>
-                <div className="flex justify-between items-end text-xs mb-1.5">
-                  <span className="font-bold text-slate-700 truncate mr-2">{evento.nome}</span>
-                  <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">{adesao}%</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 8 }}>{evento.nome}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', background: '#eef2ff', padding: '2px 8px', borderRadius: 6, flexShrink: 0 }}>{adesao}%</span>
                 </div>
-                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${adesao}%` }} />
+                <div style={{ width: '100%', background: '#f1f5f9', height: 10, borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ width: `${adesao}%`, height: '100%', borderRadius: 999, background: '#6366f1' }} />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">{pagantes} de {total} alunos aderiram</p>
+                <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>{pagantes} de {total} alunos aderiram</p>
               </div>
             )) : (
-              <div className="text-xs text-slate-400 text-center py-6">Nenhum evento ativo.</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', padding: '24px 0' }}>Nenhum evento ativo.</div>
             )}
           </div>
         </div>
 
         {/* Saúde da Cantina */}
-        <div className="glass-panel rounded-[24px] p-6 flex flex-col bg-gradient-to-br from-amber-50 to-orange-50 border-orange-100">
-          <div className="flex items-center justify-between mb-2">
+        <div style={{ background: 'linear-gradient(135deg, #fffbeb, #fff7ed)', border: '1px solid #fed7aa', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div>
-              <h3 className="text-[15px] font-bold text-orange-900">Saúde da Cantina</h3>
-              <p className="text-xs text-orange-700/70">Saldos depositados</p>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#7c2d12', margin: 0 }}>Saúde da Cantina</h3>
+              <p style={{ fontSize: 12, color: 'rgba(124,45,18,.7)', margin: '2px 0 0' }}>Saldos depositados</p>
             </div>
-            <span className="text-2xl">🍔</span>
+            <span style={{ fontSize: 24 }}>🍔</span>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] font-bold tracking-widest uppercase text-orange-800/60 mb-1">Passivo de Carteiras</p>
-            <p className="text-3xl font-black text-orange-900 tracking-tight">{fmtBRL(cantinaSaldoTotal)}</p>
-            <p className="text-xs text-orange-800/70 mt-3 leading-relaxed">
+          <div style={{ marginTop: 'auto' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(124,45,18,.6)', marginBottom: 4 }}>Passivo de Carteiras</p>
+            <p style={{ fontSize: 30, fontWeight: 900, color: '#7c2d12', letterSpacing: '-.02em', margin: 0 }}>{fmtBRL(cantinaSaldoTotal)}</p>
+            <p style={{ fontSize: 12, color: 'rgba(124,45,18,.7)', marginTop: 12, lineHeight: 1.55 }}>
               Valor total "guardado" pela escola nas carteiras digitais dos alunos da cantina.
             </p>
           </div>
@@ -496,14 +499,14 @@ export default async function AdminDashboard({
       </section>
 
       <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(320px, 1fr)', gap: 16 }}>
-        <article className="glass-panel rounded-[24px] p-6 flex flex-col min-h-[340px]">
-          <div className="flex items-center justify-between mb-6">
+        <article style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column', minHeight: 340 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
             <div>
-              <h2 className="text-lg font-bold text-slate-800 tracking-tight">Receita confirmada</h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Visão consolidada de vendas diárias pagas</p>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', letterSpacing: '-.01em', margin: 0 }}>Receita confirmada</h2>
+              <p style={{ fontSize: 12, color: '#64748b', fontWeight: 500, marginTop: 2 }}>Visão consolidada de vendas diárias pagas</p>
             </div>
           </div>
-          <div className="flex-1 w-full min-h-0">
+          <div style={{ flex: 1, width: '100%' }}>
             <SalesChart data={salesSeries} />
           </div>
         </article>
