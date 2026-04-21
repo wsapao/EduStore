@@ -20,30 +20,18 @@ export default async function PedidoPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  await sincronizarPixExpiradoPedido(id, user.id)
+  // 3 queries em paralelo + sincronização pix (sem bloquear as queries)
+  const [, { data: pedido }, { data: pagamento }, { data: itensRaw }] = await Promise.all([
+    sincronizarPixExpiradoPedido(id, user.id),
+    supabase.from('pedidos').select('*').eq('id', id).single<Pedido>(),
+    supabase.from('pagamentos').select('*').eq('pedido_id', id).single<Pagamento>(),
+    supabase.from('itens_pedido')
+      .select('*, produto:produtos(*), aluno:alunos(*), ingresso:ingressos(id, token, status)')
+      .eq('pedido_id', id),
+  ])
 
-  // Fetch order
-  const { data: pedido } = await supabase
-    .from('pedidos')
-    .select('*')
-    .eq('id', id)
-    .eq('responsavel_id', user.id)
-    .single<Pedido>()
-
-  if (!pedido) notFound()
-
-  // Fetch payment
-  const { data: pagamento } = await supabase
-    .from('pagamentos')
-    .select('*')
-    .eq('pedido_id', id)
-    .single<Pagamento>()
-
-  // Fetch items with product + student + ingresso
-  const { data: itensRaw } = await supabase
-    .from('itens_pedido')
-    .select('*, produto:produtos(*), aluno:alunos(*), ingresso:ingressos(id, token, status)')
-    .eq('pedido_id', id)
+  // autorização verificada em JS após fetch paralelo
+  if (!pedido || pedido.responsavel_id !== user.id) notFound()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const itens = (itensRaw ?? []).map((i: any) => ({

@@ -4,8 +4,8 @@ import { CartProvider } from '@/components/loja/CartProvider'
 import { LojaHeader } from '@/components/loja/LojaHeader'
 import { CartDrawer } from '@/components/loja/CartDrawer'
 import { CartBar } from '@/components/loja/CartBar'
-import { getEscolaByUser, escolaThemeStyle } from '@/lib/escola/getEscola'
-import type { Responsavel } from '@/types/database'
+import { escolaThemeStyle, ESCOLA_FALLBACK } from '@/lib/escola/getEscola'
+import type { Escola, Responsavel } from '@/types/database'
 
 export default async function LojaLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -13,15 +13,19 @@ export default async function LojaLayout({ children }: { children: React.ReactNo
 
   if (!user) redirect('/login')
 
-  const { data: responsavel } = await supabase
+  // 1 query com join em vez de 2 sequenciais (responsaveis + getEscolaByUser)
+  const { data: resp } = await supabase
     .from('responsaveis')
-    .select('*')
+    .select('*, escola:escolas(*)')
     .eq('id', user.id)
-    .single<Responsavel>()
+    .single()
 
-  if (!responsavel) redirect('/login')
+  if (!resp) redirect('/login')
 
-  const escola = await getEscolaByUser(user.id)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const responsavel = resp as unknown as Responsavel
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const escola: Escola = (resp as any).escola ?? ESCOLA_FALLBACK
 
   return (
     <CartProvider>

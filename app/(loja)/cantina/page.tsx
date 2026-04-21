@@ -45,43 +45,27 @@ export default async function CantinaPage() {
     )
   }
 
-  // Buscar alunos + carteiras
-  const { data: alunos } = await supabase
-    .from('alunos')
-    .select('id, nome, serie, turma')
-    .in('id', alunoIds)
-
-  const { data: carteiras } = await supabase
-    .from('cantina_carteiras')
-    .select('*')
-    .in('aluno_id', alunoIds)
-
-  // Buscar movimentações dos últimos 30 dias
   const trinta = new Date()
   trinta.setDate(trinta.getDate() - 30)
 
-  const carteiraIds = (carteiras ?? []).map(c => c.id)
-  const { data: movs30 } = carteiraIds.length > 0
-    ? await supabase
-        .from('cantina_movimentacoes')
-        .select('carteira_id, tipo, valor, created_at')
-        .in('carteira_id', carteiraIds)
-        .gte('created_at', trinta.toISOString())
-    : { data: [] }
+  // Todas as queries em paralelo (alunos, carteiras, movimentações e pedidos juntos)
+  const [{ data: alunos }, { data: carteiras }, { data: pedidosPendentes }] = await Promise.all([
+    supabase.from('alunos').select('id, nome, serie, turma').in('id', alunoIds),
+    supabase.from('cantina_carteiras').select('*').in('aluno_id', alunoIds),
+    supabase.from('cantina_pedidos').select('id').in('aluno_id', alunoIds).eq('tipo', 'online').in('status', ['aberto', 'confirmado', 'pronto']),
+  ])
 
-  // Stats globais
+  // Movimentações usando aluno_id diretamente (sem precisar dos carteiraIds)
+  const { data: movs30 } = await supabase
+    .from('cantina_movimentacoes')
+    .select('carteira_id, tipo, valor, created_at')
+    .in('carteira_id', (carteiras ?? []).map(c => c.id).length > 0 ? (carteiras ?? []).map(c => c.id) : [''])
+    .gte('created_at', trinta.toISOString())
+
   const saldoTotal = (carteiras ?? []).reduce((s, c) => s + Number(c.saldo), 0)
   const consumoMes = (movs30 ?? [])
     .filter(m => m.tipo === 'consumo')
     .reduce((s, m) => s + Number(m.valor), 0)
-
-  // Pedidos online pendentes
-  const { data: pedidosPendentes } = await supabase
-    .from('cantina_pedidos')
-    .select('id')
-    .in('aluno_id', alunoIds)
-    .eq('tipo', 'online')
-    .in('status', ['aberto', 'confirmado', 'pronto'])
 
   const statCards = [
     { label: 'Saldo total', value: fmtBRL(saldoTotal), icon: '💰', bg: '#ecfdf5', color: '#065f46' },

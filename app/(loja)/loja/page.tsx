@@ -47,10 +47,16 @@ export default async function LojaPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: vinculos }, { data: responsavel }, { data: allProdutosRaw }] = await Promise.all([
+  // Bateria 1: tudo que só precisa de user.id
+  const [{ data: vinculos }, { data: responsavel }, { data: allProdutosRaw }, { data: pedidosRecentes }] = await Promise.all([
     supabase.from('responsavel_aluno').select('aluno:alunos(*)').eq('responsavel_id', user.id),
     supabase.from('responsaveis').select('nome, escola_id').eq('id', user.id).single(),
     supabase.from('produtos').select('*').eq('ativo', true).order('created_at', { ascending: false }),
+    supabase.from('pedidos')
+      .select('id, numero, status, total, created_at, pagamento:pagamentos(status)')
+      .eq('responsavel_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(3),
   ])
 
   const alunos: Aluno[] = (vinculos ?? [])
@@ -61,32 +67,36 @@ export default async function LojaPage({
   const selectedAluno = alunos.find((aluno) => aluno.id === alunoId) ?? alunos[0] ?? null
   const escolaId = responsavel?.escola_id
 
-  // filtra por escola e categoria em JS (já buscados em paralelo)
   const allProdutos = (allProdutosRaw ?? []).filter(p =>
     (!escolaId || p.escola_id === escolaId) &&
     (!categoria || p.categoria === categoria)
   )
-  const produtos: Produto[] = allProdutos ?? []
-
+  const produtos: Produto[] = allProdutos
   const produtosComCapacidade = produtos.filter((produto) => produto.capacidade !== null)
+  const idsCapacidade = produtosComCapacidade.map(p => p.id)
+
+  // Bateria 2: tudo que depende de selectedAluno ou idsCapacidade (paralelo)
+  const [{ data: ingressosRaw }, { data: carteiraAluno }, { data: pedidosCantinaPendentes }] = await Promise.all([
+    idsCapacidade.length > 0
+      ? supabase.from('ingressos').select('produto_id').in('produto_id', idsCapacidade).in('status', ['emitido', 'usado'])
+      : Promise.resolve({ data: [] }),
+    selectedAluno
+      ? supabase.from('cantina_carteiras').select('*').eq('aluno_id', selectedAluno.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    selectedAluno
+      ? supabase.from('cantina_pedidos').select('id').eq('aluno_id', selectedAluno.id).in('status', ['aberto', 'confirmado', 'pronto'])
+      : Promise.resolve({ data: [] }),
+  ])
+
   const vagasMap: Record<string, number | null> = {}
-  if (produtosComCapacidade.length > 0) {
-    const ids = produtosComCapacidade.map((produto) => produto.id)
-    const { data: counts } = await supabase
-      .from('ingressos')
-      .select('produto_id')
-      .in('produto_id', ids)
-      .in('status', ['emitido', 'usado'])
-
-    const countMap: Record<string, number> = {}
-    for (const row of counts ?? []) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      countMap[(row as any).produto_id] = (countMap[(row as any).produto_id] ?? 0) + 1
-    }
-
-    for (const produto of produtosComCapacidade) {
-      vagasMap[produto.id] = Math.max(0, (produto.capacidade ?? 0) - (countMap[produto.id] ?? 0))
-    }
+  const countMap: Record<string, number> = {}
+  for (const row of ingressosRaw ?? []) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pid = (row as any).produto_id as string
+    countMap[pid] = (countMap[pid] ?? 0) + 1
+  }
+  for (const produto of produtosComCapacidade) {
+    vagasMap[produto.id] = Math.max(0, (produto.capacidade ?? 0) - (countMap[produto.id] ?? 0))
   }
 
   const produtosPorAluno = selectedAluno
@@ -136,29 +146,6 @@ export default async function LojaPage({
 
   const shouldShowFlatResults =
     normalizedSort !== 'recentes' || minPrice !== null || maxPrice !== null || normalizedQuery.length > 0
-
-  const [{ data: pedidosRecentes }, { data: carteiraAluno }, { data: pedidosCantinaPendentes }] = await Promise.all([
-    supabase
-      .from('pedidos')
-      .select('id, numero, status, total, created_at, pagamento:pagamentos(status)')
-      .eq('responsavel_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(3),
-    selectedAluno
-      ? supabase
-          .from('cantina_carteiras')
-          .select('*')
-          .eq('aluno_id', selectedAluno.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    selectedAluno
-      ? supabase
-          .from('cantina_pedidos')
-          .select('id')
-          .eq('aluno_id', selectedAluno.id)
-          .in('status', ['aberto', 'confirmado', 'pronto'])
-      : Promise.resolve({ data: [] }),
-  ])
 
   const pendingPedidos = ((pedidosRecentes ?? []) as PedidoMini[]).filter((pedido) => pedido.status === 'pendente')
   const pixExpiradoCount = pendingPedidos.filter((pedido) => paymentStatus(pedido.pagamento) === 'expirado').length

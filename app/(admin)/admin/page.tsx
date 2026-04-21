@@ -95,6 +95,14 @@ export default async function AdminDashboard({
     pedidosRecentesQuery = pedidosRecentesQuery.lte('created_at', interval.toIso)
   }
 
+  // Monta query de itens com o mesmo filtro de data dos pedidos (elimina dependência de pedidosIds)
+  let itensQuery = supabase
+    .from('itens_pedido')
+    .select('id, pedido_id, produto_id, preco_unitario, aluno_id, produto:produtos(nome, categoria)')
+  if (interval.fromIso) itensQuery = itensQuery.gte('created_at', interval.fromIso)
+  if (interval.toIso)   itensQuery = itensQuery.lte('created_at', interval.toIso)
+
+  // Tudo em uma única bateria paralela
   const [
     { data: pedidosTodos },
     { data: pedidosRecentes },
@@ -103,6 +111,8 @@ export default async function AdminDashboard({
     { data: responsaveisAll },
     { data: pixPendentesData },
     { data: cantinaCarteiras },
+    { data: itensVendidos },
+    { data: ingressosEmitidos },
   ] = await Promise.all([
     pedidosResumoQuery,
     pedidosRecentesQuery,
@@ -117,6 +127,8 @@ export default async function AdminDashboard({
       .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: false }),
     supabase.from('cantina_carteira').select('saldo'),
+    itensQuery,
+    supabase.from('ingressos').select('produto_id, status').in('status', ['emitido', 'usado']),
   ])
 
   const pedidos = (pedidosTodos ?? []) as PedidoResumo[]
@@ -125,27 +137,7 @@ export default async function AdminDashboard({
   const pixPendentes = pixPendentesData ?? []
   const cantinaSaldoTotal = (cantinaCarteiras ?? []).reduce((acc, c) => acc + Number(c.saldo), 0)
 
-  const pedidosIds = pedidos.map((pedido) => pedido.id)
   const produtosComCapacidade = produtos.filter((produto) => produto.capacidade !== null)
-
-  const [
-    { data: itensVendidos },
-    { data: ingressosEmitidos },
-  ] = await Promise.all([
-    pedidosIds.length > 0
-      ? supabase
-          .from('itens_pedido')
-          .select('id, pedido_id, produto_id, preco_unitario, aluno_id, produto:produtos(nome, categoria)')
-          .in('pedido_id', pedidosIds)
-      : Promise.resolve({ data: [] }),
-    produtosComCapacidade.length > 0
-      ? supabase
-          .from('ingressos')
-          .select('produto_id, status')
-          .in('produto_id', produtosComCapacidade.map((produto) => produto.id))
-          .in('status', ['emitido', 'usado'])
-      : Promise.resolve({ data: [] }),
-  ])
 
   const receitaConfirmada = pedidos
     .filter((pedido) => pedido.status === 'pago')
