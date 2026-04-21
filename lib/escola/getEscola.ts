@@ -21,21 +21,16 @@ export async function getEscolaByUser(userId: string): Promise<Escola> {
   try {
     const supabase = await createClient()
 
-    const { data: resp } = await supabase
+    // 1 query com join em vez de 2 sequenciais
+    const { data } = await supabase
       .from('responsaveis')
-      .select('escola_id')
+      .select('escola:escolas(*)')
       .eq('id', userId)
       .single()
 
-    if (!resp?.escola_id) return ESCOLA_FALLBACK
-
-    const { data: escola } = await supabase
-      .from('escolas')
-      .select('*')
-      .eq('id', resp.escola_id)
-      .single()
-
-    return (escola as Escola | null) ?? ESCOLA_FALLBACK
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const escola = (data as any)?.escola as Escola | null
+    return escola ?? ESCOLA_FALLBACK
   } catch {
     return ESCOLA_FALLBACK
   }

@@ -47,9 +47,10 @@ export default async function LojaPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: vinculos }, { data: responsavel }] = await Promise.all([
+  const [{ data: vinculos }, { data: responsavel }, { data: allProdutosRaw }] = await Promise.all([
     supabase.from('responsavel_aluno').select('aluno:alunos(*)').eq('responsavel_id', user.id),
     supabase.from('responsaveis').select('nome, escola_id').eq('id', user.id).single(),
+    supabase.from('produtos').select('*').eq('ativo', true).order('created_at', { ascending: false }),
   ])
 
   const alunos: Aluno[] = (vinculos ?? [])
@@ -60,16 +61,11 @@ export default async function LojaPage({
   const selectedAluno = alunos.find((aluno) => aluno.id === alunoId) ?? alunos[0] ?? null
   const escolaId = responsavel?.escola_id
 
-  let query = supabase
-    .from('produtos')
-    .select('*')
-    .eq('ativo', true)
-    .order('created_at', { ascending: false })
-
-  if (escolaId) query = query.eq('escola_id', escolaId)
-  if (categoria) query = query.eq('categoria', categoria)
-
-  const { data: allProdutos } = await query
+  // filtra por escola e categoria em JS (já buscados em paralelo)
+  const allProdutos = (allProdutosRaw ?? []).filter(p =>
+    (!escolaId || p.escola_id === escolaId) &&
+    (!categoria || p.categoria === categoria)
+  )
   const produtos: Produto[] = allProdutos ?? []
 
   const produtosComCapacidade = produtos.filter((produto) => produto.capacidade !== null)
