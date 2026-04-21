@@ -68,6 +68,7 @@ export interface Categoria {
   escola_id: string
   nome: string
   icone: string
+  tem_variantes: boolean
   ativo: boolean
   created_at: string
 }

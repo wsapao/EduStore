@@ -10,6 +10,7 @@ export function CategoriaManager({ categorias }: { categorias: Categoria[] }) {
 
   const [iconVal, setIconVal] = useState('🏷️')
   const [nomeVal, setNomeVal] = useState('')
+  const [temVariantes, setTemVariantes] = useState(false)
 
   const ICONS_SUGESTOES = ['🏷️', '🎉', '🚌', '📝', '📚', '👕', '📦', '🍔', '🎁', '📱', '🏀', '🎭']
 
@@ -26,6 +27,7 @@ export function CategoriaManager({ categorias }: { categorias: Categoria[] }) {
       }
       setNomeVal('')
       setIconVal('🏷️')
+      setTemVariantes(false)
     })
   }
 
@@ -81,6 +83,19 @@ export function CategoriaManager({ categorias }: { categorias: Categoria[] }) {
             }}
           />
         </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, height: 48, cursor: 'pointer', flexShrink: 0 }}>
+          <input
+            type="checkbox"
+            name="tem_variantes"
+            checked={temVariantes}
+            onChange={e => setTemVariantes(e.target.checked)}
+            style={{ width: 16, height: 16, accentColor: '#4338ca' }}
+          />
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+            Tem grade de tamanhos
+          </span>
+        </label>
+
         <button
           type="submit"
           disabled={isPending || !nomeVal.trim()}
@@ -137,8 +152,13 @@ export function CategoriaManager({ categorias }: { categorias: Categoria[] }) {
                     <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)' }}>
                       {cat.nome}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                    <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', gap: 8, alignItems: 'center' }}>
                       {cat.ativo ? 'Disponível no cadastro de produtos' : 'Oculta'}
+                      {cat.tem_variantes && (
+                        <span style={{ background: '#ede9fe', color: '#5b21b6', borderRadius: 6, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>
+                          grade de tamanhos
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

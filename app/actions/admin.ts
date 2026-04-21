@@ -493,11 +493,13 @@ export async function criarCategoriaAction(formData: FormData) {
 
   const nome = (formData.get('nome') as string).trim()
   const icone = (formData.get('icone') as string).trim() || '🏷️'
+  const tem_variantes = formData.get('tem_variantes') === 'on'
 
   const { error } = await supabase.from('categorias_produto').insert({
     escola_id: resp.escola_id,
     nome,
     icone,
+    tem_variantes,
     ativo: true,
   })
 

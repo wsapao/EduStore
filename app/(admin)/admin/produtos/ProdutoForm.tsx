@@ -364,7 +364,7 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias }: Props)
         </div>
       </Section>
 
-      <Section title="Variantes e tamanhos">
+      {categorias.find(c => c.nome === categoria)?.tem_variantes && <Section title="Variantes e tamanhos">
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           <div style={{
             display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(130px, 1fr))', gap:10,
@@ -517,7 +517,7 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias }: Props)
             {variantesComEstoqueControlado.length > 0 && ` ${variantesComEstoqueControlado.length} variante(s) estão com estoque controlado agora.`}
           </div>
         </div>
-      </Section>
+      </Section>}
 
       {/* ── Seção: Prazos e Evento ── */}
       <Section title="Prazos e evento">
