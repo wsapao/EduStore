@@ -57,7 +57,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div style={{ flex: 1 }} />
 
         {/* Nav links — desktop */}
-        <nav className="hidden md:flex gap-1">
+        <nav className="hidden md:flex gap-1" style={{ alignItems: 'center' }}>
           {[
             { href: '/admin', label: 'Dashboard', icon: '📊' },
             { href: '/admin/pedidos', label: 'Pedidos', icon: '🧾' },
@@ -78,6 +78,41 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <span>{label}</span>
             </Link>
           ))}
+
+          {/* Configurações dropdown */}
+          <div style={{ position: 'relative' }} className="group">
+            <button style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 6,
+              fontSize: 13, fontWeight: 600, color: '#94a3b8',
+              background: 'none', border: 'none', cursor: 'pointer',
+            }}>
+              <span>⚙️</span>
+              <span>Config</span>
+              <span style={{ fontSize: 10, marginLeft: 2 }}>▾</span>
+            </button>
+            <div className="group-hover:flex" style={{
+              display: 'none', position: 'absolute', top: '100%', right: 0,
+              background: '#1e293b', border: '1px solid #334155', borderRadius: 10,
+              padding: 6, minWidth: 200, zIndex: 300, flexDirection: 'column', gap: 2,
+              marginTop: 4,
+            }}>
+              {[
+                { href: '/admin/produtos/categorias', label: 'Categorias de produtos', icon: '🏷️' },
+                { href: '/admin/vouchers', label: 'Vouchers e Descontos', icon: '🎟️' },
+              ].map(({ href, label, icon }) => (
+                <Link key={href} href={href} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 12px', borderRadius: 8,
+                  fontSize: 13, fontWeight: 600, color: '#cbd5e1',
+                  textDecoration: 'none',
+                }}>
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </nav>
 
         {/* Avatar + sair */}
@@ -117,7 +152,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { href: '/admin/responsaveis', label: 'Pessoas', icon: '👥' },
           { href: '/admin/alunos', label: 'Alunos', icon: '🎒' },
           { href: '/admin/produtos', label: 'Produtos', icon: '📦' },
-          { href: '/loja', label: 'Loja', icon: '🏪' },
+          { href: '/admin/produtos/categorias', label: 'Categ.', icon: '🏷️' },
         ].map(({ href, label, icon }) => (
           <Link key={href} href={href} style={{
             flex: 1, display: 'flex', flexDirection: 'column',
