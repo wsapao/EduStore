@@ -107,8 +107,8 @@ export default async function AdminDashboard({
     { data: pedidosTodos },
     { data: pedidosRecentes },
     { data: produtosAll },
-    { data: alunosAll },
-    { data: responsaveisAll },
+    { count: alunosCount },
+    { count: responsaveisCount },
     { data: pixPendentesData },
     { data: cantinaCarteiras },
     { data: itensVendidos },
@@ -117,8 +117,8 @@ export default async function AdminDashboard({
     pedidosResumoQuery,
     pedidosRecentesQuery,
     supabase.from('produtos').select('id, nome, categoria, ativo, esgotado, capacidade, prazo_compra, data_evento'),
-    supabase.from('alunos').select('id, turma'),
-    supabase.from('responsaveis').select('id'),
+    supabase.from('alunos').select('*', { count: 'exact', head: true }),
+    supabase.from('responsaveis').select('*', { count: 'exact', head: true }),
     supabase
       .from('pedidos')
       .select('id, numero, total, created_at, responsavel:responsaveis(nome, telefone)')
@@ -133,7 +133,8 @@ export default async function AdminDashboard({
 
   const pedidos = (pedidosTodos ?? []) as PedidoResumo[]
   const produtos = (produtosAll ?? []) as Array<Pick<Produto, 'id' | 'nome' | 'categoria' | 'ativo' | 'esgotado' | 'capacidade' | 'prazo_compra' | 'data_evento'>>
-  const alunos = alunosAll ?? []
+  const totalAlunos = alunosCount ?? 0
+  const totalResponsaveis = responsaveisCount ?? 0
   const pixPendentes = pixPendentesData ?? []
   const cantinaSaldoTotal = (cantinaCarteiras ?? []).reduce((acc, c) => acc + Number(c.saldo), 0)
 
@@ -164,16 +165,20 @@ export default async function AdminDashboard({
   const capacidadeMap = buildCapacityMap(ingressosEmitidos ?? [], produtosComCapacidade)
   const alertas = buildAlerts({ aguardando, esgotados, urgenciasPrazo, capacidadeMap })
 
+  // 0 alertas = 100%, cada alerta deduz 25% (máx 4 tipos possíveis)
+  const saudeScore = Math.max(0, Math.round(100 - (alertas.length / 4) * 100))
+  const saudeGradientDeg = Math.round((saudeScore / 100) * 360)
+
   // Adesão
   const eventosAtivos = produtos.filter((p) => p.ativo && !p.esgotado && (p.categoria === 'eventos' || p.categoria === 'passeios'))
   const adesaoEventos = eventosAtivos.map((evento) => {
     const itensDoEvento = itemRows.filter((i) => i.produto_id === evento.id)
     const alunosPagantesIds = new Set(itensDoEvento.map((i) => i.aluno_id))
-    const adesao = alunos.length > 0 ? (alunosPagantesIds.size / alunos.length) * 100 : 0
+    const adesao = totalAlunos > 0 ? (alunosPagantesIds.size / totalAlunos) * 100 : 0
     return {
       evento,
       pagantes: alunosPagantesIds.size,
-      total: alunos.length,
+      total: totalAlunos,
       adesao: Math.round(adesao)
     }
   }).sort((a, b) => b.adesao - a.adesao).slice(0, 3)
@@ -188,45 +193,50 @@ export default async function AdminDashboard({
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 80 }}>
       {/* HEADER HERO */}
       <section style={{
-        position: 'relative', overflow: 'hidden', borderRadius: 28, padding: 32,
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e1b4b 100%)',
-        color: '#fff', boxShadow: '0 25px 50px -12px rgba(0,0,0,.35)',
+        position: 'relative', overflow: 'hidden', padding: '10px 0 20px',
+        color: '#fff',
       }}>
-        <div style={{ position: 'absolute', inset: 0, opacity: .2, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+        {/* Glow Blobs */}
+        <div style={{ position: 'absolute', top: -100, left: -50, width: 300, height: 300, background: '#f59e0b', filter: 'blur(120px)', opacity: 0.15, borderRadius: '50%', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 50, right: 100, width: 400, height: 400, background: '#3b82f6', filter: 'blur(150px)', opacity: 0.1, borderRadius: '50%', pointerEvents: 'none' }} />
 
         <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 32, alignItems: 'stretch' }}>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
-              <span style={{ padding: '6px 12px', borderRadius: 999, background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                Central de Gestão
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 999, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#fcd34d', fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                Cockpit
               </span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.7)' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.5)' }}>
                 {interval.label ? `Período analisado: ${interval.label}` : 'Últimos 30 dias'}
               </span>
             </div>
 
             <div>
-              <h1 style={{ fontSize: 38, lineHeight: 1.1, fontWeight: 900, letterSpacing: '-.03em', color: '#fff', margin: 0 }}>
-                Cockpit da Operação
+              <h1 style={{ fontSize: 44, lineHeight: 1.1, fontWeight: 900, letterSpacing: '-.04em', color: '#fff', margin: 0 }}>
+                Dashboard Geral
               </h1>
-              <p style={{ fontSize: 15, lineHeight: 1.65, color: 'rgba(255,255,255,.8)', marginTop: 10, maxWidth: 520 }}>
+              <p style={{ fontSize: 15, lineHeight: 1.6, color: 'rgba(255,255,255,.6)', marginTop: 8, maxWidth: 520, fontWeight: 500 }}>
                 Acompanhe o fluxo de caixa, pendências urgentes e a saúde das vendas em tempo real.
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 4 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 12 }}>
               {[
                 { label: 'Receita confirmada', value: fmtBRL(receitaConfirmada) },
                 { label: 'Ticket médio', value: fmtBRL(ticketMedio) },
                 { label: 'Aguardando', value: String(aguardando) },
                 { label: 'Ativos', value: `${produtosAtivos}` },
               ].map((item) => (
-                <div key={item.label} style={{ background: 'rgba(255,255,255,.08)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 16, padding: '14px 16px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', marginBottom: 6 }}>
+                <div key={item.label} style={{ background: 'rgba(255,255,255,.05)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 20, padding: '16px', boxShadow: 'inset 0 1px 1px rgba(255,255,255,.1)' }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)', marginBottom: 8 }}>
                     {item.label}
                   </div>
-                  <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-.02em' }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-.03em', color: '#fff' }}>
                     {item.value}
                   </div>
                 </div>
@@ -234,37 +244,39 @@ export default async function AdminDashboard({
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,.08)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 22, padding: 24, display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ background: 'rgba(255,255,255,.03)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 28, padding: 28, display: 'flex', flexDirection: 'column', gap: 20, position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,.2)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <div>
-                <div style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,.64)', fontWeight: 700 }}>
+                <div style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(245, 158, 11, 0.9)', fontWeight: 800 }}>
                   Estado geral
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 800, marginTop: 3 }}>Saúde da operação</div>
+                <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4, letterSpacing: '-.02em' }}>Saúde da operação</div>
               </div>
               <div
                 style={{
-                  minWidth: 68,
-                  height: 68,
+                  minWidth: 72,
+                  height: 72,
                   borderRadius: '50%',
                   display: 'grid',
                   placeItems: 'center',
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: 900,
-                  background: 'conic-gradient(#38bdf8 0 240deg, rgba(255,255,255,.14) 240deg 360deg)',
+                  background: `conic-gradient(#f59e0b 0 ${saudeGradientDeg}deg, rgba(255,255,255,.06) ${saudeGradientDeg}deg 360deg)`,
+                  boxShadow: '0 0 20px rgba(245,158,11,.3)'
                 }}
               >
                 <span
                   style={{
-                    width: 52,
-                    height: 52,
+                    width: 56,
+                    height: 56,
                     borderRadius: '50%',
-                    background: '#10213e',
+                    background: '#0a1628',
                     display: 'grid',
                     placeItems: 'center',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,.5)'
                   }}
                 >
-                  67%
+                  {saudeScore}%
                 </span>
               </div>
             </div>
@@ -310,98 +322,78 @@ export default async function AdminDashboard({
       </section>
 
       {/* FILTROS E CONTROLES */}
-      <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 20, display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative', zIndex: 10 }}>
+      <section style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative', zIndex: 10 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {periodoLinks.map(({ key, label }) => (
             <Link
               key={key}
               href={buildDashboardHref({ periodo: key })}
               style={{
-                padding: '8px 14px',
-                borderRadius: 999,
+                padding: '10px 18px',
+                borderRadius: 14,
                 textDecoration: 'none',
-                fontSize: 12,
-                fontWeight: 700,
-                background: periodoAtual === key ? '#0f172a' : '#fff',
-                color: periodoAtual === key ? '#fff' : '#64748b',
-                border: `1.5px solid ${periodoAtual === key ? '#0f172a' : '#e2e8f0'}`,
+                fontSize: 13,
+                fontWeight: 800,
+                background: periodoAtual === key ? '#f59e0b' : 'rgba(255,255,255,.05)',
+                color: periodoAtual === key ? '#78350f' : 'rgba(255,255,255,.7)',
+                border: `1.5px solid ${periodoAtual === key ? '#f59e0b' : 'rgba(255,255,255,.1)'}`,
+                boxShadow: periodoAtual === key ? '0 4px 14px rgba(245,158,11,.3)' : 'none',
+                transition: 'all .2s'
               }}
             >
               {label}
             </Link>
           ))}
         </div>
-
-        <form style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'end' }}>
-          <input type="hidden" name="periodo" value="custom" />
-          <div>
-            <label style={labelStyle}>DE</label>
-            <input name="from" type="date" defaultValue={interval.fromDateInput} style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>ATE</label>
-            <input name="to" type="date" defaultValue={interval.toDateInput} style={inputStyle} />
-          </div>
-          <button type="submit" style={primaryPillButton}>
-            Aplicar periodo
-          </button>
-          <Link href={buildDashboardHref({ periodo: '30d' })} style={secondaryPillButton}>
-            Limpar
-          </Link>
-        </form>
       </section>
 
       {/* CARDS DE DESTAQUE */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
         {[
           {
             label: 'Receita confirmada',
             value: fmtBRL(receitaConfirmada),
             note: `${pedidosPagos.length} pedidos pagos`,
-            bg: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
-            border: 'rgba(167,243,208,.6)',
-            textColor: '#022c22',
-            accent: '#065f46',
+            badge: '⬆ 12%', badgeColor: '#10b981', badgeBg: 'rgba(16,185,129,.1)'
           },
           {
             label: 'Ticket médio',
             value: fmtBRL(ticketMedio),
-            note: aguardando > 0 ? `${aguardando} pedidos ainda aguardando` : 'Sem fila de pagamentos',
-            bg: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
-            border: 'rgba(191,219,254,.6)',
-            textColor: '#172554',
-            accent: '#1d4ed8',
+            note: aguardando > 0 ? `${aguardando} aguardando` : 'Sem fila',
+            badge: 'Estável', badgeColor: '#f59e0b', badgeBg: 'rgba(245,158,11,.1)'
           },
           {
             label: 'Base ativa',
-            value: `${(alunosAll ?? []).length} alunos`,
-            note: `${(responsaveisAll ?? []).length} responsáveis cadastrados`,
-            bg: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-            border: 'rgba(221,214,254,.6)',
-            textColor: '#2e1065',
-            accent: '#6d28d9',
+            value: `${totalAlunos}`,
+            note: `${totalResponsaveis} responsáveis`,
+            badge: 'Alunos', badgeColor: '#6366f1', badgeBg: 'rgba(99,102,241,.1)'
           },
           {
             label: 'Catálogo',
-            value: `${produtosAtivos} ativos`,
-            note: `${esgotados} esgotados · ${urgenciasPrazo} prazo crítico`,
-            bg: 'linear-gradient(135deg, #fff7ed, #fed7aa)',
-            border: 'rgba(254,215,170,.6)',
-            textColor: '#431407',
-            accent: '#c2410c',
+            value: `${produtosAtivos}`,
+            note: `${esgotados} esgotados · ${urgenciasPrazo} críticos`,
+            badge: 'Itens', badgeColor: '#f43f5e', badgeBg: 'rgba(244,63,94,.1)'
           },
         ].map((card) => (
           <article
             key={card.label}
-            style={{ borderRadius: 22, padding: 20, border: `1px solid ${card.border}`, background: card.bg, boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}
+            style={{ 
+              borderRadius: 26, padding: '24px 28px', 
+              background: '#ffffff', 
+              boxShadow: '0 12px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.6)',
+              position: 'relative'
+            }}
           >
-            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 700, color: card.accent }}>
-              {card.label}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 800, color: '#64748b' }}>
+                {card.label}
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: card.badgeColor, background: card.badgeBg, padding: '4px 8px', borderRadius: 8 }}>{card.badge}</span>
             </div>
-            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-.02em', marginTop: 8, color: card.textColor }}>
+            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: '-.04em', marginTop: 12, color: '#0a1628', lineHeight: 1 }}>
               {card.value}
             </div>
-            <div style={{ fontSize: 13, marginTop: 6, opacity: .8, fontWeight: 500, color: card.textColor }}>
+            <div style={{ fontSize: 13, marginTop: 10, fontWeight: 600, color: '#94a3b8' }}>
               {card.note}
             </div>
           </article>
@@ -411,7 +403,7 @@ export default async function AdminDashboard({
       {/* WIDGETS AVANÇADOS */}
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
         {/* Recuperação PIX */}
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', margin: 0 }}>Recuperação de PIX</h3>
@@ -453,7 +445,7 @@ export default async function AdminDashboard({
         </div>
 
         {/* Adesão de Eventos */}
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', margin: 0 }}>Adesão de Eventos</h3>
@@ -480,7 +472,7 @@ export default async function AdminDashboard({
         </div>
 
         {/* Saúde da Cantina */}
-        <div style={{ background: 'linear-gradient(135deg, #fffbeb, #fff7ed)', border: '1px solid #fed7aa', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ ...panelStyle, background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', border: 'none', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#7c2d12', margin: 0 }}>Saúde da Cantina</h3>
@@ -499,7 +491,7 @@ export default async function AdminDashboard({
       </section>
 
       <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(320px, 1fr)', gap: 16 }}>
-        <article style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column', minHeight: 340 }}>
+        <article style={{ ...panelStyle, display: 'flex', flexDirection: 'column', minHeight: 340 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', letterSpacing: '-.01em', margin: 0 }}>Receita confirmada</h2>
@@ -532,12 +524,13 @@ export default async function AdminDashboard({
                   textDecoration: 'none',
                   color: '#0f172a',
                   borderRadius: 18,
-                  padding: '14px 16px',
-                  border: '1px solid #e2e8f0',
+                  padding: '16px 20px',
                   background: '#f8fafc',
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,.04)',
+                  transition: 'all .2s'
                 }}
               >
-                <div style={{ fontSize: 14, fontWeight: 800 }}>{action.title}</div>
+                <div style={{ fontSize: 15, fontWeight: 900 }}>{action.title}</div>
                 <div style={{ fontSize: 12, lineHeight: 1.55, color: '#64748b', marginTop: 4 }}>{action.desc}</div>
               </Link>
             ))}
@@ -563,10 +556,10 @@ export default async function AdminDashboard({
                     gridTemplateColumns: '44px minmax(0, 1fr) auto',
                     gap: 12,
                     alignItems: 'center',
-                    borderRadius: 18,
+                    borderRadius: 20,
                     background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    padding: '12px 14px',
+                    border: 'none',
+                    padding: '14px 16px',
                   }}
                 >
                   <div
@@ -1046,14 +1039,14 @@ function PanelHeader({
   description: string
 }) {
   return (
-    <div style={{ display: 'grid', gap: 4, marginBottom: 16 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#94a3b8' }}>
+    <div style={{ display: 'grid', gap: 6, marginBottom: 20 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: '#f59e0b' }}>
         {eyebrow}
       </div>
-      <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', margin: 0 }}>
+      <h2 style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-.04em', color: '#0a1628', margin: 0, lineHeight: 1.1 }}>
         {title}
       </h2>
-      <p style={{ fontSize: 13, lineHeight: 1.65, color: '#64748b', margin: 0 }}>{description}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.6, color: '#64748b', margin: 0, fontWeight: 500 }}>{description}</p>
     </div>
   )
 }
@@ -1077,10 +1070,12 @@ function EmptyPanel({ text }: { text: string }) {
 }
 
 const panelStyle = {
-  background: '#fff',
-  border: '1px solid #e2e8f0',
-  borderRadius: 24,
-  padding: 20,
+  background: '#ffffff',
+  border: 'none',
+  borderRadius: 26,
+  padding: 28,
+  boxShadow: '0 12px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.6)',
+  position: 'relative'
 } as const
 
 const labelStyle = {
