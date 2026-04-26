@@ -32,6 +32,7 @@ export interface Aluno {
   serie: string
   turma: string | null
   escola_id: string
+  cor: string | null
   ativo: boolean
   created_at: string
 }
@@ -58,6 +59,8 @@ export interface Produto {
   preco_promocional: number | null
   aceita_vouchers: boolean
   estoque: number | null
+  exige_termo: boolean
+  texto_termo: string | null
   ativo: boolean
   esgotado: boolean
   created_at: string
@@ -83,7 +86,7 @@ export interface Voucher {
   usos_atuais: number
   compra_minima: number | null
   data_validade: string | null
-  produto_id: string | null
+  produtos_ids: string[] | null
   ativo: boolean
   created_at: string
 }
@@ -107,6 +110,8 @@ export interface Pedido {
   status: StatusPedido
   metodo_pagamento: MetodoPagamento | null
   total: number
+  termo_aceito: boolean
+  termo_aceito_em: string | null
   data_criacao: string
   data_pagamento: string | null
   created_at: string
@@ -199,6 +204,8 @@ export interface CantinaCarteira {
   ativo: boolean
   bloqueio_motivo: string | null
   qr_token: string
+  nfc_id: string | null
+  senha_pin: string | null
   created_at: string
   updated_at: string
 }
