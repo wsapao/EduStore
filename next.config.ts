@@ -4,6 +4,7 @@ import { withSentryConfig } from '@sentry/nextjs'
 const nextConfig: NextConfig = {
   // Remove o header "X-Powered-By: Next.js" (reduz superfície de fingerprint).
   poweredByHeader: false,
+  devIndicators: false,
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
