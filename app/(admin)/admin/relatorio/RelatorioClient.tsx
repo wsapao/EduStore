@@ -5,10 +5,10 @@ import type { Produto } from '@/types/database'
 import type { RelatorioRow } from './page'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  emitido:   { label: 'Ausente',   color: '#1d4ed8', bg: '#eff6ff', dot: '#60a5fa' },
-  usado:     { label: 'Presente',  color: '#065f46', bg: '#f0fdf4', dot: '#22c55e' },
-  cancelado: { label: 'Cancelado', color: '#6b7280', bg: '#f3f4f6', dot: '#9ca3af' },
-  expirado:  { label: 'Expirado',  color: '#92400e', bg: '#fef3c7', dot: '#f59e0b' },
+  emitido:   { label: 'Ausente',   color: '#60a5fa', bg: 'rgba(59,130,246,.1)',  dot: '#60a5fa' },
+  usado:     { label: 'Presente',  color: '#4ade80', bg: 'rgba(16,185,129,.1)',  dot: '#4ade80' },
+  cancelado: { label: 'Cancelado', color: '#94a3b8', bg: 'rgba(255,255,255,.05)', dot: '#64748b' },
+  expirado:  { label: 'Expirado',  color: '#fbbf24', bg: 'rgba(245,158,11,.1)',  dot: '#fbbf24' },
 }
 
 function fmtDataHora(iso: string | null) {
@@ -48,7 +48,7 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
     ].join(','))
 
     const csv = header + rows.join('\n')
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -63,10 +63,10 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
       {/* Header */}
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: '0 0 4px', letterSpacing: '-.03em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', margin: '0 0 6px', letterSpacing: '-.03em' }}>
             📋 Relatório de Presença
           </h1>
-          <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
+          <p style={{ fontSize: 13, color: '#94a3b8', margin: 0, fontWeight: 500 }}>
             Histórico de check-in por evento.
           </p>
         </div>
@@ -76,10 +76,9 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '10px 18px', borderRadius: 10,
-              background: '#0f172a', color: '#fff',
-              border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 700,
-              whiteSpace: 'nowrap',
+              background: 'rgba(255,255,255,.1)', color: '#f8fafc',
+              border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer',
+              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
             }}
           >
             ⬇️ Exportar CSV
@@ -90,30 +89,30 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
       {/* Seletor de evento */}
       {produtos.length === 0 ? (
         <div style={{
-          background: '#fef3c7', border: '1px solid #fcd34d',
-          borderRadius: 12, padding: '16px 20px',
-          fontSize: 14, color: '#92400e',
+          background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.25)',
+          borderRadius: 12, padding: '16px 20px', fontSize: 14, color: '#fcd34d',
         }}>
           ⚠️ Nenhum produto com ingresso encontrado.
         </div>
       ) : (
         <>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', marginBottom: 6, letterSpacing: '.04em' }}>
-              EVENTO
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,.35)', marginBottom: 8, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+              Evento
             </label>
             <select
               value={produtoSelecionado?.id ?? ''}
               onChange={e => router.push(`/admin/relatorio?produto=${e.target.value}`)}
               style={{
                 width: '100%', maxWidth: 480, padding: '10px 14px',
-                borderRadius: 10, border: '1.5px solid #e2e8f0',
-                fontSize: 14, fontWeight: 600, color: '#0f172a',
-                background: '#fff', appearance: 'none', cursor: 'pointer',
+                borderRadius: 10, border: '1px solid rgba(255,255,255,.1)',
+                fontSize: 14, fontWeight: 600, color: '#f8fafc',
+                background: 'rgba(0,0,0,.2)', appearance: 'none', cursor: 'pointer',
+                fontFamily: 'inherit',
               }}
             >
               {produtos.map(p => (
-                <option key={p.id} value={p.id}>
+                <option key={p.id} value={p.id} style={{ color: '#000' }}>
                   {p.icon ?? '🎟️'} {p.nome}
                   {p.data_evento ? ` — ${new Date(p.data_evento).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
                 </option>
@@ -124,17 +123,17 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
           {/* Cards de resumo */}
           {relatorio.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
-              <ResumoCard valor={presentes} label="Presentes" color="#16a34a" bg="#f0fdf4" border="#86efac" emoji="✅" />
-              <ResumoCard valor={ausentes}  label="Ausentes"  color="#2563eb" bg="#eff6ff" border="#93c5fd" emoji="⏳" />
-              <ResumoCard valor={total}     label="Total"     color="#0f172a" bg="#f8fafc" border="#e2e8f0" emoji="🎟️" />
+              <ResumoCard valor={presentes} label="Presentes" color="#4ade80" bg="rgba(16,185,129,.1)"   border="rgba(16,185,129,.2)"  emoji="✅" />
+              <ResumoCard valor={ausentes}  label="Ausentes"  color="#60a5fa" bg="rgba(59,130,246,.1)"   border="rgba(59,130,246,.2)"  emoji="⏳" />
+              <ResumoCard valor={total}     label="Total"     color="#f8fafc" bg="rgba(255,255,255,.04)" border="rgba(255,255,255,.1)" emoji="🎟️" />
             </div>
           )}
 
-          {/* Tabela */}
+          {/* Tabela / Empty */}
           {relatorio.length === 0 ? (
             <div style={{
-              background: '#f8fafc', border: '1.5px solid #e2e8f0',
-              borderRadius: 12, padding: '60px 20px', textAlign: 'center',
+              background: 'rgba(255,255,255,.02)', border: '1.5px dashed rgba(255,255,255,.1)',
+              borderRadius: 16, padding: '60px 20px', textAlign: 'center',
               fontSize: 14, color: '#94a3b8',
             }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
@@ -142,19 +141,17 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
             </div>
           ) : (
             <div style={{
-              background: '#fff', border: '1.5px solid #e2e8f0',
-              borderRadius: 16, overflow: 'hidden',
+              background: 'rgba(255,255,255,.02)', border: '1.5px solid rgba(255,255,255,.06)',
+              borderRadius: 16, overflow: 'hidden', backdropFilter: 'blur(16px)',
             }}>
-              {/* Header da tabela */}
+              {/* Cabeçalho */}
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1.5fr',
+                display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1.5fr',
                 padding: '10px 16px',
-                background: '#f8fafc',
-                borderBottom: '1px solid #e2e8f0',
-                fontSize: 10, fontWeight: 700, color: '#94a3b8',
-                letterSpacing: '.06em', textTransform: 'uppercase',
-                gap: 8,
+                background: 'rgba(0,0,0,.2)',
+                borderBottom: '1px solid rgba(255,255,255,.06)',
+                fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,.35)',
+                letterSpacing: '.08em', textTransform: 'uppercase', gap: 8,
               }}>
                 <span>Aluno</span>
                 <span>Status</span>
@@ -170,19 +167,17 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
                   <div
                     key={row.ingresso_id}
                     style={{
-                      display: 'grid',
-                      gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1.5fr',
+                      display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1.5fr',
                       padding: '12px 16px',
-                      borderBottom: idx < relatorio.length - 1 ? '1px solid #f1f5f9' : 'none',
-                      alignItems: 'center',
-                      gap: 8,
-                      background: row.status === 'usado' ? 'rgba(240,253,244,.4)' : '#fff',
+                      borderBottom: idx < relatorio.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                      alignItems: 'center', gap: 8,
+                      background: row.status === 'usado' ? 'rgba(16,185,129,.04)' : 'transparent',
                     }}
                   >
                     {/* Aluno */}
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{row.aluno_nome}</div>
-                      <div style={{ fontSize: 11, color: '#64748b' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{row.aluno_nome}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>
                         {row.aluno_serie}{row.aluno_turma ? ` · T.${row.aluno_turma}` : ''}
                       </div>
                     </div>
@@ -200,21 +195,21 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
 
                     {/* Responsável */}
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{row.responsavel_nome}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>{row.responsavel_nome}</div>
                       <div style={{ fontSize: 11, color: '#94a3b8' }}>{row.responsavel_email}</div>
                     </div>
 
                     {/* Validado em */}
-                    <div style={{ fontSize: 11, color: '#64748b' }}>
+                    <div style={{ fontSize: 11, color: '#94a3b8' }}>
                       {row.usado_em ? fmtDataHora(row.usado_em) : '—'}
                       {row.validado_por && (
-                        <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>{row.validado_por}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', marginTop: 1 }}>{row.validado_por}</div>
                       )}
                     </div>
 
                     {/* Token */}
                     <span style={{
-                      fontFamily: 'monospace', fontSize: 10, color: '#94a3b8',
+                      fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,.3)',
                       letterSpacing: '.04em',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
@@ -238,11 +233,12 @@ function ResumoCard({ valor, label, color, bg, border, emoji }: {
     <div style={{
       background: bg, border: `1px solid ${border}`,
       borderRadius: 14, padding: '16px',
+      backdropFilter: 'blur(10px)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
     }}>
       <div style={{ fontSize: 24 }}>{emoji}</div>
       <div style={{ fontSize: 28, fontWeight: 900, color }}>{valor}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color, opacity: .8 }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 11, fontWeight: 800, color, opacity: .8 }}>{label.toUpperCase()}</div>
     </div>
   )
 }
