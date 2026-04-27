@@ -136,6 +136,8 @@ export interface Pagamento {
   status: StatusPagamento
   total: number
   parcelas: number
+  valor_liquido: number | null
+  gateway_taxa: number | null
   pix_qr_code: string | null
   pix_qr_code_imagem: string | null
   pix_tx_id: string | null

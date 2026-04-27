@@ -21,6 +21,7 @@ interface AsaasWebhookPayload {
     id: string
     status: string
     value: number
+    netValue?: number      // valor líquido após taxas do gateway
     billingType: string
     externalReference?: string
   }
@@ -41,7 +42,7 @@ function isAuthorized(request: Request): boolean {
 
 // ── Confirmar pagamento (lógica compartilhada com admin.ts) ────────────────────
 
-async function confirmarPagamento(pedidoId: string): Promise<void> {
+async function confirmarPagamento(pedidoId: string, netValue?: number): Promise<void> {
   const supabase = createAdminClient()
   const now = new Date().toISOString()
 
@@ -56,10 +57,18 @@ async function confirmarPagamento(pedidoId: string): Promise<void> {
     throw new Error(`Erro ao atualizar pedido ${pedidoId}: ${pedidoErr.message}`)
   }
 
-  // 2. Atualiza pagamento
+  // 2. Atualiza pagamento — salva valor líquido informado pelo gateway
+  const pagamentoUpdate: Record<string, unknown> = {
+    status: 'confirmado',
+    webhook_confirmado_em: now,
+  }
+  if (netValue !== undefined && netValue > 0) {
+    pagamentoUpdate.valor_liquido = netValue
+  }
+
   await supabase
     .from('pagamentos')
-    .update({ status: 'confirmado', webhook_confirmado_em: now })
+    .update(pagamentoUpdate)
     .eq('pedido_id', pedidoId)
 
   // 3. Gera ingressos (RPC que insere apenas para produtos com gera_ingresso = true)
@@ -174,8 +183,8 @@ export async function POST(request: Request) {
 
   // 6. Confirma pagamento e gera ingressos
   try {
-    await confirmarPagamento(pagamento.pedido_id)
-    console.log(`[webhook/asaas] Pedido ${pagamento.pedido_id} confirmado via webhook.`)
+    await confirmarPagamento(pagamento.pedido_id, payment.netValue)
+    console.log(`[webhook/asaas] Pedido ${pagamento.pedido_id} confirmado via webhook. netValue=${payment.netValue ?? 'não informado'}`)
     return Response.json({ ok: true })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erro interno.'
