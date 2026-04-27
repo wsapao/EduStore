@@ -11,6 +11,10 @@ export async function GET(req: Request) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
+  if (process.env.LOJA_LIVE !== 'true') {
+    return NextResponse.json({ success: true, skipped: 'LOJA_LIVE!=true' })
+  }
+
   try {
     const adminClient = createAdminClient()
     // 1. Target Date = Hoje + 2 dias
