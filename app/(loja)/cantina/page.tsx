@@ -26,18 +26,18 @@ export default async function CantinaPage() {
 
   if (alunoIds.length === 0) {
     return (
-      <div style={{ maxWidth: 640, margin: '48px auto', padding: '0 20px', textAlign: 'center' }}>
+      <div style={{ background: '#f0f2f8', minHeight: '100vh', padding: '48px 20px', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🍽️</div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', marginBottom: 8 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0a1628', marginBottom: 8 }}>
           Cantina Escolar
         </h1>
-        <p style={{ fontSize: 15, color: 'var(--text-2)', marginBottom: 24 }}>
+        <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>
           Você não tem alunos vinculados. Cadastre seus filhos para acessar a cantina.
         </p>
         <Link href="/perfil/alunos" style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'var(--brand)', color: '#fff', borderRadius: 'var(--r-md)',
-          padding: '12px 24px', fontSize: 14, fontWeight: 700, textDecoration: 'none',
+          background: '#0a1628', color: '#fff', borderRadius: 13,
+          padding: '12px 24px', fontSize: 14, fontWeight: 800, textDecoration: 'none',
         }}>
           Cadastrar filhos
         </Link>
@@ -67,176 +67,158 @@ export default async function CantinaPage() {
     .filter(m => m.tipo === 'consumo')
     .reduce((s, m) => s + Number(m.valor), 0)
 
-  const statCards = [
-    { label: 'Saldo total', value: fmtBRL(saldoTotal), icon: '💰', bg: '#ecfdf5', color: '#065f46' },
-    { label: 'Consumo no mês', value: fmtBRL(consumoMes), icon: '🍽️', bg: '#fef3c7', color: '#92400e' },
-    { label: 'Pedidos pendentes', value: String((pedidosPendentes ?? []).length), icon: '⏳', bg: '#eef2ff', color: '#3730a3' },
-  ]
-
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 20px 48px', display: 'flex', flexDirection: 'column', gap: 28 }}>
+    <div style={{ background: '#f0f2f8', minHeight: '100vh', paddingBottom: 80, margin:'0 auto' }}>
+      
+      {/* ── Top Bar ── */}
+      <div style={{
+        height: 52, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 10, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10
+      }}>
+        <Link href="/loja" style={{
+          width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', textDecoration: 'none'
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </Link>
+      </div>
 
       {/* Hero */}
       <div style={{
-        background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: 'var(--r-xl)', padding: '28px 28px 24px',
-        boxShadow: 'var(--shadow-sm)',
+        background: 'linear-gradient(135deg,#0a1628,#1e3a8a)', padding: '44px 14px 28px', position: 'relative', overflow: 'hidden'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+        <div style={{ position:'absolute', top:-50, right:-30, width:160, height:160, background:'rgba(255,255,255,.05)', borderRadius:'50%' }} />
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 1 }}>
           <div style={{
-            width: 52, height: 52, borderRadius: 'var(--r-lg)',
-            background: 'var(--brand)',
+            width: 46, height: 46, background: 'white', borderRadius: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 26, boxShadow: '0 4px 14px rgba(26,47,90,.25)',
+            fontSize: 22, boxShadow: '0 4px 12px rgba(0,0,0,.15)'
           }}>
-            🍽️
+            🍔
           </div>
-          <div>
-            <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-1)', margin: 0, letterSpacing: '-.02em' }}>
-              Cantina Escolar
-            </h1>
-            <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '3px 0 0', fontWeight: 500 }}>
-              Carteiras digitais dos seus filhos
-            </p>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: 'white', letterSpacing: '-.02em', lineHeight: 1.2 }}>
+              Cantina Digital
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', marginTop: 2, fontWeight: 500 }}>
+              Gerencie a carteira dos seus filhos
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Mini stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          {statCards.map(({ label, value, icon, bg, color }) => (
-            <div key={label} style={{
-              background: bg, borderRadius: 'var(--r-md)', padding: '14px 16px',
-            }}>
-              <div style={{ fontSize: 20, marginBottom: 6 }}>{icon}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color, letterSpacing: '-.02em' }}>{value}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color, opacity: .7, marginTop: 2 }}>
-                {label.toUpperCase()}
-              </div>
-            </div>
-          ))}
+      {/* Total Geral (opcional, mostra um resumo consolidado) */}
+      <div style={{
+        background: 'white', border: '1.5px solid rgba(0,0,0,.07)', borderRadius: 16,
+        padding: '16px', margin: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,.04)'
+      }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em' }}>Saldo Total Familiar</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#0a1628', letterSpacing: '-.03em', lineHeight: 1, marginTop: 4 }}>{fmtBRL(saldoTotal)}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em' }}>Consumo 30d</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#ea580c', letterSpacing: '-.02em', lineHeight: 1, marginTop: 4 }}>{fmtBRL(consumoMes)}</div>
         </div>
       </div>
 
       {/* Cards por aluno */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {(alunos ?? []).map(aluno => {
           const carteira = (carteiras ?? []).find(c => c.aluno_id === aluno.id)
           const movsAluno = carteira
             ? (movs30 ?? []).filter(m => m.carteira_id === carteira.id)
             : []
-          const consumoAlunoMes = movsAluno.filter(m => m.tipo === 'consumo').reduce((s, m) => s + Number(m.valor), 0)
           const ultimoConsumo = movsAluno.filter(m => m.tipo === 'consumo').sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
           const ultimaRecarga = movsAluno.filter(m => m.tipo === 'recarga').sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
 
           return (
-            <div key={aluno.id} style={{
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: 'var(--r-lg)', overflow: 'hidden',
-              boxShadow: 'var(--shadow-sm)',
-            }}>
+            <div key={aluno.id}>
+              
               {/* Header do aluno */}
-              <div style={{
-                padding: '20px 24px 16px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 'var(--r-pill)',
-                    background: 'linear-gradient(135deg,#667eea,#764ba2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 18, fontWeight: 700, color: '#fff',
-                    flexShrink: 0,
-                  }}>
-                    {aluno.nome.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', marginBottom: 10 }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: 10, background: '#f8f9fd', border: '1.5px solid rgba(0,0,0,.05)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#3b82f6'
+                }}>
+                  {aluno.nome.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0a1628', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {aluno.nome}
                   </div>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)' }}>
-                      {aluno.nome}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 500 }}>
-                      {aluno.serie}{aluno.turma ? ` · Turma ${aluno.turma}` : ''}
-                    </div>
+                  <div style={{ fontSize: 10, color: '#6b7280', marginTop: 1, fontWeight: 600 }}>
+                    {aluno.serie}{aluno.turma ? ` · Turma ${aluno.turma}` : ''}
                   </div>
                 </div>
-
-                {carteira ? (
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--brand)', letterSpacing: '-.03em' }}>
-                      {fmtBRL(Number(carteira.saldo))}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>SALDO DISPONÍVEL</div>
-                    {!carteira.ativo && (
-                      <div style={{
-                        marginTop: 4, fontSize: 11, fontWeight: 700,
-                        color: '#991b1b', background: '#fee2e2',
-                        padding: '2px 8px', borderRadius: 'var(--r-pill)', display: 'inline-block',
-                      }}>
-                        BLOQUEADA
-                      </div>
-                    )}
-                  </div>
-                ) : null}
               </div>
 
-              {/* Corpo */}
               {carteira ? (
-                <div style={{ padding: '16px 24px 20px' }}>
-                  {/* Mini stats do aluno */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
-                    <div style={{ background: 'var(--surface-2)', borderRadius: 'var(--r-md)', padding: '10px 12px' }}>
-                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, marginBottom: 4 }}>LIMITE DIÁRIO</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>
-                        {carteira.limite_diario ? fmtBRL(Number(carteira.limite_diario)) : 'Sem limite'}
-                      </div>
+                <>
+                  {/* Saldo Card */}
+                  <div style={{
+                    background: 'white', borderRadius: 16, padding: 16, margin: '0 14px 16px', position: 'relative', zIndex: 2,
+                    boxShadow: '0 4px 14px rgba(0,0,0,.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1.5px solid rgba(0,0,0,.04)'
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em' }}>Saldo Disponível</div>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: '#16a34a', letterSpacing: '-.03em', lineHeight: 1 }}>{fmtBRL(Number(carteira.saldo))}</div>
+                      {!carteira.ativo && (
+                        <div style={{ marginTop: 4, fontSize: 9, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase' }}>BLOQUEADA</div>
+                      )}
                     </div>
-                    <div style={{ background: 'var(--surface-2)', borderRadius: 'var(--r-md)', padding: '10px 12px' }}>
-                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, marginBottom: 4 }}>ÚLT. CONSUMO</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>
-                        {ultimoConsumo ? fmtData(ultimoConsumo.created_at) : '—'}
-                      </div>
-                    </div>
-                    <div style={{ background: 'var(--surface-2)', borderRadius: 'var(--r-md)', padding: '10px 12px' }}>
-                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, marginBottom: 4 }}>ÚLT. RECARGA</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>
-                        {ultimaRecarga ? fmtData(ultimaRecarga.created_at) : '—'}
-                      </div>
-                    </div>
+                    <Link href={`/cantina/${aluno.id}/recarga`} style={{
+                      background: '#16a34a', color: 'white', border: 'none', height: 38, padding: '0 14px', borderRadius: 10,
+                      fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 3px 10px rgba(22,163,74,.3)', textDecoration: 'none'
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Recarregar
+                    </Link>
                   </div>
 
-                  {/* Botões */}
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {[
-                      { href: `/cantina/${aluno.id}/recarga`, label: '💳 Recarregar', primary: true },
-                      { href: `/cantina/${aluno.id}/cartao`, label: '📱 Cartão virtual', primary: false },
-                      { href: `/cantina/${aluno.id}/extrato`, label: '📋 Extrato', primary: false },
-                      { href: `/cantina/${aluno.id}/configurar`, label: '⚙️ Configurar', primary: false },
-                    ].map(({ href, label, primary }) => (
-                      <Link key={href} href={href} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '9px 16px', borderRadius: 'var(--r-md)',
-                        fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                        background: primary ? 'var(--brand)' : 'var(--surface-2)',
-                        color: primary ? '#fff' : 'var(--text-2)',
-                        border: primary ? 'none' : '1px solid var(--border)',
-                        transition: 'all .15s var(--ease)',
-                      }}>
-                        {label}
-                      </Link>
-                    ))}
+                  {/* Actions Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, margin: '0 14px 16px' }}>
+                    <Link href={`/cantina/${aluno.id}/cartao`} style={{
+                      background: 'white', border: '1.5px solid rgba(0,0,0,.05)', borderRadius: 12, padding: '12px',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textDecoration: 'none'
+                    }}>
+                      <div style={{ fontSize: 20 }}>📱</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#0a1628' }}>Cartão</div>
+                    </Link>
+                    <Link href={`/cantina/${aluno.id}/extrato`} style={{
+                      background: 'white', border: '1.5px solid rgba(0,0,0,.05)', borderRadius: 12, padding: '12px',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textDecoration: 'none'
+                    }}>
+                      <div style={{ fontSize: 20 }}>📋</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#0a1628' }}>Extrato</div>
+                    </Link>
+                    <Link href={`/cantina/${aluno.id}/configurar`} style={{
+                      background: 'white', border: '1.5px solid rgba(0,0,0,.05)', borderRadius: 12, padding: '12px',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textDecoration: 'none'
+                    }}>
+                      <div style={{ fontSize: 20 }}>⚙️</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#0a1628' }}>Ajustes</div>
+                    </Link>
                   </div>
 
-                  {consumoAlunoMes > 0 && (
-                    <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-3)', fontWeight: 500 }}>
-                      Consumo nos últimos 30 dias: <strong style={{ color: 'var(--text-2)' }}>{fmtBRL(consumoAlunoMes)}</strong>
+                  {/* Limites Info */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, margin: '0 14px 24px' }}>
+                    <div style={{ background: 'white', border: '1.5px solid rgba(0,0,0,.07)', borderRadius: 14, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 2 }}>Limite Diário</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0a1628' }}>{carteira.limite_diario ? fmtBRL(Number(carteira.limite_diario)) : 'Ilimitado'}</div>
                     </div>
-                  )}
-                </div>
+                    <div style={{ background: 'white', border: '1.5px solid rgba(0,0,0,.07)', borderRadius: 14, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 2 }}>Último Uso</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0a1628' }}>{ultimoConsumo ? fmtData(ultimoConsumo.created_at) : '—'}</div>
+                    </div>
+                  </div>
+                </>
               ) : (
                 /* Sem carteira */
-                <div style={{ padding: '20px 24px', textAlign: 'center' }}>
+                <div style={{ background: 'white', border: '1.5px solid rgba(0,0,0,.07)', borderRadius: 16, padding: '24px 20px', margin: '0 14px 24px', textAlign: 'center' }}>
                   <div style={{ fontSize: 32, marginBottom: 8 }}>💳</div>
-                  <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 16 }}>
+                  <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, fontWeight: 500 }}>
                     Este aluno ainda não tem carteira digital na cantina.
                   </p>
                   <form action={async () => {
@@ -244,10 +226,9 @@ export default async function CantinaPage() {
                     await ativarCarteiraAction(aluno.id)
                   }}>
                     <button type="submit" style={{
-                      background: 'var(--brand)', color: '#fff',
-                      border: 'none', borderRadius: 'var(--r-md)',
-                      padding: '10px 20px', fontSize: 13, fontWeight: 700,
-                      cursor: 'pointer',
+                      background: '#0a1628', color: '#fff', border: 'none', borderRadius: 12,
+                      padding: '12px 20px', fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(10,22,40,.3)'
                     }}>
                       Ativar carteira
                     </button>

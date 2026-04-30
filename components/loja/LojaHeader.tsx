@@ -19,71 +19,61 @@ export function LojaHeader({ responsavel, escola }: Props) {
     <>
       <header style={{
         position:'sticky', top:0, zIndex:200,
-        background:'rgba(255,255,255,.92)',
-        backdropFilter:'blur(16px) saturate(180%)',
-        WebkitBackdropFilter:'blur(16px) saturate(180%)',
+        background:'rgba(255,255,255, 0.93)',
+        backdropFilter:'blur(20px)',
+        WebkitBackdropFilter:'blur(20px)',
         borderBottom:'1px solid var(--border)',
-        height:64, padding:'0 20px',
+        height:60, padding:'0 18px',
         display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
       }}>
         {/* Brand */}
         <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
           <div style={{
-            width:38, height:38, borderRadius:10, background:'var(--brand)',
+            width:36, height:36, borderRadius:10, background:'var(--brand)',
             display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow:'0 2px 8px rgba(26,47,90,.35)', flexShrink:0,
+            flexShrink:0,
           }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
               <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
           </div>
           <div style={{ lineHeight:1.2 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:'var(--text-1)', letterSpacing:'-.01em' }}>
+            <div style={{ fontSize:14, fontWeight:800, color:'var(--text-1)' }}>
               {escola.nome}
             </div>
-            <div style={{ fontSize:11, color:'var(--text-3)', fontWeight:500 }}>Loja Escolar</div>
+            <div style={{ fontSize:11, color:'var(--text-3)', fontWeight:600 }}>Loja da Escola</div>
           </div>
         </div>
 
         {/* Actions */}
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          {/* Greeting (desktop only) */}
-          <div style={{ textAlign:'right', display:'none' }} className="header-greeting">
-            <div style={{ fontSize:11, color:'var(--text-3)', fontWeight:500 }}>Olá,</div>
-            <div style={{ fontSize:13, color:'var(--text-1)', fontWeight:700 }}>
-              {responsavel.nome.split(' ')[0]}
-            </div>
-          </div>
-
           {/* Cart button */}
           <button onClick={open} title="Meu Carrinho" style={{
-            position:'relative', width:42, height:42, borderRadius:'var(--r-md)',
-            background:'var(--brand)', border:'none', cursor:'pointer',
-            display:'flex', alignItems:'center', justifyContent:'center',
+            position:'relative', width:44, height:44, borderRadius:12,
+            background: items.length > 0 ? 'var(--brand)' : 'var(--surface-2)',
+            border: items.length > 0 ? 'none' : '1px solid var(--border)',
+            cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
             transition:'all .2s var(--ease)',
-            boxShadow:'0 2px 8px rgba(26,47,90,.3)',
           }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'
-              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(26,47,90,.4)'
+              (e.currentTarget as HTMLElement).style.transform = 'scale(0.96)'
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(26,47,90,.3)'
+              (e.currentTarget as HTMLElement).style.transform = 'scale(1)'
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={items.length > 0 ? 'white' : 'var(--text-3)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
               <path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6"/>
             </svg>
             {items.length > 0 && (
               <span style={{
-                position:'absolute', top:-5, right:-5,
+                position:'absolute', top:-6, right:-6,
                 background:'var(--danger)', color:'white',
-                borderRadius:'var(--r-pill)', minWidth:18, height:18,
+                borderRadius:'var(--r-pill)', width:20, height:20,
                 fontSize:10, fontWeight:800, display:'flex', alignItems:'center',
-                justifyContent:'center', padding:'0 4px', border:'2px solid white',
+                justifyContent:'center', border:'2.5px solid white', boxSizing: 'content-box'
               }}>
                 {items.length}
               </span>
@@ -213,11 +203,6 @@ export function LojaHeader({ responsavel, escola }: Props) {
         </div>
       </header>
 
-      <style>{`
-        @media (min-width: 640px) {
-          .header-greeting { display: block !important; }
-        }
-      `}</style>
     </>
   )
 }

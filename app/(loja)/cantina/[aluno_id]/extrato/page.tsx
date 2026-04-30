@@ -73,6 +73,39 @@ export default async function ExtratoCantinaPage({
     .order('created_at', { ascending: false })
     .range(from, to)
 
+  // Busca itens detalhados se houver pedidos
+  const pedidoIds = (movs ?? []).map(m => m.pedido_cantina_id).filter(Boolean) as string[]
+  let itensMap: Record<string, { qtd: number; nome: string }[]> = {}
+
+  if (pedidoIds.length > 0) {
+    const { data: itens } = await supabase
+      .from('cantina_pedido_itens')
+      .select('pedido_id, quantidade, produto_id')
+      .in('pedido_id', pedidoIds)
+
+    if (itens && itens.length > 0) {
+      const prodIds = Array.from(new Set(itens.map(i => i.produto_id)))
+      const { data: prods } = await supabase
+        .from('cantina_produtos')
+        .select('id, nome')
+        .in('id', prodIds)
+
+      const prodsDict = (prods ?? []).reduce((acc: Record<string, string>, p) => {
+        acc[p.id] = p.nome
+        return acc
+      }, {})
+
+      itensMap = itens.reduce((acc, item) => {
+        if (!acc[item.pedido_id]) acc[item.pedido_id] = []
+        acc[item.pedido_id].push({
+          qtd: item.quantidade,
+          nome: prodsDict[item.produto_id] || 'Produto'
+        })
+        return acc
+      }, {} as Record<string, { qtd: number; nome: string }[]>)
+    }
+  }
+
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE))
 
   // Stats do mês
@@ -182,6 +215,11 @@ export default async function ExtratoCantinaPage({
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>
                     {mov.descricao || cfg.label}
                   </div>
+                  {mov.pedido_cantina_id && itensMap[mov.pedido_cantina_id] && (
+                    <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>
+                      {itensMap[mov.pedido_cantina_id].map(i => `${i.qtd}x ${i.nome}`).join(' • ')}
+                    </div>
+                  )}
                   <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
                     {fmtData(mov.created_at)}
                   </div>

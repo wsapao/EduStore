@@ -10,15 +10,13 @@ function fmtBRL(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-// ── Category styles ───────────────────────────────────────────────────────────
-
-const CAT_BG: Record<string, string> = {
-  eventos:        'linear-gradient(135deg,#ede9fe,#ddd6fe)',
-  passeios:       'linear-gradient(135deg,#d1fae5,#a7f3d0)',
-  segunda_chamada:'linear-gradient(135deg,#fef3c7,#fde68a)',
-  materiais:      'linear-gradient(135deg,#dbeafe,#bfdbfe)',
-  uniforme:       'linear-gradient(135deg,#fce7f3,#fbcfe8)',
-  outros:         'linear-gradient(135deg,#f3f4f6,#e5e7eb)',
+const CAT_THEMES: Record<string, { bg: string, text: string }> = {
+  eventos:        { bg: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', text: '#6d28d9' },
+  passeios:       { bg: 'linear-gradient(135deg,#0ea5e9,#0284c7)', text: '#0369a1' },
+  segunda_chamada:{ bg: 'linear-gradient(135deg,#f59e0b,#d97706)', text: '#b45309' },
+  materiais:      { bg: 'linear-gradient(135deg,#10b981,#059669)', text: '#047857' },
+  uniforme:       { bg: 'linear-gradient(135deg,#f43f5e,#e11d48)', text: '#be123c' },
+  outros:         { bg: 'linear-gradient(135deg,#6b7280,#4b5563)', text: '#374151' },
 }
 
 const DEFAULT_ICONS: Record<string, string> = {
@@ -30,43 +28,39 @@ const DEFAULT_ICONS: Record<string, string> = {
   outros:         '📦',
 }
 
-const METODO_STYLES: Record<string, React.CSSProperties> = {
-  pix:    { color:'#047857', background:'#d1fae5', borderColor:'#a7f3d0' },
-  cartao: { color:'#1e40af', background:'#dbeafe', borderColor:'#bfdbfe' },
-  boleto: { color:'#78350f', background:'#fef3c7', borderColor:'#fde68a' },
-}
-const METODO_LABELS: Record<string, string> = { pix:'PIX', cartao:'Cartão', boleto:'Boleto' }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { day:'numeric', month:'short' })
+  return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })
 }
 
-function isUrgent(prazo: string | null) {
-  if (!prazo) return false
-  const diff = (new Date(prazo).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  return diff >= 0 && diff <= 3
+function getUrgencia(prazo: string | null): { isUrgent: boolean; text: string } {
+  if (!prazo) return { isUrgent: false, text: '' }
+  const diff = Math.ceil((new Date(prazo).getTime() - Date.now()) / 86400000)
+  if (diff < 0) return { isUrgent: false, text: '' }
+  if (diff === 0) return { isUrgent: true, text: 'Hoje!' }
+  if (diff === 1) return { isUrgent: true, text: 'Amanhã!' }
+  if (diff <= 4) return { isUrgent: true, text: `${diff} dias` }
+  return { isUrgent: false, text: '' }
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 interface Props {
   produto: Produto
   aluno: Aluno
   index?: number
-  vagasRestantes?: number | null  // null = sem limite, número = vagas sobrando
+  vagasRestantes?: number | null
 }
 
 export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props) {
   const { add, remove, hasItem } = useCart()
   const router = useRouter()
-  const [justAdded, setJustAdded] = useState(false)
+  const [isPressing, setIsPressing] = useState(false)
   const exigeVariante = !!produto.variantes?.length
   const inCart = !exigeVariante && hasItem(produto.id, aluno.id)
   const icon = produto.icon ?? DEFAULT_ICONS[produto.categoria] ?? '📦'
-  const bg = CAT_BG[produto.categoria] ?? CAT_BG.outros
-  const urgent = isUrgent(produto.prazo_compra)
+  
+  const urgencia = getUrgencia(produto.prazo_compra)
+  const isUrgent = urgencia.isUrgent && !produto.esgotado
+
+  const theme = CAT_THEMES[produto.categoria] ?? CAT_THEMES.outros
 
   function handleAdd(e: React.MouseEvent) {
     e.stopPropagation()
@@ -79,8 +73,6 @@ export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props
       remove(`${produto.id}__${aluno.id}__sem-variante`)
     } else {
       add(produto, aluno)
-      setJustAdded(true)
-      setTimeout(() => setJustAdded(false), 1800)
     }
   }
 
@@ -88,233 +80,177 @@ export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props
     <div
       onClick={() => router.push(`/loja/produto/${produto.id}?aluno=${aluno.id}`)}
       style={{
-        background:'var(--surface)', borderRadius:'var(--r-lg)', overflow:'hidden',
-        border: `1.5px solid ${inCart ? 'var(--accent)' : 'var(--border)'}`,
-        boxShadow: inCart ? '0 0 0 3px var(--accent-glow), var(--shadow-sm)' : 'var(--shadow-xs)',
-        display:'flex', flexDirection:'column', cursor:'pointer',
-        transition:'all .25s var(--ease)', position:'relative',
-        opacity: produto.esgotado ? .55 : 1,
+        background: 'white',
+        border: '1.5px solid rgba(0,0,0,.07)',
+        borderRadius: 18,
+        overflow: 'hidden',
+        margin: '0 14px 10px',
+        boxShadow: '0 2px 8px rgba(0,0,0,.06)',
+        opacity: produto.esgotado ? 0.6 : 1,
         pointerEvents: produto.esgotado ? 'none' : 'auto',
-        animation:`fade-up .4s var(--ease) ${index * 0.05}s both`,
-      }}
-      onMouseEnter={e => {
-        if (!produto.esgotado) {
-          const el = e.currentTarget as HTMLElement
-          el.style.borderColor = 'var(--accent)'
-          el.style.boxShadow = '0 0 0 3px var(--accent-glow), var(--shadow-md)'
-          el.style.transform = 'translateY(-2px)'
-        }
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget as HTMLElement
-        el.style.borderColor = inCart ? 'var(--accent)' : 'var(--border)'
-        el.style.boxShadow = inCart ? '0 0 0 3px var(--accent-glow), var(--shadow-sm)' : 'var(--shadow-xs)'
-        el.style.transform = 'translateY(0)'
+        animation: `fadeUp 0.3s ease ${index * 0.04}s both`,
+        cursor: 'pointer'
       }}
     >
-      {/* Card top — colored header */}
       <div style={{
-        height:80, display:'flex', alignItems:'center', justifyContent:'center',
-        background: bg, position:'relative', overflow:'hidden',
+        height: 76,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        background: theme.bg
       }}>
-        {/* Badges */}
-        <div style={{ position:'absolute', top:8, left:8, display:'flex', flexDirection:'column', gap:4, zIndex:2 }}>
-          {produto.esgotado && <Badge variant="esgotado">Esgotado</Badge>}
-          {!produto.esgotado && urgent && <Badge variant="urgente">Urgente</Badge>}
-          {!produto.esgotado && vagasRestantes !== null && vagasRestantes !== undefined && vagasRestantes <= 10 && (
-            <Badge variant={vagasRestantes <= 3 ? 'urgente' : 'vagas'}>
-              {vagasRestantes === 0 ? 'Última vaga!' : `${vagasRestantes} vagas`}
-            </Badge>
-          )}
-        </div>
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,.1) 1px, transparent 1px)',
+          backgroundSize: '14px 14px'
+        }} />
+        
+        {produto.imagem_url ? (
+          <Image src={produto.imagem_url} alt={produto.nome} fill sizes="150px" style={{ objectFit: 'cover' }} />
+        ) : (
+          <div style={{
+            fontSize: 30,
+            filter: 'drop-shadow(0 2px 5px rgba(0,0,0,.2))',
+            position: 'relative', zIndex: 1
+          }}>
+            {icon}
+          </div>
+        )}
 
-        <span style={{
-          fontSize:32, position:'relative', zIndex:1,
-          filter:'drop-shadow(0 2px 4px rgba(0,0,0,.15))',
-        }}>
-          {icon}
-        </span>
+        {produto.esgotado && (
+          <div style={{
+            position: 'absolute', top: 7, left: 9, fontSize: 8, fontWeight: 800,
+            padding: '3px 7px', borderRadius: 99, background: 'rgba(0,0,0,.6)',
+            color: 'white', letterSpacing: '.04em', backdropFilter: 'blur(8px)'
+          }}>
+            ESGOTADO
+          </div>
+        )}
+        {!produto.esgotado && isUrgent && (
+          <div style={{
+            position: 'absolute', top: 7, left: 9, fontSize: 8, fontWeight: 800,
+            padding: '3px 7px', borderRadius: 99, background: 'rgba(220,38,38,.75)',
+            color: 'white', letterSpacing: '.04em', backdropFilter: 'blur(8px)'
+          }}>
+            ⏰ {urgencia.text}
+          </div>
+        )}
+        {inCart && (
+          <div style={{
+            position: 'absolute', top: 7, right: 9, fontSize: 8, fontWeight: 800,
+            padding: '3px 7px', borderRadius: 99, background: 'rgba(22,163,74,.8)',
+            color: 'white'
+          }}>
+            ✓ No carrinho
+          </div>
+        )}
+        {!produto.esgotado && !inCart && vagasRestantes !== null && vagasRestantes !== undefined && vagasRestantes <= 10 && (
+          <div style={{
+            position: 'absolute', top: 7, right: 9, fontSize: 8, fontWeight: 800,
+            padding: '3px 7px', borderRadius: 99, background: 'rgba(245,158,11,.85)',
+            color: '#78350f', backdropFilter: 'blur(8px)'
+          }}>
+            {vagasRestantes === 0 ? 'Última vaga' : `${vagasRestantes} vagas`}
+          </div>
+        )}
       </div>
 
-      {/* Body */}
-      <div style={{ padding:'12px 14px', flex:1, display:'flex', gap:12 }}>
-        {/* Texts */}
-        <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, minWidth:0 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:'var(--text-1)', lineHeight:1.3, letterSpacing:'-.01em' }}>
-            {produto.nome}
-          </div>
+      <div style={{ padding: '11px 13px 9px' }}>
+        <div style={{
+          fontSize: 9, fontWeight: 800, letterSpacing: '.07em',
+          textTransform: 'uppercase', marginBottom: 3, color: theme.text
+        }}>
+          {produto.categoria.replace('_', ' ')}
+        </div>
+        <div style={{
+          fontSize: 13, fontWeight: 800, color: '#0a1628',
+          letterSpacing: '-.02em', lineHeight: 1.3, marginBottom: 4
+        }}>
+          {produto.nome}
+        </div>
         {produto.descricao && (
           <div style={{
-            fontSize:11, color:'var(--text-3)', lineHeight:1.5, fontWeight:500, flex:1,
-            display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden',
+            fontSize: 10, color: '#9ca3af', lineHeight: 1.5,
+            marginBottom: 7, display: '-webkit-box', WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical', overflow: 'hidden'
           }}>
             {produto.descricao}
           </div>
         )}
-
-          {/* Meta tags */}
-          <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:2 }}>
-            {produto.variantes && produto.variantes.length > 0 && (
-              <MetaTag>
-                <ShirtIcon />
-                {produto.variantes.length} tamanhos
-              </MetaTag>
-            )}
-            {produto.data_evento && (
-              <MetaTag>
-                <CalendarIcon />
-                {formatDate(produto.data_evento)}
-              </MetaTag>
-            )}
-            {produto.prazo_compra && (
-              <MetaTag urgent={urgent}>
-                <ClockIcon />
-                Prazo {formatDate(produto.prazo_compra)}
-              </MetaTag>
-            )}
-          </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {produto.data_evento && (
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 7,
+              background: '#f0f2f8', color: '#374151', border: '1px solid rgba(0,0,0,.07)',
+              display: 'inline-block'
+            }}>
+              📅 {formatDate(produto.data_evento)}
+            </span>
+          )}
+          {exigeVariante && (
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 7,
+              background: '#f0f2f8', color: '#374151', border: '1px solid rgba(0,0,0,.07)',
+              display: 'inline-block'
+            }}>
+              Variantes
+            </span>
+          )}
+          {!produto.esgotado && isUrgent && (
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 7,
+              background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca',
+              display: 'inline-block'
+            }}>
+              ⏰ Termina {urgencia.text.toLowerCase()}
+            </span>
+          )}
         </div>
-        
-        {/* Thumbnail Image */}
-        {produto.imagem_url && (
-           <div style={{
-             width: 64, height: 64, borderRadius: 8, flexShrink: 0,
-             position: 'relative', overflow: 'hidden',
-             border: '1px solid var(--border)'
-           }}>
-             <Image src={produto.imagem_url} alt={produto.nome} fill sizes="64px" style={{ objectFit: 'cover' }} />
-           </div>
-        )}
       </div>
 
-      {/* Payment methods */}
-      {produto.metodos_aceitos?.length > 0 && (
-        <div style={{ display:'flex', gap:4, padding:'0 14px 10px', flexWrap:'wrap' }}>
-          {produto.metodos_aceitos.map(m => (
-            <span key={m} style={{
-              fontSize:9, fontWeight:700, borderRadius:'var(--r-pill)',
-              padding:'2px 7px', border:'1px solid',
-              ...METODO_STYLES[m],
-            }}>
-              {METODO_LABELS[m]}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Footer */}
       <div style={{
-        padding:'10px 14px 14px', display:'flex',
-        alignItems:'flex-end', justifyContent:'space-between', gap:8,
-        borderTop:'1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '9px 13px 12px', borderTop: '1px solid rgba(0,0,0,.06)', gap: 10
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {produto.preco_promocional && (
-            <div style={{ fontSize: 11, color: 'var(--text-3)', textDecoration: 'line-through', fontWeight: 600 }}>
-              {fmtBRL(produto.preco)}
-            </div>
-          )}
-          <div style={{ fontSize:17, fontWeight:800, color: produto.preco_promocional ? 'var(--brand)' : 'var(--text-1)', letterSpacing:'-.02em', lineHeight: 1.1 }}>
-            <span style={{ fontSize:10, fontWeight:600, color:'var(--text-3)', verticalAlign:'super', marginRight:1 }}>R$</span>
-            {Math.floor(produto.preco_promocional ?? produto.preco).toLocaleString('pt-BR')}
-            {((produto.preco_promocional ?? produto.preco) % 1) !== 0 && (
-              <span style={{ fontSize:12 }}>,{String(Math.round(((produto.preco_promocional ?? produto.preco) % 1) * 100)).padStart(2,'0')}</span>
-            )}
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', marginBottom: 1 }}>
+            Valor total
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: '#0a1628', letterSpacing: '-.04em', lineHeight: 1 }}>
+            {fmtBRL(produto.preco_promocional ?? produto.preco)}
           </div>
         </div>
 
         <button
           onClick={handleAdd}
+          onMouseDown={() => setIsPressing(true)}
+          onMouseUp={() => setIsPressing(false)}
+          onMouseLeave={() => setIsPressing(false)}
           disabled={produto.esgotado}
-          title={inCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}
           style={{
-            width:34, height:34, borderRadius:'50%',
-            background: inCart ? 'var(--success)' : 'var(--brand)',
-            border:'none', cursor:'pointer',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            transition:'all .2s var(--spring)', flexShrink:0,
-            boxShadow: inCart ? '0 2px 8px rgba(16,185,129,.35)' : '0 2px 8px rgba(26,47,90,.3)',
+            height: 40, padding: '0 14px', borderRadius: 12,
+            background: produto.esgotado ? '#e5e7eb' : inCart ? '#16a34a' : '#f59e0b',
+            border: 'none', fontSize: 12, fontWeight: 800,
+            color: produto.esgotado ? '#9ca3af' : inCart ? 'white' : '#78350f',
+            display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+            boxShadow: produto.esgotado ? 'none' : inCart ? '0 3px 10px rgba(22,163,74,.4)' : '0 3px 10px rgba(245,158,11,.4)',
+            transform: isPressing && !produto.esgotado ? 'scale(0.95)' : 'scale(1)',
+            transition: 'all 0.2s', cursor: produto.esgotado ? 'not-allowed' : 'pointer'
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.12)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
         >
-          {justAdded || inCart ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          ) : exigeVariante ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
+          {produto.esgotado ? 'Esgotado' : inCart ? (
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg> Adicionado
+            </>
           ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
+            <>Adicionar <span>+</span></>
           )}
         </button>
       </div>
     </div>
-  )
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function Badge({ variant, children }: { variant: 'urgente'|'esgotado'|'novo'|'vagas'; children: React.ReactNode }) {
-  const styles: Record<string, React.CSSProperties> = {
-    urgente:  { background:'var(--danger)', color:'white' },
-    esgotado: { background:'var(--text-2)', color:'white' },
-    novo:     { background:'var(--accent)',  color:'white' },
-    vagas:    { background:'#f59e0b', color:'white' },
-  }
-  return (
-    <span style={{
-      fontSize:9, fontWeight:800, textTransform:'uppercase',
-      letterSpacing:'.04em', padding:'3px 7px', borderRadius:'var(--r-pill)',
-      lineHeight:1.4, ...styles[variant],
-    }}>
-      {children}
-    </span>
-  )
-}
-
-function MetaTag({ children, urgent }: { children: React.ReactNode; urgent?: boolean }) {
-  return (
-    <span style={{
-      display:'inline-flex', alignItems:'center', gap:4,
-      fontSize:10, fontWeight:600,
-      color: urgent ? 'var(--danger)' : 'var(--text-3)',
-      background: urgent ? 'var(--danger-light)' : 'var(--surface-2)',
-      borderRadius:'var(--r-pill)', padding:'3px 8px',
-      border:`1px solid ${urgent ? '#fecaca' : 'var(--border)'}`,
-    }}>
-      {children}
-    </span>
-  )
-}
-
-function CalendarIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-      <line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-  )
-}
-
-function ClockIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <polyline points="12 6 12 12 16 14"/>
-    </svg>
-  )
-}
-
-function ShirtIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 3l5 4-3 5v8a1 1 0 01-1 1H7a1 1 0 01-1-1v-8L3 7l5-4 2 3h4l2-3z"/>
-    </svg>
   )
 }

@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS cantina_carteiras (
   ativo            BOOLEAN NOT NULL DEFAULT true,
   bloqueio_motivo  TEXT,
   qr_token         TEXT NOT NULL UNIQUE DEFAULT gen_random_uuid()::text,
+  nfc_id           TEXT UNIQUE,
+  senha_pin        TEXT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ProdutoForm } from '../ProdutoForm'
+import { getSeriesDisponiveis } from '@/lib/crm/series'
 
 export default async function NovoProdutoPage() {
   const supabase = await createClient()
@@ -13,6 +14,8 @@ export default async function NovoProdutoPage() {
     .select('*')
     .eq('ativo', true)
     .order('nome')
+
+  const seriesDisponiveis = await getSeriesDisponiveis()
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', paddingBottom: 80 }}>
@@ -41,7 +44,7 @@ export default async function NovoProdutoPage() {
         </div>
       </div>
 
-      <ProdutoForm variantesDetalhadas={[]} categorias={categorias ?? []} />
+      <ProdutoForm variantesDetalhadas={[]} categorias={categorias ?? []} seriesDisponiveis={seriesDisponiveis} />
     </div>
   )
 }

@@ -285,6 +285,8 @@ function parseProdutoForm(formData: FormData, escolaId?: string) {
     variantes:      variantes.length ? variantes : null,
     icon:           (formData.get('icon') as string || '').trim() || null,
     estoque:        (formData.get('estoque') as string) ? parseInt(formData.get('estoque') as string) : null,
+    exige_termo:    formData.get('exige_termo') === 'on',
+    texto_termo:    (formData.get('texto_termo') as string || '').trim() || null,
     ativo:          formData.get('ativo') === 'on',
     // imagem_url is added directly in the action handler
   } as any // Use any because the return type can be mixed before inferring the DB schema correctly
@@ -531,7 +533,14 @@ export async function criarVoucherAction(formData: FormData) {
   const { data: resp } = await supabase.from('responsaveis').select('escola_id').eq('id', user!.id).single()
   if (!resp?.escola_id) return { success: false, error: 'Admin sem escola vinculada.' }
 
-  const codigo = (formData.get('codigo') as string).trim().toUpperCase()
+  const gerarAleatorio = formData.get('gerar_aleatorio') === 'on'
+  const codigoDigitado = (formData.get('codigo') as string)?.trim().toUpperCase()
+  const quantidade = parseInt(formData.get('quantidade') as string) || 1
+
+  if (!gerarAleatorio && !codigoDigitado) {
+    return { success: false, error: 'Forneça um código ou escolha gerar aleatoriamente.' }
+  }
+
   const tipo_desconto = formData.get('tipo_desconto') as 'percentual' | 'fixo'
   const valor = parseFloat((formData.get('valor') as string).replace(',', '.'))
   const limiteRaw = formData.get('limite_usos') as string
@@ -540,22 +549,43 @@ export async function criarVoucherAction(formData: FormData) {
   const compra_minima = compraMinimaRaw ? parseFloat(compraMinimaRaw.replace(',', '.')) : null
   const validadeRaw = formData.get('data_validade') as string
   const data_validade = validadeRaw ? new Date(validadeRaw).toISOString() : null
-  const produtoIdRaw = formData.get('produto_id') as string
-  const produto_id = produtoIdRaw || null
+  
+  // Pegar os arrays de produtos
+  const produtos_ids = formData.getAll('produtos_ids') as string[]
+  const produtosIdsFinais = produtos_ids.length > 0 && produtos_ids[0] !== '' ? produtos_ids : null
 
-  const { error } = await supabase.from('vouchers').insert({
+  // Gera a lista de códigos
+  const codigos = []
+  if (gerarAleatorio) {
+    for (let i = 0; i < quantidade; i++) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+      let code = ''
+      for (let j = 0; j < 8; j++) code += chars.charAt(Math.floor(Math.random() * chars.length))
+      codigos.push(codigoDigitado ? `${codigoDigitado}-${code}` : code) // permite prefixo opcional
+    }
+  } else {
+    codigos.push(codigoDigitado)
+  }
+
+  const inserts = codigos.map(cod => ({
     escola_id: resp.escola_id,
-    codigo,
+    codigo: cod,
     tipo_desconto,
     valor,
     limite_usos,
     compra_minima,
     data_validade,
-    produto_id,
+    produtos_ids: produtosIdsFinais,
     ativo: true,
-  })
+  }))
 
-  if (error) return { success: false, error: error.message }
+  const { error } = await supabase.from('vouchers').insert(inserts)
+
+  if (error) {
+    if (error.code === '23505') return { success: false, error: 'Um cupom com esse código já existe.' }
+    return { success: false, error: error.message }
+  }
+  
   revalidatePath('/admin/vouchers')
   return { success: true }
 }
@@ -571,6 +601,14 @@ export async function toggleVoucherAction(id: string, ativo: boolean) {
 export async function excluirVoucherAction(id: string) {
   const { supabase } = await verificarAdmin()
   const { error } = await supabase.from('vouchers').delete().eq('id', id)
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/admin/vouchers')
+  return { success: true }
+}
+
+export async function excluirVouchersLoteAction(ids: string[]) {
+  const { supabase } = await verificarAdmin()
+  const { error } = await supabase.from('vouchers').delete().in('id', ids)
   if (error) return { success: false, error: error.message }
   revalidatePath('/admin/vouchers')
   return { success: true }

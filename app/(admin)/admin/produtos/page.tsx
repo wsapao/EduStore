@@ -47,7 +47,7 @@ export default async function AdminProdutos({
     query = query.or(`nome.ilike.%${busca}%,descricao.ilike.%${busca}%`)
   }
 
-  const { data: produtos } = await query.range(from, to)
+  const { data: produtos, error: erroQuery } = await query.range(from, to)
 
   let countQuery = supabase.from('produtos').select('id', { count: 'exact', head: true })
   if (busca) {
@@ -64,58 +64,73 @@ export default async function AdminProdutos({
   const lista = (produtos ?? []) as Array<Produto & { variantes_rel?: ProdutoVariante[] | null }>
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 80 }}>
+      {erroQuery && (
+        <div style={{ background: '#7f1d1d', color: '#fef2f2', padding: 16, borderRadius: 12, border: '1px solid #b91c1c' }}>
+          <strong>ERRO NA QUERY:</strong> {erroQuery.message} - {erroQuery.details}
+        </div>
+      )}
+
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-.02em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', margin: 0, letterSpacing: '-.03em' }}>
             Produtos
           </h1>
-          <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 13, color: '#94a3b8', margin: '6px 0 0', fontWeight: 500 }}>
             {totalFiltrado ?? 0} produtos encontrados · {ativos} ativos · {inativos} inativos · {esgotados} esgotados
           </p>
         </div>
 
         <Link href="/admin/produtos/novo" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 7,
-          height: 38, padding: '0 16px', borderRadius: 8,
-          background: 'var(--brand)', color: '#fff',
-          fontSize: 13, fontWeight: 700, textDecoration: 'none',
-          boxShadow: '0 2px 8px rgba(26,47,90,.25)',
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          height: 42, padding: '0 20px', borderRadius: 14,
+          background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: '#fff',
+          fontSize: 14, fontWeight: 800, textDecoration: 'none',
+          boxShadow: '0 4px 14px rgba(59,130,246,.3)', transition: 'all .2s'
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           Novo produto
         </Link>
       </div>
 
+      {/* Search Bar */}
       <form style={{
-        background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 14,
-        display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)', borderRadius: 16, padding: '12px 14px',
+        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', backdropFilter: 'blur(10px)'
       }}>
-        <input
-          name="q"
-          defaultValue={busca}
-          placeholder="Buscar por nome ou descrição"
-          style={{
-            flex: 1, minWidth: 240, height: 42, borderRadius: 10, border: '1.5px solid #e2e8f0',
-            background: '#f8fafc', padding: '0 14px', fontSize: 14, color: '#0f172a', fontFamily: 'inherit',
-          }}
-        />
-        <button type="submit" style={actionButton('#0f172a', '#fff', 'none')}>
+        <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
+          <svg style={{ position: 'absolute', left: 14, top: 12, color: '#64748b' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            name="q"
+            defaultValue={busca}
+            placeholder="Buscar por nome ou descrição..."
+            style={{
+              width: '100%', height: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,.1)',
+              background: 'rgba(0,0,0,.2)', padding: '0 14px 0 40px', fontSize: 14, color: '#f8fafc', fontFamily: 'inherit',
+              outline: 'none', boxSizing: 'border-box'
+            }}
+          />
+        </div>
+        <button type="submit" style={actionButton('rgba(255,255,255,.1)', '#f8fafc', '1px solid rgba(255,255,255,.05)')}>
           Buscar
         </button>
         {busca && (
-          <Link href="/admin/produtos" style={actionButton('#eef2ff', '#4338ca', '1px solid #c7d2fe')}>
+          <Link href="/admin/produtos" style={actionButton('rgba(239,68,68,.1)', '#fca5a5', '1px solid rgba(239,68,68,.2)')}>
             Limpar
           </Link>
         )}
       </form>
 
+      {/* Grid de Produtos */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-        gap: 14,
+        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+        gap: 16,
       }}>
         {lista.map((produto) => {
           const cat = produto.categoria as CategoriaProduto
@@ -129,51 +144,51 @@ export default async function AdminProdutos({
 
           return (
             <div key={produto.id} style={{
-              background: '#fff',
-              border: `1.5px solid ${!isAtivo ? '#fecaca' : isEsgotado ? '#fed7aa' : '#e2e8f0'}`,
-              borderRadius: 12, overflow: 'hidden',
-              opacity: isAtivo ? 1 : 0.7,
+              background: 'rgba(255,255,255,.02)',
+              border: `1.5px solid ${!isAtivo ? 'rgba(239,68,68,.3)' : isEsgotado ? 'rgba(245,158,11,.3)' : 'rgba(255,255,255,.06)'}`,
+              borderRadius: 20, overflow: 'hidden', backdropFilter: 'blur(16px)',
+              opacity: isAtivo ? 1 : 0.6, display: 'flex', flexDirection: 'column'
             }}>
               <div style={{
-                padding: '14px 16px',
-                borderBottom: '1px solid #f1f5f9',
-                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '20px',
+                borderBottom: '1px solid rgba(255,255,255,.05)',
+                display: 'flex', alignItems: 'center', gap: 14,
               }}>
                 <div style={{
-                  width: 44, height: 44, borderRadius: 10,
-                  background: '#f1f5f9',
+                  width: 52, height: 52, borderRadius: 14,
+                  background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 22, flexShrink: 0,
+                  fontSize: 24, flexShrink: 0,
                 }}>
                   {produto.icon ?? CAT_ICONS[cat] ?? '📦'}
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 14, fontWeight: 700, color: '#0f172a',
+                    fontSize: 16, fontWeight: 800, color: '#f8fafc', letterSpacing: '-.02em',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>
                     {produto.nome}
                   </div>
-                  <div style={{ display: 'flex', gap: 5, marginTop: 4, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                     <span style={{
-                      fontSize: 10, fontWeight: 700, color: '#6366f1',
-                      background: '#eef2ff', padding: '2px 7px', borderRadius: 4,
+                      fontSize: 10, fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '.05em',
+                      background: 'rgba(59,130,246,.1)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(59,130,246,.2)'
                     }}>
                       {CAT_LABELS[cat]}
                     </span>
                     {!isAtivo && (
                       <span style={{
-                        fontSize: 10, fontWeight: 700, color: '#991b1b',
-                        background: '#fee2e2', padding: '2px 7px', borderRadius: 4,
+                        fontSize: 10, fontWeight: 800, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '.05em',
+                        background: 'rgba(239,68,68,.1)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(239,68,68,.2)'
                       }}>
                         INATIVO
                       </span>
                     )}
                     {isEsgotado && isAtivo && (
                       <span style={{
-                        fontSize: 10, fontWeight: 700, color: '#92400e',
-                        background: '#fef3c7', padding: '2px 7px', borderRadius: 4,
+                        fontSize: 10, fontWeight: 800, color: '#fcd34d', textTransform: 'uppercase', letterSpacing: '.05em',
+                        background: 'rgba(245,158,11,.1)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(245,158,11,.2)'
                       }}>
                         ESGOTADO
                       </span>
@@ -182,19 +197,19 @@ export default async function AdminProdutos({
                 </div>
               </div>
 
-              <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>PREÇO</span>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
+                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Preço</span>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: '#10b981', letterSpacing: '-.03em' }}>
                     {fmtBRL(produto.preco)}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>MÉTODOS</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
+                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Métodos</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
                     {(produto.metodos_aceitos ?? []).map((m) => (
-                      <span key={m} title={m} style={{ fontSize: 16 }}>
+                      <span key={m} title={m} style={{ fontSize: 18 }}>
                         {METODO_ICONS[m as MetodoPagamento]}
                       </span>
                     ))}
@@ -203,8 +218,8 @@ export default async function AdminProdutos({
 
                 {produto.data_evento && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>EVENTO</span>
-                    <span style={{ fontSize: 12, color: '#374151', fontWeight: 600 }}>
+                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Evento</span>
+                    <span style={{ fontSize: 12, color: '#f8fafc', fontWeight: 700 }}>
                       {new Date(produto.data_evento).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>
@@ -212,8 +227,8 @@ export default async function AdminProdutos({
 
                 {produto.prazo_compra && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>PRAZO</span>
-                    <span style={{ fontSize: 12, color: '#374151', fontWeight: 600 }}>
+                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Prazo</span>
+                    <span style={{ fontSize: 12, color: '#f8fafc', fontWeight: 700 }}>
                       {new Date(produto.prazo_compra).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>
@@ -221,12 +236,12 @@ export default async function AdminProdutos({
 
                 {produto.series && produto.series.length > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>SÉRIES</span>
+                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Séries</span>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
                       {produto.series.map((serie) => (
                         <span key={serie} style={{
-                          fontSize: 10, fontWeight: 600, color: '#374151',
-                          background: '#f1f5f9', padding: '2px 6px', borderRadius: 4,
+                          fontSize: 10, fontWeight: 700, color: '#e2e8f0',
+                          background: 'rgba(255,255,255,.05)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,.1)'
                         }}>
                           {serie}
                         </span>
@@ -236,102 +251,72 @@ export default async function AdminProdutos({
                 )}
 
                 {variantes.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-                      <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>VARIANTES</span>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, maxWidth: '65%' }}>
-                        <span style={{ fontSize: 11, color: '#374151', fontWeight: 700 }}>
-                          {variantesDisponiveis.length}/{variantes.length} prontas para venda
+                      <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Variantes</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, maxWidth: '70%' }}>
+                        <span style={{ fontSize: 11, color: '#f8fafc', fontWeight: 800 }}>
+                          {variantesDisponiveis.length}/{variantes.length} ativas
                         </span>
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                           <StockPill tone={variantesSemEstoque.length > 0 ? 'danger' : 'neutral'}>
                             {variantesSemEstoque.length} sem estoque
                           </StockPill>
                           <StockPill tone={variantesBaixoEstoque.length > 0 ? 'warning' : 'neutral'}>
-                            {variantesBaixoEstoque.length} baixo estoque
-                          </StockPill>
-                          <StockPill tone={variantesIndisponiveis.length > 0 ? 'muted' : 'neutral'}>
-                            {variantesIndisponiveis.length} indisponíveis
+                            {variantesBaixoEstoque.length} baixo est.
                           </StockPill>
                         </div>
                       </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {variantes.map((variante) => {
-                        const semEstoque = variante.estoque === 0
-                        const baixoEstoque = variante.estoque !== null && variante.estoque > 0 && variante.estoque <= 3
-                        const prontaParaVenda = variante.disponivel && !semEstoque
-
-                        return (
-                          <span key={variante.id} style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                            fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999,
-                            border: `1px solid ${!variante.disponivel ? '#d1d5db' : semEstoque ? '#fecaca' : baixoEstoque ? '#fde68a' : '#c7d2fe'}`,
-                            color: !variante.disponivel ? '#6b7280' : semEstoque ? '#b91c1c' : baixoEstoque ? '#92400e' : '#4338ca',
-                            background: !variante.disponivel ? '#f3f4f6' : semEstoque ? '#fef2f2' : baixoEstoque ? '#fffbeb' : '#eef2ff',
-                            textDecoration: !variante.disponivel ? 'line-through' : 'none',
-                          }}>
-                            <span>{variante.nome}</span>
-                            <span style={{ opacity: 0.85 }}>
-                              {!variante.disponivel ? 'off' : variante.estoque === null ? 'livre' : prontaParaVenda ? `${variante.estoque} un` : '0 un'}
-                            </span>
-                          </span>
-                        )
-                      })}
                     </div>
                   </div>
                 )}
               </div>
 
               <div style={{
-                padding: '10px 14px',
-                borderTop: '1px solid #f1f5f9',
-                display: 'flex', flexDirection: 'column', gap: 8,
+                padding: '14px 20px',
+                background: 'rgba(0,0,0,.15)', borderTop: '1px solid rgba(255,255,255,.05)',
+                display: 'flex', flexDirection: 'column', gap: 10,
               }}>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 10 }}>
                   <Link href={`/admin/produtos/${produto.id}/editar`} style={{
-                    flex: 1, padding: '7px 10px', borderRadius: 7,
-                    fontSize: 12, fontWeight: 700, textAlign: 'center',
-                    background: '#eff6ff', color: '#1d4ed8',
-                    textDecoration: 'none', border: '1px solid #bfdbfe',
+                    flex: 1, padding: '10px', borderRadius: 10,
+                    fontSize: 13, fontWeight: 800, textAlign: 'center',
+                    background: 'rgba(59,130,246,.15)', color: '#60a5fa',
+                    textDecoration: 'none', border: '1.5px solid rgba(59,130,246,.3)', transition: 'all .2s'
                   }}>
                     ✏️ Editar
                   </Link>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   <form action={duplicarProdutoAction.bind(null, produto.id) as any} style={{ flex: 1 }}>
                     <button type="submit" style={{
-                      width: '100%', padding: '7px 10px', borderRadius: 7,
-                      fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                      background: '#f5f3ff', color: '#6d28d9',
-                      border: '1px solid #ddd6fe',
+                      width: '100%', padding: '10px', borderRadius: 10,
+                      fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                      background: 'rgba(255,255,255,.05)', color: '#e2e8f0',
+                      border: '1.5px solid rgba(255,255,255,.1)', transition: 'all .2s'
                     }}>
                       📋 Duplicar
                     </button>
                   </form>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <div style={{ display: 'flex', gap: 10 }}>
                   <form action={toggleProdutoAtivoAction.bind(null, produto.id, isAtivo) as any} style={{ flex: 1 }}>
                     <button type="submit" style={{
-                      width: '100%', padding: '7px 10px', borderRadius: 7,
-                      fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
-                      background: isAtivo ? '#fee2e2' : '#dcfce7',
-                      color: isAtivo ? '#991b1b' : '#166534',
+                      width: '100%', padding: '10px', borderRadius: 10,
+                      fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                      background: isAtivo ? 'rgba(239,68,68,.1)' : 'rgba(16,185,129,.15)',
+                      color: isAtivo ? '#fca5a5' : '#34d399', border: isAtivo ? '1.5px solid rgba(239,68,68,.2)' : '1.5px solid rgba(16,185,129,.3)',
                     }}>
                       {isAtivo ? '⏸ Desativar' : '▶ Ativar'}
                     </button>
                   </form>
 
                   {isAtivo && (
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     <form action={toggleEsgotadoAction.bind(null, produto.id, isEsgotado) as any} style={{ flex: 1 }}>
                       <button type="submit" style={{
-                        width: '100%', padding: '7px 10px', borderRadius: 7,
-                        fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
-                        background: isEsgotado ? '#d1fae5' : '#fef3c7',
-                        color: isEsgotado ? '#065f46' : '#92400e',
+                        width: '100%', padding: '10px', borderRadius: 10,
+                        fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                        background: isEsgotado ? 'rgba(16,185,129,.1)' : 'rgba(245,158,11,.15)',
+                        color: isEsgotado ? '#34d399' : '#fbbf24', border: isEsgotado ? '1.5px solid rgba(16,185,129,.2)' : '1.5px solid rgba(245,158,11,.3)',
                       }}>
                         {isEsgotado ? '↩ Reativar' : '🚫 Esgotar'}
                       </button>
@@ -339,18 +324,16 @@ export default async function AdminProdutos({
                   )}
                 </div>
 
-                {/* Linha 3: Excluir (só se inativo, para evitar acidentes) */}
                 {!isAtivo && (
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   <form action={excluirProdutoAction.bind(null, produto.id) as any}>
                     <button
                       type="submit"
                       onClick={e => { if (!confirm(`Excluir "${produto.nome}" permanentemente?`)) e.preventDefault() }}
                       style={{
-                        width: '100%', padding: '7px 10px', borderRadius: 7,
-                        fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                        background: 'transparent', color: '#94a3b8',
-                        border: '1px dashed #e2e8f0',
+                        width: '100%', padding: '10px', borderRadius: 10,
+                        fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                        background: 'transparent', color: '#64748b',
+                        border: '1.5px dashed rgba(255,255,255,.1)',
                       }}
                     >
                       🗑 Excluir produto
@@ -363,22 +346,24 @@ export default async function AdminProdutos({
         })}
       </div>
 
-      {lista.length === 0 && (
+      {lista.length === 0 && !erroQuery && (
         <div style={{
-          background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 12,
-          padding: '60px 20px', textAlign: 'center',
-          fontSize: 14, color: '#94a3b8',
+          background: 'rgba(255,255,255,.02)', border: '1.5px dashed rgba(255,255,255,.1)', borderRadius: 20,
+          padding: '80px 20px', textAlign: 'center', backdropFilter: 'blur(10px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12
         }}>
-          Nenhum produto cadastrado.
+          <div style={{ fontSize: 40, opacity: 0.5 }}>📦</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc' }}>Nenhum produto cadastrado.</div>
+          <div style={{ fontSize: 13, color: '#94a3b8' }}>Os produtos que você adicionar aparecerão aqui.</div>
         </div>
       )}
 
       {totalPages > 1 && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-          flexWrap: 'wrap',
+          flexWrap: 'wrap', padding: '10px 0'
         }}>
-          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+          <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700 }}>
             Página {currentPage} de {totalPages}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -406,15 +391,15 @@ function StockPill({ children, tone }: {
   tone: 'neutral' | 'warning' | 'danger' | 'muted'
 }) {
   const styles: Record<typeof tone, { color: string; background: string; border: string }> = {
-    neutral: { color: '#475569', background: '#f8fafc', border: '#e2e8f0' },
-    warning: { color: '#92400e', background: '#fffbeb', border: '#fde68a' },
-    danger: { color: '#b91c1c', background: '#fef2f2', border: '#fecaca' },
-    muted: { color: '#6b7280', background: '#f3f4f6', border: '#d1d5db' },
+    neutral: { color: '#94a3b8', background: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.1)' },
+    warning: { color: '#fbbf24', background: 'rgba(245,158,11,.1)', border: 'rgba(245,158,11,.2)' },
+    danger: { color: '#fca5a5', background: 'rgba(239,68,68,.1)', border: 'rgba(239,68,68,.2)' },
+    muted: { color: '#64748b', background: 'rgba(255,255,255,.02)', border: 'rgba(255,255,255,.05)' },
   }
 
   return (
     <span style={{
-      fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 8px',
+      fontSize: 10, fontWeight: 800, borderRadius: 6, padding: '3px 8px', textTransform: 'uppercase', letterSpacing: '.05em',
       color: styles[tone].color, background: styles[tone].background,
       border: `1px solid ${styles[tone].border}`,
     }}>
@@ -434,19 +419,20 @@ function buildPageHref(pathname: string, params: Record<string, string | undefin
 
 function actionButton(background: string, color: string, border: string) {
   return {
-    height: 36,
-    padding: '0 12px',
-    borderRadius: 999,
+    height: 44,
+    padding: '0 20px',
+    borderRadius: 12,
     background,
     color,
     border,
-    fontSize: 12,
-    fontWeight: 700,
+    fontSize: 13,
+    fontWeight: 800,
     cursor: 'pointer',
     textDecoration: 'none',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    transition: 'all .2s'
   } as const
 }
 
@@ -455,14 +441,16 @@ function pagerButton(enabled: boolean) {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 36,
-    padding: '0 12px',
-    borderRadius: 999,
+    height: 40,
+    padding: '0 16px',
+    borderRadius: 10,
     textDecoration: 'none',
-    fontSize: 12,
-    fontWeight: 700,
-    background: enabled ? '#0f172a' : '#e5e7eb',
-    color: enabled ? '#fff' : '#94a3b8',
+    fontSize: 13,
+    fontWeight: 800,
+    background: enabled ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.02)',
+    color: enabled ? '#f8fafc' : '#475569',
+    border: enabled ? '1px solid rgba(255,255,255,.15)' : '1px solid rgba(255,255,255,.05)',
     pointerEvents: enabled ? 'auto' : 'none',
+    transition: 'all .2s'
   } as const
 }

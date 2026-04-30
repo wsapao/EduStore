@@ -25,24 +25,26 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Renova sessão
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Rotas protegidas — redireciona para login se não autenticado
-  const protectedPaths = ['/loja', '/pedidos', '/perfil']
+  // Lista de rotas protegidas
+  const protectedPaths = ['/loja', '/pedidos', '/perfil', '/admin']
   const isProtected = protectedPaths.some(p => request.nextUrl.pathname.startsWith(p))
+  const isLogin = request.nextUrl.pathname === '/login'
 
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
+  // Só faz a chamada pesada (rede) para o Supabase se for uma rota que precise
+  if (isProtected || isLogin) {
+    const { data: { user } } = await supabase.auth.getUser()
 
-  // Redireciona usuário autenticado que tenta acessar /login
-  if (user && request.nextUrl.pathname === '/login') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/loja'
-    return NextResponse.redirect(url)
+    if (isProtected && !user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+
+    if (isLogin && user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/loja'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse

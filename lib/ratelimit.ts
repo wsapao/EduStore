@@ -73,6 +73,9 @@ async function upstashCheck(
   if (!url || !token) return null
 
   try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 1500) // 1.5s timeout
+
     // INCR + EXPIRE em pipeline — primeira chamada define TTL
     const pipelineRes = await fetch(`${url}/pipeline`, {
       method: 'POST',
@@ -86,7 +89,10 @@ async function upstashCheck(
         ['TTL', key],
       ]),
       cache: 'no-store',
+      signal: controller.signal,
     })
+
+    clearTimeout(timeoutId)
 
     if (!pipelineRes.ok) return null
 

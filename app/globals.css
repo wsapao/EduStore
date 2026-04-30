@@ -1,33 +1,49 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 /* ── DESIGN TOKENS — Loja Virtual Escolar ── */
 :root {
-  --brand:          #1a2f5a;
-  --brand-mid:      #243b70;
-  --brand-light:    #eef2ff;
-  --accent:         #5b6af8;
-  --accent-glow:    rgba(91, 106, 248, 0.15);
-  --success:        #10b981;
-  --success-light:  #d1fae5;
-  --danger:         #ef4444;
-  --danger-light:   #fee2e2;
-  --warn:           #f59e0b;
-  --warn-light:     #fef9c3;
+  --brand:        #0a1628;
+  --brand-mid:    #1a2f5a;
+  --accent:       #f59e0b;
+  --accent-dark:  #78350f;
+  --accent-soft:  #fef9ec;
+  --accent-glow:  rgba(245,158,11,.45);
+  
+  --success:      #16a34a;
+  --success-soft: #dcfce7;
+  --danger:       #dc2626;
+  --danger-soft:  #fef2f2;
+  --warn:         #d97706;
+  --warn-soft:    #fffbeb;
 
-  --bg:             #f5f6fa;
-  --surface:        #ffffff;
-  --surface-2:      #f8f9fc;
-  --border:         #e8eaf0;
-  --border-strong:  #d1d5e0;
+  --bg:           #f4f6fb;
+  --surface:      #ffffff;
+  --surface-2:    #f8f9fd;
+  --border:       #e4e8f0;
+  --border-strong: #d1d5e0;
 
-  --text-1:         #111827;
-  --text-2:         #4b5563;
-  --text-3:         #9ca3af;
+  --text-1:       #111827;
+  --text-2:       #374151;
+  --text-3:       #9ca3af;
 
+  /* Categorias (Novo Redesign) */
+  --cat-passeios:        linear-gradient(135deg,#0ea5e9,#0284c7);
+  --cat-eventos:         linear-gradient(135deg,#8b5cf6,#7c3aed);
+  --cat-materiais:       linear-gradient(135deg,#0d9488,#0891b2);
+  --cat-uniforme:        linear-gradient(135deg,#f43f5e,#e11d48);
+  --cat-segunda-chamada: linear-gradient(135deg,#f59e0b,#d97706);
+  --cat-outros:          linear-gradient(135deg,#6b7280,#4b5563);
+
+  /* Sombras (Atualizadas) */
   --shadow-xs: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
   --shadow-sm: 0 2px 8px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.04);
   --shadow-md: 0 4px 16px rgba(0,0,0,.09), 0 2px 6px rgba(0,0,0,.05);
   --shadow-lg: 0 12px 40px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+  --shadow-card:  0 2px 10px rgba(0,0,0,.06);
+  --shadow-card-active: 0 0 0 3px rgba(245,158,11,.2), 0 2px 12px rgba(0,0,0,.07);
+  --shadow-amber: 0 4px 14px rgba(245,158,11,.45);
+  --shadow-hero:  0 60px 120px rgba(0,0,0,.7);
 
   --r-sm:   8px;
   --r-md:   12px;
@@ -47,19 +63,24 @@
   /* Paleta da marca */
   --color-brand:         var(--brand);
   --color-brand-mid:     var(--brand-mid);
-  --color-brand-light:   var(--brand-light);
   --color-accent:        var(--accent);
+  --color-accent-dark:   var(--accent-dark);
+  --color-accent-soft:   var(--accent-soft);
   --color-success:       var(--success);
-  --color-success-light: var(--success-light);
+  --color-success-soft:  var(--success-soft);
   --color-danger:        var(--danger);
-  --color-danger-light:  var(--danger-light);
+  --color-danger-soft:   var(--danger-soft);
   --color-warn:          var(--warn);
-  --color-warn-light:    var(--warn-light);
+  --color-warn-soft:     var(--warn-soft);
 
   /* Superfícies */
   --color-surface:   var(--surface);
   --color-surface-2: var(--surface-2);
   --color-border:    var(--border);
+
+  /* Identidade EduStore v4 */
+  --color-navy: #0a1628;
+  --color-amber: #f59e0b;
 
   /* Texto */
   --color-text-1: var(--text-1);
@@ -131,14 +152,34 @@ body {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 @keyframes pulse-red {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, .5); }
   50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
+@keyframes slideCart {
+  from { transform: translateY(80px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes pulseRing {
+  0%   { transform: scale(1); opacity: .8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
 
 .animate-fade-up  { animation: fade-up  .4s var(--ease) both; }
 .animate-fade-in  { animation: fade-in  .3s var(--ease) both; }
+.animate-fadeUp  { animation: fadeUp  .3s var(--ease) both; }
+.animate-fadeIn  { animation: fadeIn  .2s var(--ease) both; }
 .animate-pulse-red { animation: pulse-red 1.5s ease infinite; }
+.animate-slideCart { animation: slideCart 0.35s cubic-bezier(.34,1.56,.64,1) both; }
+.animate-pulseRing { animation: pulseRing 2.5s ease-out infinite; }
 
 /* Scrollbar invisível */
 .no-scrollbar { scrollbar-width: none; }
@@ -153,14 +194,27 @@ body {
     display: none !important;
   }
 
-  .pedido-print-root,
-  .ingresso-print-root {
-    min-height: auto !important;
-    background: #fff !important;
-  }
-
   .pedido-print-root a,
   .ingresso-print-root a {
     text-decoration: none !important;
+  }
+}
+
+/* Fix para Layout do Admin (garante o funcionamento independente do JIT do Tailwind) */
+@media (min-width: 768px) {
+  .md-sidebar-offset {
+    margin-left: 260px !important;
+  }
+  .md-hide {
+    display: none !important;
+  }
+  .md-show-flex {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-hide {
+    display: none !important;
   }
 }

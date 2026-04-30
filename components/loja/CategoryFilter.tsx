@@ -1,15 +1,14 @@
 'use client'
 
-import React from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useEffect, useState, useRef } from 'react'
 import type { CategoriaProduto } from '@/types/database'
 
 export const CATEGORIAS: Record<CategoriaProduto | 'todas', { label: string; icon: string }> = {
-  todas: { label: 'Todos', icon: '' },
+  todas: { label: 'Tudo', icon: '✦' },
   eventos: { label: 'Eventos', icon: '🎉' },
   passeios: { label: 'Passeios', icon: '🚌' },
   segunda_chamada: { label: '2ª Chamada', icon: '📝' },
-  materiais: { label: 'Materiais', icon: '📚' },
+  materiais: { label: 'Mat.', icon: '📚' },
   uniforme: { label: 'Uniforme', icon: '👕' },
   outros: { label: 'Outros', icon: '📦' },
 }
@@ -19,62 +18,119 @@ interface Props {
 }
 
 export function CategoryFilter({ counts }: Props) {
-  const router = useRouter()
-  const sp = useSearchParams()
-  const selected = (sp.get('categoria') ?? 'todas') as CategoriaProduto | 'todas'
-
-  function select(cat: string) {
-    const params = new URLSearchParams(sp.toString())
-    if (cat === 'todas') params.delete('categoria')
-    else params.set('categoria', cat)
-    router.push(`/loja?${params.toString()}`)
-  }
+  const [activeCategory, setActiveCategory] = useState<string>('todas')
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const tabs = Object.entries(CATEGORIAS).filter(([cat]) => {
     if (cat === 'todas') return true
     return (counts[cat as CategoriaProduto] ?? 0) > 0
   })
 
+  // ScrollSpy observer
+  useEffect(() => {
+    const sections = Array.from(document.querySelectorAll('section[data-cat-key]'))
+    if (sections.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const cat = entry.target.getAttribute('data-cat-key')
+            if (cat) {
+              setActiveCategory(cat)
+              const activePill = document.getElementById(`pill-${cat}`)
+              if (activePill && scrollRef.current) {
+                const container = scrollRef.current
+                const scrollLeft = activePill.offsetLeft - (container.offsetWidth / 2) + (activePill.offsetWidth / 2)
+                container.scrollTo({ left: scrollLeft, behavior: 'smooth' })
+              }
+            }
+          }
+        })
+      },
+      { rootMargin: '-20% 0px -60% 0px' }
+    )
+
+    sections.forEach((sec) => observer.observe(sec))
+    return () => observer.disconnect()
+  }, [])
+
+  function scrollToCat(cat: string) {
+    setActiveCategory(cat)
+    if (cat === 'todas') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    const target = document.querySelector(`section[data-cat-key="${cat}"]`)
+    if (target) {
+      const offset = 120
+      const elementPosition = target.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
+    }
+  }
+
   if (tabs.length <= 1) return null
 
   return (
-    <section style={{ padding:'16px 20px 0' }}>
-      <div style={{
-        display:'flex', gap:8, overflowX:'auto',
-        paddingBottom:2, scrollbarWidth:'none',
-      }}>
-        {tabs.map(([cat, { label, icon }]) => {
-          const isActive = selected === cat
-          const count = cat === 'todas'
-            ? (counts.todas ?? 0)
-            : (counts[cat as CategoriaProduto] ?? 0)
+    <div 
+      ref={scrollRef}
+      className="no-scrollbar"
+      style={{
+        display: 'flex',
+        gap: 6,
+        overflowX: 'auto',
+        padding: '10px 14px 4px'
+      }}
+    >
+      {tabs.map(([cat, { label, icon }]) => {
+        const isActive = activeCategory === cat
+        const count = cat === 'todas'
+          ? (counts.todas ?? 0)
+          : (counts[cat as CategoriaProduto] ?? 0)
 
-          return (
-            <button key={cat} onClick={() => select(cat)} style={{
-              display:'flex', alignItems:'center', gap:6,
-              padding:'8px 16px', borderRadius:'var(--r-pill)',
-              border: `1.5px solid ${isActive ? 'var(--brand)' : 'var(--border)'}`,
-              background: isActive ? 'var(--brand)' : 'var(--surface)',
-              fontFamily:'inherit', fontSize:13, fontWeight:600,
-              color: isActive ? 'white' : 'var(--text-2)',
-              cursor:'pointer', whiteSpace:'nowrap', flexShrink:0,
-              transition:'all .2s var(--ease)',
-              boxShadow: isActive ? '0 2px 10px rgba(26,47,90,.3)' : 'var(--shadow-xs)',
+        return (
+          <button 
+            key={cat} 
+            id={`pill-${cat}`}
+            onClick={() => scrollToCat(cat)} 
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '6px 11px',
+              borderRadius: 10,
+              fontSize: 11,
+              fontWeight: 700,
+              flexShrink: 0,
+              border: isActive ? '1.5px solid transparent' : '1.5px solid rgba(0,0,0,.07)',
+              background: isActive ? '#f59e0b' : 'white',
+              color: isActive ? '#78350f' : '#374151',
+              boxShadow: isActive ? '0 3px 10px rgba(245,158,11,.4)' : 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {icon && <span>{icon}</span>}
+            <span>{label}</span>
+            <span style={{
+              fontSize: 9,
+              fontWeight: 800,
+              borderRadius: 99,
+              padding: '1px 4px',
+              lineHeight: 1.5,
+              background: isActive ? 'rgba(0,0,0,.12)' : '#f0f2f8',
+              color: isActive ? '#78350f' : '#9ca3af'
             }}>
-              {icon && <span>{icon}</span>}
-              {label}
-              <span style={{
-                fontSize:10, fontWeight:700,
-                background: isActive ? 'rgba(255,255,255,.25)' : 'var(--border)',
-                color: isActive ? 'white' : 'var(--text-3)',
-                borderRadius:'var(--r-pill)', padding:'1px 6px', lineHeight:1.6,
-              }}>
-                {count}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </section>
+              {count}
+            </span>
+          </button>
+        )
+      })}
+    </div>
   )
 }

@@ -32,11 +32,26 @@ export default async function ConfigurarCartinaPage({
 
   const { data: carteira } = await supabase
     .from('cantina_carteiras')
-    .select('id, saldo, limite_diario, ativo, bloqueio_motivo')
+    .select('id, saldo, limite_diario, ativo, bloqueio_motivo, senha_pin')
     .eq('aluno_id', aluno_id)
     .single()
 
   if (!carteira) redirect('/cantina')
+
+  // Buscar restrições atuais
+  const { data: restricoes } = await supabase
+    .from('cantina_restricoes')
+    .select('*')
+    .eq('aluno_id', aluno_id)
+
+  // Buscar todos os produtos da cantina da escola para preencher o select
+  // Primeiro, achar o escola_id do aluno
+  const { data: responsavel } = await supabase.from('responsaveis').select('escola_id').eq('id', user.id).single()
+  const { data: produtos } = await supabase
+    .from('cantina_produtos')
+    .select('id, nome, categoria')
+    .eq('escola_id', responsavel?.escola_id)
+    .order('nome')
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '16px 16px 100px' }}>
@@ -81,6 +96,9 @@ export default async function ConfigurarCartinaPage({
         limiteDiario={carteira.limite_diario}
         ativo={carteira.ativo}
         bloqueioMotivo={carteira.bloqueio_motivo}
+        hasPin={!!carteira.senha_pin}
+        restricoes={restricoes || []}
+        produtos={produtos || []}
       />
     </div>
   )

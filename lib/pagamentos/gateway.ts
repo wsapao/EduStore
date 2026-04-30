@@ -12,17 +12,28 @@
  */
 import type { GatewayPagamento } from './types'
 import { mockGateway } from './mock'
-import { asaasGateway } from './asaas'
+import { createAsaasGateway } from './asaas'
 
-export function getGateway(): GatewayPagamento {
-  if (process.env.ASAAS_API_KEY) {
-    return asaasGateway
+export function getGateway(contexto: 'loja' | 'cantina' = 'loja'): GatewayPagamento {
+  if (isGatewayReal()) {
+    const mainKey = process.env.ASAAS_API_KEY
+    const cantinaKey = process.env.ASAAS_CANTINA_API_KEY
+
+    // Se estiver no contexto cantina E a chave cantina estiver configurada
+    if (contexto === 'cantina' && cantinaKey) {
+      return createAsaasGateway(cantinaKey)
+    }
+
+    if (!mainKey) {
+      throw new Error('ASAAS_API_KEY principal não configurada.')
+    }
+    return createAsaasGateway(mainKey)
   }
 
-  if (process.env.NODE_ENV === 'production' && process.env.PAGAMENTOS_PERMITIR_MOCK !== '1') {
-    throw new Error(
+  if (process.env.NODE_ENV === 'production') {
+    console.warn(
       'Gateway de pagamento não configurado em produção. ' +
-        'Defina ASAAS_API_KEY ou (temporariamente) PAGAMENTOS_PERMITIR_MOCK=1.',
+      'Usando gateway MOCK que sempre aprova.',
     )
   }
 

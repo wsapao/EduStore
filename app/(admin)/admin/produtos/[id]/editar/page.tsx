@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ProdutoForm } from '../../ProdutoForm'
+import { getSeriesDisponiveis } from '@/lib/crm/series'
 import { normalizarProduto, normalizarVariantes } from '@/lib/produtos/normalizers'
 import type { Produto, ProdutoVariante } from '@/types/database'
 
@@ -27,6 +28,8 @@ export default async function EditarProdutoPage({ params }: Props) {
     .select('*')
     .eq('ativo', true)
     .order('nome')
+
+  const seriesDisponiveis = await getSeriesDisponiveis()
 
   if (!data) notFound()
 
@@ -73,7 +76,7 @@ export default async function EditarProdutoPage({ params }: Props) {
         </span>
       </div>
 
-      <ProdutoForm produto={produto} variantesDetalhadas={variantesDetalhadas} categorias={categorias ?? []} />
+      <ProdutoForm produto={produto} variantesDetalhadas={variantesDetalhadas} categorias={categorias ?? []} seriesDisponiveis={seriesDisponiveis} />
     </div>
   )
 }

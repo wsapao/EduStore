@@ -12,13 +12,6 @@ const METODOS: { value: MetodoPagamento; label: string; icon: string }[] = [
   { value: 'boleto', label: 'Boleto', icon: '📄' },
 ]
 
-const SERIES_OPTIONS = [
-  'Berçário I', 'Berçário II', 'Maternal I', 'Maternal II', 'Jardim I', 'Jardim II',
-  '1º ano EF', '2º ano EF', '3º ano EF', '4º ano EF', '5º ano EF',
-  '6º ano EF', '7º ano EF', '8º ano EF', '9º ano EF',
-  '1º ano EM', '2º ano EM', '3º ano EM',
-]
-
 const ICONS_SUGESTOES = ['🎉', '🚌', '📝', '📚', '👕', '📦', '🎭', '🏊', '🎨', '🏅', '🌿', '🎸', '⚽', '🎓']
 const VARIANTES_PRESETS = [
   { label: 'P / M / G / GG', values: ['P', 'M', 'G', 'GG'] },
@@ -42,9 +35,10 @@ interface Props {
   produto?: Produto   // undefined = criação, definido = edição
   variantesDetalhadas: ProdutoVariante[]
   categorias: Categoria[]
+  seriesDisponiveis: string[]
 }
 
-export function ProdutoForm({ produto, variantesDetalhadas, categorias }: Props) {
+export function ProdutoForm({ produto, variantesDetalhadas, categorias, seriesDisponiveis }: Props) {
   const router  = useRouter()
   const isEdit  = !!produto
   const [isPending, startTransition] = useTransition()
@@ -54,8 +48,10 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias }: Props)
   const [categoria,    setCategoria]    = useState<string>(produto?.categoria ?? categorias[0]?.nome ?? 'Outros')
   const [metodos,      setMetodos]      = useState<MetodoPagamento[]>(produto?.metodos_aceitos ?? ['pix'])
   const [series,       setSeries]       = useState<string[]>(produto?.series ?? [])
-  const [geraIngresso, setGeraIngresso] = useState(produto?.gera_ingresso ?? false)
   const [aceitaVouchers, setAceitaVouchers] = useState(produto?.aceita_vouchers ?? true)
+  const [geraIngresso, setGeraIngresso] = useState(produto?.gera_ingresso ?? false)
+  const [exigeTermo,   setExigeTermo]   = useState(produto?.exige_termo ?? false)
+  const [textoTermo,   setTextoTermo]   = useState(produto?.texto_termo ?? '')
   const [temCartao,    setTemCartao]    = useState(produto?.metodos_aceitos?.includes('cartao') ?? false)
   const [iconVal,      setIconVal]      = useState(produto?.icon ?? '')
   const [ativo,        setAtivo]        = useState(produto?.ativo ?? true)
@@ -152,6 +148,13 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias }: Props)
     else fd.delete('gera_ingresso')
     if (aceitaVouchers) fd.set('aceita_vouchers', 'on')
     else fd.delete('aceita_vouchers')
+    if (exigeTermo) {
+      fd.set('exige_termo', 'on')
+      fd.set('texto_termo', textoTermo)
+    } else {
+      fd.delete('exige_termo')
+      fd.delete('texto_termo')
+    }
     if (ativo) fd.set('ativo', 'on')
     else fd.delete('ativo')
 
@@ -595,13 +598,40 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias }: Props)
         )}
       </Section>
 
+      {/* ── Seção: Termo de Responsabilidade ── */}
+      <Section title="Documentação Legal">
+        <Toggle
+          checked={exigeTermo}
+          onChange={setExigeTermo}
+          label="Exigir assinatura de Termo de Aceite"
+          desc="O responsável precisará concordar com este termo para finalizar a compra."
+        />
+
+        {exigeTermo && (
+          <div style={{ marginTop: 16 }}>
+            <Label req>TEXTO DO TERMO</Label>
+            <textarea
+              value={textoTermo}
+              onChange={e => setTextoTermo(e.target.value)}
+              placeholder="Cole aqui o contrato, regras do passeio ou autorização que o pai precisa aceitar..."
+              rows={8}
+              style={{
+                ...inputStyle, height: 'auto', padding: '12px 14px',
+                resize: 'vertical', lineHeight: 1.5,
+              }}
+              required
+            />
+          </div>
+        )}
+      </Section>
+
       {/* ── Seção: Restrição por série ── */}
       <Section title="Séries permitidas">
         <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 10px', lineHeight: 1.5 }}>
           Selecione as séries que podem comprar este produto. Se nenhuma for selecionada, o produto aparece para todos.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {SERIES_OPTIONS.map(s => {
+          {seriesDisponiveis.map(s => {
             const sel = series.includes(s)
             return (
               <button

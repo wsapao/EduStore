@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { logoutAction } from '@/app/actions/auth'
 import { getEscolaByUser, escolaThemeStyle } from '@/lib/escola/getEscola'
+import { AdminSidebar } from './AdminSidebar'
+import { AdminMobileNav } from './AdminMobileNav'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -18,153 +20,45 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const escola = await getEscolaByUser(user.id)
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse at 30% 20%, #1e3a5f 0%, #0a1628 60%)', fontFamily: '"Plus Jakarta Sans", sans-serif', display: 'flex' }}>
       <style dangerouslySetInnerHTML={{ __html: escolaThemeStyle(escola) }} />
 
-      {/* Top bar */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 200,
-        height: 56, background: '#0f172a',
-        display: 'flex', alignItems: 'center',
-        padding: '0 20px', gap: 12,
-        borderBottom: '1px solid #1e293b',
-      }}>
-        {/* Logo */}
-        <Link href="/admin" style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          textDecoration: 'none', flexShrink: 0,
+      {/* SIDEBAR — Desktop */}
+      <AdminSidebar escolaNome={escola.nome} iniciais={iniciais} />
+
+      {/* MAIN CONTENT WRAPPER */}
+      <div className="flex-1 md-sidebar-offset flex flex-col min-h-screen">
+        
+        {/* Header Mobile Only */}
+        <header className="md-hide" style={{
+          position: 'sticky', top: 0, zIndex: 90,
+          height: 64, background: 'rgba(10, 22, 40, 0.85)',
+          backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 20px', borderBottom: '1px solid rgba(255,255,255,0.05)',
         }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16,
-          }}>
-            🏫
-          </div>
-          <span style={{ fontSize: 14, fontWeight: 800, color: '#f1f5f9', letterSpacing: '-.01em' }}>
-            Admin
-          </span>
-          <span style={{
-            fontSize: 10, fontWeight: 700, color: '#94a3b8',
-            background: '#1e293b', padding: '2px 6px', borderRadius: 4, letterSpacing: '.05em',
-            maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            {escola.nome.toUpperCase()}
-          </span>
-        </Link>
-
-        <div style={{ flex: 1 }} />
-
-        {/* Nav links — desktop */}
-        <nav className="hidden md:flex gap-1" style={{ alignItems: 'center' }}>
-          {[
-            { href: '/admin', label: 'Dashboard', icon: '📊' },
-            { href: '/admin/pedidos', label: 'Pedidos', icon: '🧾' },
-            { href: '/admin/produtos', label: 'Produtos', icon: '📦' },
-            { href: '/admin/responsaveis', label: 'Responsáveis', icon: '👥' },
-            { href: '/admin/alunos', label: 'Alunos', icon: '🎒' },
-            { href: '/admin/checkin', label: 'Check-in', icon: '📷' },
-            { href: '/admin/relatorio', label: 'Relatório', icon: '📋' },
-            { href: '/admin/cantina', label: 'Cantina', icon: '🍽️' },
-          ].map(({ href, label, icon }) => (
-            <Link key={href} href={href} style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '6px 12px', borderRadius: 6,
-              fontSize: 13, fontWeight: 600, color: '#94a3b8',
-              textDecoration: 'none',
-            }}>
-              <span>{icon}</span>
-              <span>{label}</span>
-            </Link>
-          ))}
-
-          {/* Configurações dropdown */}
-          <div style={{ position: 'relative' }} className="group">
-            <button style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '6px 12px', borderRadius: 6,
-              fontSize: 13, fontWeight: 600, color: '#94a3b8',
-              background: 'none', border: 'none', cursor: 'pointer',
-            }}>
-              <span>⚙️</span>
-              <span>Config</span>
-              <span style={{ fontSize: 10, marginLeft: 2 }}>▾</span>
-            </button>
-            <div className="group-hover:flex" style={{
-              display: 'none', position: 'absolute', top: '100%', right: 0,
-              background: '#1e293b', border: '1px solid #334155', borderRadius: 10,
-              padding: 6, minWidth: 200, zIndex: 300, flexDirection: 'column', gap: 2,
-              marginTop: 4,
-            }}>
-              {[
-                { href: '/admin/produtos/categorias', label: 'Categorias de produtos', icon: '🏷️' },
-                { href: '/admin/vouchers', label: 'Vouchers e Descontos', icon: '🎟️' },
-              ].map(({ href, label, icon }) => (
-                <Link key={href} href={href} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '10px 12px', borderRadius: 8,
-                  fontSize: 13, fontWeight: 600, color: '#cbd5e1',
-                  textDecoration: 'none',
-                }}>
-                  <span>{icon}</span>
-                  <span>{label}</span>
-                </Link>
-              ))}
+          <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+              🏫
             </div>
+            <span style={{ fontSize: 16, fontWeight: 900, color: '#f8fafc' }}>Admin</span>
+          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Link href="/loja" style={{ fontSize: 20, textDecoration: 'none' }}>🏪</Link>
+            <form action={logoutAction}>
+              <button type="submit" style={{ fontSize: 20, background: 'none', border: 'none' }}>🚪</button>
+            </form>
           </div>
-        </nav>
+        </header>
 
-        {/* Avatar + sair */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 700, color: '#fff',
-          }}>
-            {iniciais}
-          </div>
-          <form action={logoutAction}>
-            <button type="submit" style={{
-              fontSize: 12, fontWeight: 600, color: '#94a3b8',
-              background: 'none', border: 'none', cursor: 'pointer',
-              padding: '4px 8px', borderRadius: 4,
-            }}>
-              Sair
-            </button>
-          </form>
-        </div>
-      </header>
-
-      {/* Conteúdo */}
-      <main className="flex-1 w-full max-w-[1200px] mx-auto p-6 pb-24 md:pb-6">
-        {children}
-      </main>
+        {/* Conteúdo */}
+        <main className="flex-1 w-full max-w-[1400px] mx-auto p-6 pb-28 md:pb-10 md:p-10">
+          {children}
+        </main>
+      </div>
 
       {/* Bottom nav — mobile */}
-      <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-[100] flex h-[60px] bg-slate-900 border-t border-slate-800"
-      >
-        {[
-          { href: '/admin', label: 'Dashboard', icon: '📊' },
-          { href: '/admin/pedidos', label: 'Pedidos', icon: '🧾' },
-          { href: '/admin/responsaveis', label: 'Pessoas', icon: '👥' },
-          { href: '/admin/alunos', label: 'Alunos', icon: '🎒' },
-          { href: '/admin/produtos', label: 'Produtos', icon: '📦' },
-          { href: '/admin/produtos/categorias', label: 'Categ.', icon: '🏷️' },
-        ].map(({ href, label, icon }) => (
-          <Link key={href} href={href} style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: 3,
-            textDecoration: 'none', color: '#64748b',
-            fontSize: 10, fontWeight: 600,
-          }}>
-            <span style={{ fontSize: 18 }}>{icon}</span>
-            <span>{label}</span>
-          </Link>
-        ))}
-      </nav>
+      <AdminMobileNav />
     </div>
   )
 }

@@ -23,6 +23,7 @@ export interface CreateOrderInput {
   parcelas?: number
   dadosCartao?: DadosCartao
   voucher_codigo?: string
+  termo_aceito?: boolean
 }
 
 export type CreateOrderResult =
@@ -130,6 +131,8 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
       total: finalTotal,
       voucher_id: voucherIdParaSalvar,
       desconto_aplicado: descontoAplicado > 0 ? descontoAplicado : undefined,
+      termo_aceito: input.termo_aceito ?? false,
+      termo_aceito_em: input.termo_aceito ? new Date().toISOString() : null,
     })
     .select()
     .single()
@@ -152,7 +155,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
   if (itensErr) {
     // Rollback: remove pedido
     await supabase.from('pedidos').delete().eq('id', pedido.id)
-    return { success: false, error: 'Erro ao salvar itens do pedido.' }
+    return { success: false, error: 'Erro ao salvar itens do pedido: ' + itensErr.message }
   }
 
   // Registra uso do voucher

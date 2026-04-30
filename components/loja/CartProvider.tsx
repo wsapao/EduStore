@@ -120,6 +120,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     hydrated: state.hydrated,
     total,
     add: (produto, aluno, varianteId, variante) => {
+      // Regra Anti-Carrinho Misto (Apenas se a escola configurou CNPJs separados)
+      if (process.env.NEXT_PUBLIC_SEPARATE_CANTINA_CNPJ === 'true') {
+        const isCantina = produto.categoria.toLowerCase() === 'cantina'
+        const hasCantina = state.items.some(i => i.produto.categoria.toLowerCase() === 'cantina')
+        const hasLoja = state.items.some(i => i.produto.categoria.toLowerCase() !== 'cantina')
+
+        if (isCantina && hasLoja) {
+          alert('Você já possui itens da Loja Escolar no carrinho.\n\nPara adicionar produtos da Cantina, por favor, finalize a compra atual ou limpe o carrinho.')
+          return
+        }
+
+        if (!isCantina && hasCantina) {
+          alert('Você já possui itens da Cantina no carrinho.\n\nPara adicionar produtos da Loja Escolar, por favor, finalize a compra atual ou limpe o carrinho.')
+          return
+        }
+      }
+
       posthog?.capture('add_to_cart', {
         produto_id: produto.id,
         produto_nome: produto.nome,

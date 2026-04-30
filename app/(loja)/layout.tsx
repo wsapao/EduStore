@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { CartProvider } from '@/components/loja/CartProvider'
-import { LojaHeader } from '@/components/loja/LojaHeader'
 import { CartDrawer } from '@/components/loja/CartDrawer'
 import { CartBar } from '@/components/loja/CartBar'
+import { BottomNavigation } from '@/components/loja/BottomNavigation'
 import { escolaThemeStyle, ESCOLA_FALLBACK } from '@/lib/escola/getEscola'
 import type { Escola, Responsavel } from '@/types/database'
 
@@ -30,12 +30,12 @@ export default async function LojaLayout({ children }: { children: React.ReactNo
   return (
     <CartProvider>
       <style dangerouslySetInnerHTML={{ __html: escolaThemeStyle(escola) }} />
-      <div style={{ minHeight:'100vh', background:'var(--bg)', paddingBottom:100 }}>
-        <LojaHeader responsavel={responsavel} escola={escola} />
+      <div style={{ minHeight:'100vh', background:'var(--bg)', paddingBottom: '64px' }}>
         {children}
       </div>
       <CartDrawer />
       <CartBar />
+      <BottomNavigation />
     </CartProvider>
   )
 }

@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { criarVoucherAction, toggleVoucherAction, excluirVoucherAction } from '@/app/actions/admin'
+import { criarVoucherAction, toggleVoucherAction, excluirVoucherAction, excluirVouchersLoteAction } from '@/app/actions/admin'
 import type { Voucher, Produto } from '@/types/database'
 
 export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; produtos: Pick<Produto, 'id' | 'nome'>[] }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
+  const [gerarAleatorio, setGerarAleatorio] = useState(false)
+  const [selectedVouchers, setSelectedVouchers] = useState<string[]>([])
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -20,6 +22,7 @@ export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; pr
         return
       }
       ;(e.target as HTMLFormElement).reset()
+      setGerarAleatorio(false)
     })
   }
 
@@ -37,6 +40,34 @@ export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; pr
     })
   }
 
+  function handleBatchDelete() {
+    if (selectedVouchers.length === 0) return
+    if (!confirm(`Tem certeza que deseja excluir permanentemente ${selectedVouchers.length} voucher(s)?`)) return
+    
+    startTransition(async () => {
+      const res = await excluirVouchersLoteAction(selectedVouchers)
+      if (!res?.success) {
+        alert(res?.error || 'Erro ao excluir vouchers em lote')
+      } else {
+        setSelectedVouchers([])
+      }
+    })
+  }
+
+  function toggleVoucherSelection(id: string) {
+    setSelectedVouchers(prev => 
+      prev.includes(id) ? prev.filter(vId => vId !== id) : [...prev, id]
+    )
+  }
+
+  function toggleAllVouchers(checked: boolean) {
+    if (checked) {
+      setSelectedVouchers(vouchers.map(v => v.id))
+    } else {
+      setSelectedVouchers([])
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Formulário de Criação */}
@@ -44,24 +75,60 @@ export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; pr
         background: '#fff', border: '1.5px solid var(--border)', borderRadius: 16, padding: 24,
         display: 'flex', flexDirection: 'column', gap: 20
       }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-1)' }}>Criar novo cupom</div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-1)' }}>Criar novos cupons</div>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+          {/* Opção Aleatório */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, gridColumn: '1 / -1' }}>
+            <input 
+              type="checkbox" 
+              name="gerar_aleatorio" 
+              id="gerar_aleatorio"
+              checked={gerarAleatorio}
+              onChange={(e) => setGerarAleatorio(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+            <label htmlFor="gerar_aleatorio" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', cursor: 'pointer' }}>
+              Gerar códigos aleatórios (em lote)
+            </label>
+          </div>
+
           {/* Código */}
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 6 }}>
-              CÓDIGO DO CUPOM *
+              {gerarAleatorio ? 'PREFIXO DO CUPOM (Opcional)' : 'CÓDIGO DO CUPOM *'}
             </label>
             <input
               name="codigo"
-              required
-              placeholder="Ex: VOLTAASAULAS"
+              required={!gerarAleatorio}
+              placeholder={gerarAleatorio ? "Ex: LOTE" : "Ex: VOLTAASAULAS"}
               style={{
                 width: '100%', height: 44, padding: '0 14px', borderRadius: 10, textTransform: 'uppercase',
                 border: '1.5px solid var(--border)', background: 'var(--surface-2)', fontSize: 14, fontWeight: 700
               }}
             />
           </div>
+
+          {/* Quantidade (Se aleatório) */}
+          {gerarAleatorio && (
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 6 }}>
+                QUANTIDADE A GERAR *
+              </label>
+              <input
+                name="quantidade"
+                type="number"
+                required
+                min="1"
+                max="500"
+                defaultValue="10"
+                style={{
+                  width: '100%', height: 44, padding: '0 14px', borderRadius: 10,
+                  border: '1.5px solid var(--border)', background: 'var(--surface-2)', fontSize: 14, fontWeight: 700
+                }}
+              />
+            </div>
+          )}
 
           {/* Tipo de Desconto */}
           <div>
@@ -104,7 +171,7 @@ export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; pr
           {/* Limite de Usos */}
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 6 }}>
-              LIMITE DE USOS
+              LIMITE DE USOS (Por Cupom)
             </label>
             <input
               name="limite_usos"
@@ -150,25 +217,26 @@ export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; pr
           </div>
         </div>
 
-        {/* Produto vinculado */}
+        {/* Produtos vinculados (Múltiplos) */}
         <div>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 6 }}>
-            RESTRINGIR AO PRODUTO
+            RESTRINGIR AOS PRODUTOS (Segure Ctrl/Cmd para selecionar vários)
           </label>
           <select
-            name="produto_id"
+            name="produtos_ids"
+            multiple
             style={{
-              width: '100%', height: 44, padding: '0 14px', borderRadius: 10,
+              width: '100%', height: 120, padding: '8px 14px', borderRadius: 10,
               border: '1.5px solid var(--border)', background: 'var(--surface-2)', fontSize: 14, fontWeight: 600
             }}
           >
-            <option value="">Válido para qualquer produto</option>
+            <option value="">Nenhuma restrição (Válido para qualquer produto)</option>
             {produtos.map(p => (
               <option key={p.id} value={p.id}>{p.nome}</option>
             ))}
           </select>
           <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
-            Se selecionado, o cupom só funciona para esse produto específico.
+            Se selecionado, os cupons só funcionarão se houver pelo menos um destes produtos no carrinho.
           </p>
         </div>
 
@@ -184,7 +252,7 @@ export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; pr
               color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer'
             }}
           >
-            {isPending ? 'Salvando...' : 'Gerar Cupom'}
+            {isPending ? 'Salvando...' : (gerarAleatorio ? 'Gerar Lote de Cupons' : 'Gerar Cupom')}
           </button>
         </div>
       </form>
@@ -195,9 +263,32 @@ export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; pr
       }}>
         <div style={{
           padding: '14px 20px', borderBottom: '1px solid var(--border)',
-          fontSize: 13, fontWeight: 800, color: 'var(--text-1)', background: '#f8fafc'
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc'
         }}>
-          Cupons Ativos e Inativos ({vouchers.length})
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <input 
+              type="checkbox"
+              checked={vouchers.length > 0 && selectedVouchers.length === vouchers.length}
+              onChange={(e) => toggleAllVouchers(e.target.checked)}
+              style={{ cursor: 'pointer', width: 16, height: 16 }}
+            />
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-1)' }}>
+              Cupons Ativos e Inativos ({vouchers.length})
+            </span>
+          </div>
+          
+          {selectedVouchers.length > 0 && (
+            <button
+              onClick={handleBatchDelete}
+              disabled={isPending}
+              style={{
+                height: 32, padding: '0 16px', borderRadius: 8, background: '#fee2e2',
+                border: '1px solid #fca5a5', color: '#b91c1c', fontSize: 12, fontWeight: 700, cursor: 'pointer'
+              }}
+            >
+              🗑️ Excluir Selecionados ({selectedVouchers.length})
+            </button>
+          )}
         </div>
         
         {vouchers.length === 0 ? (
@@ -214,56 +305,65 @@ export function VoucherManager({ vouchers, produtos }: { vouchers: Voucher[]; pr
               return (
                 <div key={v.id} style={{
                   padding: '16px 20px', borderBottom: '1px solid var(--border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  display: 'flex', alignItems: 'center', gap: 16,
                   opacity: invalido ? 0.6 : 1, background: invalido ? '#f8fafc' : '#fff'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{
-                      padding: '8px 12px', background: '#ede9fe', border: '1.5px dashed #a78bfa',
-                      borderRadius: 8, fontSize: 15, fontWeight: 900, color: '#5b21b6', letterSpacing: 1
-                    }}>
-                      {v.codigo}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>
-                        {v.tipo_desconto === 'percentual' ? `${v.valor}% de desconto` : `R$ ${v.valor.toFixed(2)} de desconto`}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                        <span>Usados: {v.usos_atuais}{v.limite_usos ? ` / ${v.limite_usos}` : ''}</span>
-                        {v.compra_minima && <span>Mínimo: R$ {v.compra_minima.toFixed(2)}</span>}
-                        {v.data_validade && <span>Validade: {new Date(v.data_validade).toLocaleDateString('pt-BR')}</span>}
-                        {v.produto_id && (
-                          <span style={{ color: '#4338ca', fontWeight: 700 }}>
-                            🔒 {produtos.find(p => p.id === v.produto_id)?.nome ?? 'Produto específico'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <input 
+                    type="checkbox"
+                    checked={selectedVouchers.includes(v.id)}
+                    onChange={() => toggleVoucherSelection(v.id)}
+                    style={{ cursor: 'pointer', width: 16, height: 16 }}
+                  />
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <button
-                      onClick={() => handleToggle(v.id, v.ativo)}
-                      style={{
-                        height: 32, padding: '0 12px', borderRadius: 8,
-                        background: v.ativo ? '#fff' : '#e2e8f0',
-                        border: `1px solid ${v.ativo ? '#cbd5e1' : '#cbd5e1'}`,
-                        color: 'var(--text-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer'
-                      }}
-                    >
-                      {v.ativo ? 'Desativar' : 'Reativar'}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(v.id)}
-                      style={{
-                        width: 32, height: 32, borderRadius: 8, background: '#fef2f2',
-                        border: '1px solid #fecaca', color: '#ef4444', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}
-                      title="Excluir"
-                    >
-                      🗑️
-                    </button>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div style={{
+                        padding: '8px 12px', background: '#ede9fe', border: '1.5px dashed #a78bfa',
+                        borderRadius: 8, fontSize: 15, fontWeight: 900, color: '#5b21b6', letterSpacing: 1
+                      }}>
+                        {v.codigo}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>
+                          {v.tipo_desconto === 'percentual' ? `${v.valor}% de desconto` : `R$ ${v.valor.toFixed(2)} de desconto`}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                          <span>Usados: {v.usos_atuais}{v.limite_usos ? ` / ${v.limite_usos}` : ''}</span>
+                          {v.compra_minima && <span>Mínimo: R$ {v.compra_minima.toFixed(2)}</span>}
+                          {v.data_validade && <span>Validade: {new Date(v.data_validade).toLocaleDateString('pt-BR')}</span>}
+                          {v.produtos_ids && v.produtos_ids.length > 0 && (
+                            <span style={{ color: '#4338ca', fontWeight: 700 }}>
+                              🔒 {v.produtos_ids.length} Produto(s) vinculado(s)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <button
+                        onClick={() => handleToggle(v.id, v.ativo)}
+                        style={{
+                          height: 32, padding: '0 12px', borderRadius: 8,
+                          background: v.ativo ? '#fff' : '#e2e8f0',
+                          border: `1px solid ${v.ativo ? '#cbd5e1' : '#cbd5e1'}`,
+                          color: 'var(--text-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer'
+                        }}
+                      >
+                        {v.ativo ? 'Desativar' : 'Reativar'}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(v.id)}
+                        style={{
+                          width: 32, height: 32, borderRadius: 8, background: '#fef2f2',
+                          border: '1px solid #fecaca', color: '#ef4444', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}
+                        title="Excluir único"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                 </div>
               )

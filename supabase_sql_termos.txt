@@ -1,0 +1,9 @@
+-- 1. Adicionar colunas na tabela produtos
+ALTER TABLE public.produtos 
+ADD COLUMN IF NOT EXISTS exige_termo BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS texto_termo TEXT;
+
+-- 2. Adicionar colunas na tabela pedidos
+ALTER TABLE public.pedidos 
+ADD COLUMN IF NOT EXISTS termo_aceito BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS termo_aceito_em TIMESTAMPTZ;

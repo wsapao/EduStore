@@ -15,10 +15,10 @@ function fmtData(iso: string) {
 }
 
 const STATUS_CONFIG: Record<StatusPedido, { label: string; color: string; bg: string; dot: string }> = {
-  pendente:    { label: 'Aguardando',  color: '#92400e', bg: '#fef3c7', dot: '#f59e0b' },
-  pago:        { label: 'Pago',        color: '#065f46', bg: '#d1fae5', dot: '#10b981' },
-  cancelado:   { label: 'Cancelado',   color: '#991b1b', bg: '#fee2e2', dot: '#ef4444' },
-  reembolsado: { label: 'Reembolsado', color: '#374151', bg: '#f3f4f6', dot: '#9ca3af' },
+  pendente:    { label: 'Aguardando',  color: '#fcd34d', bg: 'rgba(245, 158, 11, 0.15)', dot: '#f59e0b' },
+  pago:        { label: 'Pago',        color: '#6ee7b7', bg: 'rgba(16, 185, 129, 0.15)', dot: '#10b981' },
+  cancelado:   { label: 'Cancelado',   color: '#fca5a5', bg: 'rgba(239, 68, 68, 0.15)', dot: '#ef4444' },
+  reembolsado: { label: 'Reembolsado', color: '#cbd5e1', bg: 'rgba(148, 163, 184, 0.15)', dot: '#9ca3af' },
 }
 
 const METODO_CONFIG: Record<MetodoPagamento, { label: string; icon: string }> = {
@@ -50,6 +50,8 @@ interface PedidoAdminRow {
   metodo_pagamento: MetodoPagamento | null
   data_criacao: string
   data_pagamento: string | null
+  termo_aceito: boolean
+  termo_aceito_em: string | null
   responsavel: { id: string; nome: string; email: string } | { id: string; nome: string; email: string }[] | null
   itens: PedidoAdminItem[]
   pagamento: PedidoAdminPagamento | PedidoAdminPagamento[] | null
@@ -105,6 +107,7 @@ export default async function AdminPedidos({
     .from('pedidos')
     .select(`
       id, numero, status, total, metodo_pagamento, data_criacao, data_pagamento,
+      termo_aceito, termo_aceito_em,
       responsavel:responsaveis(id, nome, email),
       itens:itens_pedido(
         id, preco_unitario, variante,
@@ -183,10 +186,10 @@ export default async function AdminPedidos({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-.02em' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-.02em' }}>
             Pedidos
           </h1>
-          <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', margin: '4px 0 0' }}>
             {totalFiltrado ?? 0} {totalFiltrado === 1 ? 'pedido encontrado' : 'pedidos encontrados'}
             {filtroAtual !== 'todos' ? ` · filtro ${filtroAtual}` : ''}
             {busca ? ` · busca "${busca}"` : ''}
@@ -196,7 +199,7 @@ export default async function AdminPedidos({
       </div>
 
       <form style={{
-        background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 14,
+        background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12, padding: 14,
         display: 'flex', alignItems: 'end', gap: 10, flexWrap: 'wrap',
       }}>
         <input type="hidden" name="status" value={filtroAtual} />
@@ -217,11 +220,11 @@ export default async function AdminPedidos({
           <label style={labelStyle}>ATÉ</label>
           <input name="to" type="date" defaultValue={toDate ?? ''} style={inputStyle} />
         </div>
-        <button type="submit" style={actionButton('#0f172a', '#fff', 'none')}>
+        <button type="submit" style={actionButton('#f59e0b', '#78350f', 'none')}>
           Buscar
         </button>
         {(busca || fromDate || toDate) && (
-          <Link href={filtroAtual === 'todos' ? '/admin/pedidos' : `/admin/pedidos?status=${filtroAtual}`} style={actionButton('#eef2ff', '#4338ca', '1px solid #c7d2fe')}>
+          <Link href={filtroAtual === 'todos' ? '/admin/pedidos' : `/admin/pedidos?status=${filtroAtual}`} style={actionButton('rgba(255,255,255,.05)', '#fff', '1px solid rgba(255,255,255,.1)')}>
             Limpar
           </Link>
         )}
@@ -238,9 +241,10 @@ export default async function AdminPedidos({
             padding: '7px 14px', borderRadius: 999,
             fontSize: 12, fontWeight: 700,
             textDecoration: 'none',
-            background: filtroAtual === value ? '#6366f1' : '#fff',
-            color: filtroAtual === value ? '#fff' : '#64748b',
-            border: filtroAtual === value ? '1.5px solid #6366f1' : '1.5px solid #e2e8f0',
+            background: filtroAtual === value ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.05)',
+            color: filtroAtual === value ? '#fcd34d' : 'rgba(255,255,255,.7)',
+            border: filtroAtual === value ? '1px solid rgba(245,158,11,.3)' : '1px solid rgba(255,255,255,.1)',
+            transition: 'all .2s'
           }}>
             {label}
           </Link>
@@ -250,9 +254,9 @@ export default async function AdminPedidos({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {pedidos.length === 0 && (
           <div style={{
-            background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 12,
+            background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12,
             padding: '60px 20px', textAlign: 'center',
-            fontSize: 14, color: '#94a3b8',
+            fontSize: 14, color: 'rgba(255,255,255,.5)',
           }}>
             Nenhum pedido encontrado.
           </div>
@@ -268,17 +272,17 @@ export default async function AdminPedidos({
 
           return (
             <div key={p.id} style={{
-              background: '#fff', border: '1.5px solid #e2e8f0',
+              background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)',
               borderRadius: 12, overflow: 'hidden',
             }}>
               <div style={{
                 padding: '14px 16px',
-                background: '#f8fafc',
-                borderBottom: '1px solid #e2e8f0',
+                background: 'rgba(255,255,255,.02)',
+                borderBottom: '1px solid rgba(255,255,255,.05)',
                 display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
               }}>
                 <Link href={`/pedido/${p.id}`} style={{
-                  fontWeight: 800, color: '#6366f1', textDecoration: 'none',
+                  fontWeight: 800, color: '#f59e0b', textDecoration: 'none',
                   fontFamily: 'monospace', fontSize: 13,
                 }}>
                   #{p.numero}
@@ -297,14 +301,27 @@ export default async function AdminPedidos({
                 </span>
 
                 {metodoCfg && (
-                  <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
                     {metodoCfg.icon} {metodoCfg.label}
                   </span>
                 )}
 
                 <span style={{ flex: 1 }} />
 
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>
+                {p.termo_aceito && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, padding: '3px 8px',
+                    borderRadius: 6, background: 'rgba(245,158,11,.15)', color: '#fcd34d',
+                    border: '1px solid rgba(245,158,11,.3)', display: 'flex', alignItems: 'center', gap: 4
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Termo Aceito
+                  </span>
+                )}
+
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,.5)' }}>
                   {fmtData(p.data_criacao)}
                 </span>
               </div>
@@ -313,15 +330,15 @@ export default async function AdminPedidos({
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: '50%',
-                    background: '#e0e7ff',
+                    background: 'rgba(245,158,11,.15)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 700, color: '#6366f1', flexShrink: 0,
+                    fontSize: 12, fontWeight: 700, color: '#f59e0b', flexShrink: 0,
                   }}>
                     {responsavelNome.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{responsavelNome}</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8' }}>{responsavelEmail}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{responsavelNome}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{responsavelEmail}</div>
                   </div>
                 </div>
 
@@ -329,23 +346,23 @@ export default async function AdminPedidos({
                   {itens.map((item) => (
                     <div key={item.id} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '8px 12px', background: '#f8fafc', borderRadius: 8,
-                      fontSize: 13,
+                      padding: '8px 12px', background: 'rgba(0,0,0,.2)', borderRadius: 8,
+                      fontSize: 13, border: '1px solid rgba(255,255,255,.03)'
                     }}>
                       <div>
-                        <span style={{ fontWeight: 600, color: '#374151' }}>
+                        <span style={{ fontWeight: 600, color: '#f8fafc' }}>
                           {item.produto?.nome ?? '—'}
                         </span>
-                        <span style={{ color: '#94a3b8', marginLeft: 8 }}>
+                        <span style={{ color: 'rgba(255,255,255,.5)', marginLeft: 8 }}>
                           {item.aluno?.nome} · {item.aluno?.serie}
                         </span>
                         {item.variante && (
-                          <span style={{ color: '#4f46e5', marginLeft: 8, fontWeight: 700 }}>
+                          <span style={{ color: '#fbbf24', marginLeft: 8, fontWeight: 700 }}>
                             {item.variante}
                           </span>
                         )}
                       </div>
-                      <span style={{ fontWeight: 700, color: '#0f172a', flexShrink: 0 }}>
+                      <span style={{ fontWeight: 700, color: '#fff', flexShrink: 0 }}>
                         {fmtBRL(Number(item.preco_unitario))}
                       </span>
                     </div>
@@ -353,7 +370,7 @@ export default async function AdminPedidos({
                 </div>
 
                 {pagamento?.pix_tx_id && (
-                  <div style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', fontFamily: 'monospace' }}>
                     PIX TX: {pagamento.pix_tx_id}
                   </div>
                 )}
@@ -361,13 +378,13 @@ export default async function AdminPedidos({
 
               <div style={{
                 padding: '12px 16px',
-                borderTop: '1px solid #f1f5f9',
+                borderTop: '1px solid rgba(255,255,255,.05)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
                 flexWrap: 'wrap',
               }}>
                 <div>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>TOTAL </span>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>TOTAL </span>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>
                     {fmtBRL(Number(p.total))}
                   </span>
                 </div>
@@ -379,9 +396,9 @@ export default async function AdminPedidos({
                       <form action={confirmarPagamentoAction.bind(null, p.id) as any}>
                         <button type="submit" style={{
                           padding: '7px 14px', borderRadius: 8,
-                          background: '#059669', color: '#fff',
-                          border: 'none', cursor: 'pointer',
-                          fontSize: 12, fontWeight: 700,
+                          background: 'rgba(16,185,129,.15)', color: '#34d399',
+                          border: '1px solid rgba(16,185,129,.3)', cursor: 'pointer',
+                          fontSize: 12, fontWeight: 700, transition: 'all .2s'
                         }}>
                           ✓ Confirmar pagamento
                         </button>
@@ -390,9 +407,9 @@ export default async function AdminPedidos({
                       <form action={cancelarPedidoAction.bind(null, p.id) as any}>
                         <button type="submit" style={{
                           padding: '7px 14px', borderRadius: 8,
-                          background: '#fff', color: '#ef4444',
-                          border: '1.5px solid #fecaca', cursor: 'pointer',
-                          fontSize: 12, fontWeight: 700,
+                          background: 'rgba(239,68,68,.1)', color: '#f87171',
+                          border: '1px solid rgba(239,68,68,.2)', cursor: 'pointer',
+                          fontSize: 12, fontWeight: 700, transition: 'all .2s'
                         }}>
                           ✕ Cancelar
                         </button>
@@ -400,12 +417,12 @@ export default async function AdminPedidos({
                     </>
                   )}
                   {p.status === 'pago' && (
-                    <span style={{ fontSize: 12, color: '#059669', fontWeight: 700 }}>
+                    <span style={{ fontSize: 12, color: '#34d399', fontWeight: 700 }}>
                       ✓ Pago em {p.data_pagamento ? fmtData(p.data_pagamento) : '—'}
                     </span>
                   )}
                   {p.status === 'cancelado' && (
-                    <span style={{ fontSize: 12, color: '#ef4444', fontWeight: 700 }}>
+                    <span style={{ fontSize: 12, color: '#f87171', fontWeight: 700 }}>
                       Pedido cancelado
                     </span>
                   )}
@@ -420,7 +437,7 @@ export default async function AdminPedidos({
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
             paddingTop: 4, flexWrap: 'wrap',
           }}>
-            <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>
               Página {currentPage} de {totalPages}
             </span>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -494,9 +511,10 @@ function pagerButton(enabled: boolean) {
     textDecoration: 'none',
     fontSize: 12,
     fontWeight: 700,
-    background: enabled ? '#0f172a' : '#e5e7eb',
-    color: enabled ? '#fff' : '#94a3b8',
+    background: enabled ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.02)',
+    color: enabled ? '#fff' : 'rgba(255,255,255,.3)',
     pointerEvents: enabled ? 'auto' : 'none',
+    border: enabled ? '1px solid rgba(255,255,255,.1)' : '1px solid transparent',
   } as const
 }
 
@@ -511,7 +529,7 @@ const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 11,
   fontWeight: 700,
-  color: '#64748b',
+  color: 'rgba(255,255,255,.5)',
   marginBottom: 6,
   letterSpacing: '.05em',
 }
@@ -519,11 +537,11 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   height: 42,
   borderRadius: 10,
-  border: '1.5px solid #e2e8f0',
-  background: '#f8fafc',
+  border: '1px solid rgba(255,255,255,.1)',
+  background: 'rgba(0,0,0,.2)',
   padding: '0 12px',
   fontSize: 13,
-  color: '#0f172a',
+  color: '#fff',
   fontFamily: 'inherit',
 }
 

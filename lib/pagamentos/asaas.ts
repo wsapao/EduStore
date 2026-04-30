@@ -21,13 +21,10 @@ function baseUrl() {
     : 'https://sandbox.asaas.com/api/v3'
 }
 
-async function asaasGet<T>(path: string): Promise<T> {
-  const key = process.env.ASAAS_API_KEY
-  if (!key) throw new Error('ASAAS_API_KEY não configurada.')
-
+async function asaasGet<T>(path: string, apiKey: string): Promise<T> {
   const res = await fetch(`${baseUrl()}${path}`, {
     method: 'GET',
-    headers: { accept: 'application/json', access_token: key },
+    headers: { accept: 'application/json', access_token: apiKey },
     cache: 'no-store',
   })
 
@@ -38,16 +35,13 @@ async function asaasGet<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function asaasPost<T>(path: string, body: unknown): Promise<T> {
-  const key = process.env.ASAAS_API_KEY
-  if (!key) throw new Error('ASAAS_API_KEY não configurada.')
-
+async function asaasPost<T>(path: string, body: unknown, apiKey: string): Promise<T> {
   const res = await fetch(`${baseUrl()}${path}`, {
     method: 'POST',
     headers: {
       accept: 'application/json',
       'content-type': 'application/json',
-      access_token: key,
+      access_token: apiKey,
     },
     body: JSON.stringify(body),
     cache: 'no-store',
@@ -102,11 +96,13 @@ async function findOrCreateCustomer(
   cpf: string,
   nome: string,
   email: string,
+  apiKey: string,
 ): Promise<string> {
   const cleanCpf = cpf.replace(/\D/g, '')
 
   const list = await asaasGet<AsaasCustomerList>(
     `/customers?cpfCnpj=${cleanCpf}&limit=1`,
+    apiKey
   )
 
   if (list.data && list.data.length > 0) {
@@ -118,7 +114,7 @@ async function findOrCreateCustomer(
     cpfCnpj: cleanCpf,
     email,
     notificationDisabled: true,
-  })
+  }, apiKey)
   return created.id
 }
 
@@ -149,136 +145,141 @@ function mapStatus(
 
 // ── Implementação do gateway ──────────────────────────────────────────────────
 
-export const asaasGateway: GatewayPagamento = {
-  async criarPagamento(input: CriarPagamentoInput): Promise<ResultadoPagamento> {
-    const customerId = await findOrCreateCustomer(
-      input.responsavel.cpf,
-      input.responsavel.nome,
-      input.responsavel.email,
-    )
+export function createAsaasGateway(apiKey: string): GatewayPagamento {
+  return {
+    async criarPagamento(input: CriarPagamentoInput): Promise<ResultadoPagamento> {
+      const customerId = await findOrCreateCustomer(
+        input.responsavel.cpf,
+        input.responsavel.nome,
+        input.responsavel.email,
+        apiKey
+      )
 
-    // Data de vencimento: hoje + 1 dia (mínimo exigido pelo Asaas para boleto/PIX)
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const dueDate = tomorrow.toISOString().split('T')[0]
+      // Data de vencimento: hoje + 1 dia (mínimo exigido pelo Asaas para boleto/PIX)
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const dueDate = tomorrow.toISOString().split('T')[0]
 
-    if (input.metodo === 'pix') {
+      if (input.metodo === 'pix') {
+        const payment = await asaasPost<AsaasPayment>('/payments', {
+          customer: customerId,
+          billingType: 'PIX',
+          value: input.total,
+          dueDate,
+          description: input.descricao,
+          externalReference: input.referencia,
+        }, apiKey)
+
+        const qr = await asaasGet<AsaasPixQrCode>(`/payments/${payment.id}/pixQrCode`, apiKey)
+
+        const expiracao = qr.expirationDate
+          ? new Date(qr.expirationDate).toISOString()
+          : new Date(Date.now() + 30 * 60 * 1000).toISOString()
+
+        return {
+          metodo: 'pix',
+          gateway_id: payment.id,
+          qr_code: qr.payload,
+          qr_code_imagem: `data:image/png;base64,${qr.encodedImage}`,
+          tx_id: payment.id,
+          expiracao,
+          status: 'aguardando',
+        }
+      }
+
+      if (input.metodo === 'boleto') {
+        const boletoVenc = new Date()
+        boletoVenc.setDate(boletoVenc.getDate() + 3)
+        const boletoDueDate = boletoVenc.toISOString().split('T')[0]
+
+        const payment = await asaasPost<AsaasPayment>('/payments', {
+          customer: customerId,
+          billingType: 'BOLETO',
+          value: input.total,
+          dueDate: boletoDueDate,
+          description: input.descricao,
+          externalReference: input.referencia,
+          fine: { value: 2 },     // 2% de multa
+          interest: { value: 1 }, // 1% a.m. de juros
+        }, apiKey)
+
+        const campo = await asaasGet<AsaasBoletoField>(
+          `/payments/${payment.id}/identificationField`,
+          apiKey
+        )
+
+        return {
+          metodo: 'boleto',
+          gateway_id: payment.id,
+          codigo: campo.barCode ?? campo.nossoNumero,
+          linha_digitavel: campo.identificationField,
+          vencimento: boletoDueDate,
+          url: payment.bankSlipUrl ?? `https://www.asaas.com/b/${payment.id}`,
+          status: 'aguardando',
+        }
+      }
+
+      // cartão de crédito
+      if (!input.dadosCartao) {
+        throw new Error('Dados do cartão são obrigatórios para pagamento com cartão.')
+      }
+
+      const [mesStr, anoStr] = input.dadosCartao.validade.split('/')
+      const expiryYear = anoStr.length === 2 ? `20${anoStr}` : anoStr
+
       const payment = await asaasPost<AsaasPayment>('/payments', {
         customer: customerId,
-        billingType: 'PIX',
+        billingType: 'CREDIT_CARD',
         value: input.total,
         dueDate,
         description: input.descricao,
         externalReference: input.referencia,
-      })
+        installmentCount: (input.parcelas ?? 1) > 1 ? input.parcelas : undefined,
+        installmentValue: (input.parcelas ?? 1) > 1
+          ? parseFloat((input.total / input.parcelas!).toFixed(2))
+          : undefined,
+        creditCard: {
+          holderName: input.dadosCartao.nome,
+          number: input.dadosCartao.numero.replace(/\s/g, ''),
+          expiryMonth: mesStr.padStart(2, '0'),
+          expiryYear,
+          ccv: input.dadosCartao.cvv,
+        },
+        creditCardHolderInfo: {
+          name: input.responsavel.nome,
+          email: input.responsavel.email,
+          cpfCnpj: input.responsavel.cpf.replace(/\D/g, ''),
+          postalCode: '00000000', // fallback — idealmente coleta do usuário
+          addressNumber: '0',
+          phone: '',
+        },
+      }, apiKey)
 
-      const qr = await asaasGet<AsaasPixQrCode>(`/payments/${payment.id}/pixQrCode`)
+      const numero = input.dadosCartao.numero.replace(/\s/g, '')
+      const bandeira = numero.startsWith('4')
+        ? 'Visa'
+        : numero.startsWith('5')
+          ? 'Mastercard'
+          : numero.startsWith('3')
+            ? 'Amex'
+            : 'Outro'
 
-      const expiracao = qr.expirationDate
-        ? new Date(qr.expirationDate).toISOString()
-        : new Date(Date.now() + 30 * 60 * 1000).toISOString()
-
-      return {
-        metodo: 'pix',
-        gateway_id: payment.id,
-        qr_code: qr.payload,
-        qr_code_imagem: `data:image/png;base64,${qr.encodedImage}`,
-        tx_id: payment.id,
-        expiracao,
-        status: 'aguardando',
-      }
-    }
-
-    if (input.metodo === 'boleto') {
-      const boletoVenc = new Date()
-      boletoVenc.setDate(boletoVenc.getDate() + 3)
-      const boletoDueDate = boletoVenc.toISOString().split('T')[0]
-
-      const payment = await asaasPost<AsaasPayment>('/payments', {
-        customer: customerId,
-        billingType: 'BOLETO',
-        value: input.total,
-        dueDate: boletoDueDate,
-        description: input.descricao,
-        externalReference: input.referencia,
-        fine: { value: 2 },     // 2% de multa
-        interest: { value: 1 }, // 1% a.m. de juros
-      })
-
-      const campo = await asaasGet<AsaasBoletoField>(
-        `/payments/${payment.id}/identificationField`,
-      )
+      const status = mapStatus(payment.status)
 
       return {
-        metodo: 'boleto',
+        metodo: 'cartao',
         gateway_id: payment.id,
-        codigo: campo.barCode ?? campo.nossoNumero,
-        linha_digitavel: campo.identificationField,
-        vencimento: boletoDueDate,
-        url: payment.bankSlipUrl ?? `https://www.asaas.com/b/${payment.id}`,
-        status: 'aguardando',
+        status: status === 'confirmado' ? 'confirmado' : 'falhou',
+        parcelas: input.parcelas ?? 1,
+        bandeira,
+        ultimos_digitos: numero.slice(-4),
       }
-    }
+    },
 
-    // cartão de crédito
-    if (!input.dadosCartao) {
-      throw new Error('Dados do cartão são obrigatórios para pagamento com cartão.')
-    }
-
-    const [mesStr, anoStr] = input.dadosCartao.validade.split('/')
-    const expiryYear = anoStr.length === 2 ? `20${anoStr}` : anoStr
-
-    const payment = await asaasPost<AsaasPayment>('/payments', {
-      customer: customerId,
-      billingType: 'CREDIT_CARD',
-      value: input.total,
-      dueDate,
-      description: input.descricao,
-      externalReference: input.referencia,
-      installmentCount: (input.parcelas ?? 1) > 1 ? input.parcelas : undefined,
-      installmentValue: (input.parcelas ?? 1) > 1
-        ? parseFloat((input.total / input.parcelas!).toFixed(2))
-        : undefined,
-      creditCard: {
-        holderName: input.dadosCartao.nome,
-        number: input.dadosCartao.numero.replace(/\s/g, ''),
-        expiryMonth: mesStr.padStart(2, '0'),
-        expiryYear,
-        ccv: input.dadosCartao.cvv,
-      },
-      creditCardHolderInfo: {
-        name: input.responsavel.nome,
-        email: input.responsavel.email,
-        cpfCnpj: input.responsavel.cpf.replace(/\D/g, ''),
-        postalCode: '00000000', // fallback — idealmente coleta do usuário
-        addressNumber: '0',
-        phone: '',
-      },
-    })
-
-    const numero = input.dadosCartao.numero.replace(/\s/g, '')
-    const bandeira = numero.startsWith('4')
-      ? 'Visa'
-      : numero.startsWith('5')
-        ? 'Mastercard'
-        : numero.startsWith('3')
-          ? 'Amex'
-          : 'Outro'
-
-    const status = mapStatus(payment.status)
-
-    return {
-      metodo: 'cartao',
-      gateway_id: payment.id,
-      status: status === 'confirmado' ? 'confirmado' : 'falhou',
-      parcelas: input.parcelas ?? 1,
-      bandeira,
-      ultimos_digitos: numero.slice(-4),
-    }
-  },
-
-  async consultarStatus(gateway_id) {
-    const payment = await asaasGet<AsaasPayment>(`/payments/${gateway_id}`)
-    return mapStatus(payment.status)
-  },
+    async consultarStatus(gateway_id) {
+      const payment = await asaasGet<AsaasPayment>(`/payments/${gateway_id}`, apiKey)
+      return mapStatus(payment.status)
+    },
+  }
 }
+

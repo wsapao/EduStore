@@ -67,7 +67,8 @@ export async function getExtratoAction(alunoId: string, page = 1) {
 export async function configurarCarteiraAction(
   alunoId: string,
   limiteDiario: number | null,
-  bloqueioMotivo: string | null
+  bloqueioMotivo: string | null,
+  senhaPin?: string | null
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -83,14 +84,20 @@ export async function configurarCarteiraAction(
 
   if (!vinculo) return { error: 'Acesso negado.' }
 
+  const updateData: any = {
+    limite_diario: limiteDiario,
+    ativo: !bloqueioMotivo,
+    bloqueio_motivo: bloqueioMotivo || null,
+    updated_at: new Date().toISOString(),
+  }
+
+  if (senhaPin !== undefined) {
+    updateData.senha_pin = senhaPin || null
+  }
+
   const { error } = await supabase
     .from('cantina_carteiras')
-    .update({
-      limite_diario: limiteDiario,
-      ativo: !bloqueioMotivo,
-      bloqueio_motivo: bloqueioMotivo || null,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq('aluno_id', alunoId)
 
   if (error) return { error: error.message }
@@ -230,20 +237,32 @@ export async function buscarAlunoCantinaAction(q: string) {
     .from('alunos')
     .select(`
       id, nome, serie, turma,
-      cantina_carteiras (id, saldo, limite_diario, ativo, bloqueio_motivo, qr_token)
+      cantina_carteiras (id, saldo, limite_diario, ativo, bloqueio_motivo, qr_token, senha_pin, nfc_id),
+      cantina_restricoes (produto_id, motivo)
     `)
     .ilike('nome', `%${q.trim()}%`)
     .eq('ativo', true)
     .limit(10)
 
   if (error) return { error: error.message, data: null }
-  return { data, error: null }
+
+  // Mapear para não vazar a senha para o front
+  const safeData = data.map(aluno => ({
+    ...aluno,
+    cantina_carteiras: aluno.cantina_carteiras.map(c => ({
+      ...c,
+      has_pin: !!c.senha_pin,
+      senha_pin: undefined // Limpar
+    }))
+  }))
+
+  return { data: safeData, error: null }
 }
 
-// ── Confirmar compra na cantina (operador) ────────────────────
 export async function confirmarCompraCantinaAction(
   alunoId: string,
-  itens: Array<{ produto_id: string; quantidade: number; preco_unitario: number }>
+  itens: Array<{ produto_id: string; quantidade: number; preco_unitario: number }>,
+  senhaDigitada?: string
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -260,11 +279,16 @@ export async function confirmarCompraCantinaAction(
   // Buscar carteira
   const { data: carteira } = await adminClient
     .from('cantina_carteiras')
-    .select('id, escola_id')
+    .select('id, escola_id, senha_pin')
     .eq('aluno_id', alunoId)
     .single()
 
   if (!carteira) return { error: 'Carteira não encontrada para este aluno.' }
+
+  // Validar PIN se configurado na carteira
+  if (carteira.senha_pin && carteira.senha_pin !== senhaDigitada) {
+    return { error: 'Senha incorreta.', requiresPin: true }
+  }
 
   // Debitar saldo via RPC
   const { data: resultado, error: errRpc } = await adminClient
@@ -444,5 +468,61 @@ export async function bloquearCarteiraAdminAction(carteiraId: string, bloquear: 
   if (error) return { error: error.message }
 
   revalidatePath('/admin/cantina/carteiras')
+  return { success: true }
+}
+
+// ── Restrições Nutricionais ───────────────────────────────────
+export async function adicionarRestricaoAction(alunoId: string, produtoId: string | null, categoria: string | null, motivo: string | null) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  // Verificar vínculo
+  const { data: vinculo } = await supabase
+    .from('responsavel_aluno')
+    .select('aluno_id')
+    .eq('responsavel_id', user.id)
+    .eq('aluno_id', alunoId)
+    .single()
+
+  if (!vinculo) return { error: 'Acesso negado.' }
+
+  const { error } = await supabase
+    .from('cantina_restricoes')
+    .insert({
+      aluno_id: alunoId,
+      produto_id: produtoId,
+      categoria,
+      motivo,
+    })
+
+  if (error) return { error: error.message }
+  revalidatePath(`/cantina/${alunoId}/configurar`)
+  return { success: true }
+}
+
+export async function removerRestricaoAction(restricaoId: string, alunoId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  // Verificar vínculo
+  const { data: vinculo } = await supabase
+    .from('responsavel_aluno')
+    .select('aluno_id')
+    .eq('responsavel_id', user.id)
+    .eq('aluno_id', alunoId)
+    .single()
+
+  if (!vinculo) return { error: 'Acesso negado.' }
+
+  const { error } = await supabase
+    .from('cantina_restricoes')
+    .delete()
+    .eq('id', restricaoId)
+    .eq('aluno_id', alunoId)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/cantina/${alunoId}/configurar`)
   return { success: true }
 }

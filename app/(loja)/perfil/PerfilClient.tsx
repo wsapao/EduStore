@@ -55,76 +55,67 @@ export function PerfilClient({ responsavel, totalAlunos, totalPedidos }: Props) 
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 0 100px' }}>
+    <div style={{ background: '#f0f2f8', minHeight: '100vh', paddingBottom: 80, margin:'0 auto' }}>
 
       {/* Header */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--border)',
-        height: 60, padding: '0 20px',
-        display: 'flex', alignItems: 'center', gap: 12,
+        height: 52, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 10,
+        background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(0,0,0,.07)'
       }}>
         <Link href="/loja" style={{
-          width: 36, height: 36, borderRadius: 'var(--r-sm)',
-          background: 'var(--surface-2)', border: '1.5px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--text-2)', textDecoration: 'none', flexShrink: 0,
+          width: 32, height: 32, borderRadius: 10, border: '1.5px solid rgba(0,0,0,.08)',
+          background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#374151', textDecoration: 'none', flexShrink: 0,
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </Link>
-        <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-1)', letterSpacing: '-.02em', flex: 1 }}>
-          Meu perfil
+        <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: '#0a1628', letterSpacing: '-.02em' }}>
+          Meu Perfil
         </span>
       </div>
 
-      <div style={{ padding: '24px 20px 0' }}>
-
+      <div>
         {/* Avatar + nome */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          marginBottom: 28, gap: 12,
-        }}>
+        <div style={{ textAlign: 'center', padding: '24px 14px 16px' }}>
           <div style={{
-            width: 80, height: 80, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #667eea, #764ba2)',
+            width: 76, height: 76, borderRadius: '50%',
+            background: 'linear-gradient(135deg,#f59e0b,#ea580c)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 28, fontWeight: 800, color: '#fff',
-            boxShadow: '0 4px 16px rgba(102,126,234,.4)',
+            fontSize: 26, fontWeight: 900, color: 'white',
+            boxShadow: '0 6px 16px rgba(245,158,11,.3)', margin: '0 auto 12px'
           }}>
             {iniciais(responsavel.nome)}
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)', letterSpacing: '-.02em' }}>
-              {responsavel.nome}
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>
-              {responsavel.email}
-            </div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: '#0a1628', letterSpacing: '-.02em', marginBottom: 2 }}>
+            {responsavel.nome}
+          </div>
+          <div style={{ fontSize: 12, color: '#6b7280' }}>
+            {responsavel.email}
           </div>
         </div>
 
         {/* Cards de resumo */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 14px 16px' }}>
           <Link href="/perfil/alunos" style={{
-            background: '#f5f3ff', border: '1px solid #ddd6fe',
-            borderRadius: 14, padding: '16px', textAlign: 'center',
-            textDecoration: 'none',
+            background: 'white', border: '1.5px solid rgba(0,0,0,.07)',
+            borderRadius: 16, padding: '16px', textAlign: 'center',
+            textDecoration: 'none', boxShadow: '0 2px 8px rgba(0,0,0,.04)'
           }}>
-            <div style={{ fontSize: 24, fontWeight: 900, color: '#7c3aed' }}>{totalAlunos}</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#6d28d9', marginTop: 2 }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: '#f59e0b' }}>{totalAlunos}</div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>
               {totalAlunos === 1 ? 'FILHO' : 'FILHOS'}
             </div>
           </Link>
           <Link href="/pedidos" style={{
-            background: '#eff6ff', border: '1px solid #bfdbfe',
-            borderRadius: 14, padding: '16px', textAlign: 'center',
-            textDecoration: 'none',
+            background: 'white', border: '1.5px solid rgba(0,0,0,.07)',
+            borderRadius: 16, padding: '16px', textAlign: 'center',
+            textDecoration: 'none', boxShadow: '0 2px 8px rgba(0,0,0,.04)'
           }}>
-            <div style={{ fontSize: 24, fontWeight: 900, color: '#2563eb' }}>{totalPedidos}</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#1d4ed8', marginTop: 2 }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: '#f59e0b' }}>{totalPedidos}</div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 2 }}>
               {totalPedidos === 1 ? 'PEDIDO' : 'PEDIDOS'}
             </div>
           </Link>
@@ -133,10 +124,10 @@ export function PerfilClient({ responsavel, totalAlunos, totalPedidos }: Props) 
         {/* Sucesso */}
         {success && (
           <div style={{
-            background: '#f0fdf4', border: '1px solid #86efac',
-            borderRadius: 10, padding: '12px 16px',
-            fontSize: 13, fontWeight: 600, color: '#15803d',
-            marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
+            background: '#f0fdf4', border: '1.5px solid #bbf7d0',
+            borderRadius: 14, padding: '12px 14px', margin: '0 14px 16px',
+            fontSize: 12, fontWeight: 700, color: '#15803d',
+            display: 'flex', alignItems: 'center', gap: 8,
           }}>
             ✅ {success}
           </div>
@@ -144,23 +135,23 @@ export function PerfilClient({ responsavel, totalAlunos, totalPedidos }: Props) 
 
         {/* Dados pessoais */}
         <div style={{
-          background: '#fff', border: '1.5px solid var(--border)',
-          borderRadius: 16, overflow: 'hidden', marginBottom: 16,
+          background: 'white', border: '1.5px solid rgba(0,0,0,.07)',
+          borderRadius: 18, overflow: 'hidden', margin: '0 14px 16px',
         }}>
           <div style={{
-            padding: '14px 20px', borderBottom: '1px solid var(--border)',
+            padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,.07)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>
-              Dados pessoais
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+              Dados Pessoais
             </span>
             {!editando && (
               <button
                 onClick={() => { setEditando(true); setError('') }}
                 style={{
-                  fontSize: 12, fontWeight: 700, color: 'var(--brand)',
+                  fontSize: 11, fontWeight: 700, color: '#f59e0b',
                   background: 'none', border: 'none', cursor: 'pointer',
-                  padding: '4px 8px',
+                  padding: 0,
                 }}
               >
                 ✏️ Editar
@@ -175,13 +166,13 @@ export function PerfilClient({ responsavel, totalAlunos, totalPedidos }: Props) 
               <InfoRow label="CPF" value={maskCPF(responsavel.cpf)} locked />
               <InfoRow label="E-mail" value={responsavel.email} locked />
               <InfoRow
-                label="Telefone"
+                label="WhatsApp"
                 value={responsavel.telefone ? maskTel(responsavel.telefone) : '—'}
               />
             </div>
           ) : (
             /* Modo edição */
-            <form onSubmit={handleSubmit} style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <form onSubmit={handleSubmit} style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={labelStyle}>NOME COMPLETO</label>
                 <input
@@ -205,7 +196,7 @@ export function PerfilClient({ responsavel, totalAlunos, totalPedidos }: Props) 
               </div>
 
               <div>
-                <label style={labelStyle}>TELEFONE / WHATSAPP</label>
+                <label style={labelStyle}>WHATSAPP</label>
                 <input
                   value={telefone}
                   onChange={e => setTelefone(maskTel(e.target.value))}
@@ -217,35 +208,35 @@ export function PerfilClient({ responsavel, totalAlunos, totalPedidos }: Props) 
 
               {error && (
                 <div style={{
-                  background: '#fef2f2', border: '1px solid #fca5a5',
-                  borderRadius: 8, padding: '10px 14px',
-                  fontSize: 13, color: '#b91c1c',
+                  background: '#fef2f2', border: '1.5px solid #fecaca',
+                  borderRadius: 12, padding: '10px 14px',
+                  fontSize: 11, fontWeight: 700, color: '#dc2626',
                 }}>
                   ⚠️ {error}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                 <button
                   type="submit"
                   disabled={isPending}
                   style={{
-                    flex: 1, height: 44,
-                    background: isPending ? '#94a3b8' : 'var(--brand)',
-                    color: '#fff', border: 'none', borderRadius: 10,
-                    fontSize: 14, fontWeight: 700, cursor: isPending ? 'not-allowed' : 'pointer',
+                    flex: 1, height: 46,
+                    background: isPending ? '#fbbf24' : '#f59e0b',
+                    color: '#78350f', border: 'none', borderRadius: 12,
+                    fontSize: 13, fontWeight: 800, cursor: isPending ? 'wait' : 'pointer',
                   }}
                 >
-                  {isPending ? 'Salvando…' : 'Salvar'}
+                  {isPending ? 'Salvando…' : 'Salvar Dados'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setEditando(false); setNome(responsavel.nome); setTelefone(responsavel.telefone ?? ''); setError('') }}
                   style={{
-                    height: 44, padding: '0 18px',
-                    background: 'var(--surface-2)', color: 'var(--text-2)',
-                    border: '1.5px solid var(--border)', borderRadius: 10,
-                    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                    height: 46, padding: '0 18px',
+                    background: 'white', color: '#374151',
+                    border: '1.5px solid rgba(0,0,0,.08)', borderRadius: 12,
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer',
                   }}
                 >
                   Cancelar
@@ -257,8 +248,8 @@ export function PerfilClient({ responsavel, totalAlunos, totalPedidos }: Props) 
 
         {/* Ações */}
         <div style={{
-          background: '#fff', border: '1.5px solid var(--border)',
-          borderRadius: 16, overflow: 'hidden', marginBottom: 16,
+          background: 'white', border: '1.5px solid rgba(0,0,0,.07)',
+          borderRadius: 18, overflow: 'hidden', margin: '0 14px 16px',
         }}>
           <MenuLink href="/perfil/senha" icon="🔑" label="Alterar senha" />
           <MenuLink href="/perfil/alunos" icon="👨‍👩‍👧‍👦" label="Meus filhos" border />
@@ -267,12 +258,12 @@ export function PerfilClient({ responsavel, totalAlunos, totalPedidos }: Props) 
         </div>
 
         {/* Sair */}
-        <form action={logoutAction}>
+        <form action={logoutAction} style={{ margin: '0 14px' }}>
           <button type="submit" style={{
             width: '100%', height: 48,
             background: '#fef2f2', border: '1.5px solid #fecaca',
             borderRadius: 14, cursor: 'pointer',
-            fontSize: 14, fontWeight: 700, color: '#b91c1c',
+            fontSize: 13, fontWeight: 800, color: '#ef4444',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -292,13 +283,13 @@ function InfoRow({ label, value, locked }: { label: string; value: string; locke
   return (
     <div style={{
       display: 'flex', alignItems: 'center',
-      padding: '12px 20px',
-      borderBottom: '1px solid var(--border)',
+      padding: '12px 16px',
+      borderBottom: '1px solid rgba(0,0,0,.05)',
     }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', width: 90, flexShrink: 0, letterSpacing: '.02em' }}>
-        {label.toUpperCase()}
+      <span style={{ width: 80, fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', flexShrink: 0 }}>
+        {label}
       </span>
-      <span style={{ fontSize: 14, color: locked ? 'var(--text-3)' : 'var(--text-1)', fontWeight: 500, flex: 1 }}>
+      <span style={{ flex: 1, fontSize: 13, color: locked ? '#6b7280' : '#0a1628', fontWeight: 600 }}>
         {value}
       </span>
       {locked && <LockIcon />}
@@ -310,13 +301,13 @@ function MenuLink({ href, icon, label, border }: { href: string; icon: string; l
   return (
     <a href={href} style={{
       display: 'flex', alignItems: 'center', gap: 12,
-      padding: '14px 20px', textDecoration: 'none',
-      borderTop: border ? '1px solid var(--border)' : 'none',
-      color: 'var(--text-1)',
+      padding: '16px', textDecoration: 'none',
+      borderTop: border ? '1px solid rgba(0,0,0,.05)' : 'none',
+      color: '#0a1628',
     }}>
-      <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{icon}</span>
-      <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{label}</span>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <span style={{ fontSize: 18 }}>{icon}</span>
+      <span style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>{label}</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="9 18 15 12 9 6" />
       </svg>
     </a>
@@ -325,7 +316,7 @@ function MenuLink({ href, icon, label, border }: { href: string; icon: string; l
 
 function LockIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
       <path d="M7 11V7a5 5 0 0110 0v4"/>
     </svg>
@@ -334,13 +325,13 @@ function LockIcon() {
 
 const labelStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 4,
-  fontSize: 11, fontWeight: 700, color: 'var(--text-3)',
-  marginBottom: 6, letterSpacing: '.04em',
+  fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase',
+  marginBottom: 6, letterSpacing: '.05em',
 }
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', height: 44, padding: '0 14px',
-  borderRadius: 10, border: '1.5px solid var(--border)',
-  fontSize: 14, color: 'var(--text-1)',
-  background: 'var(--surface-2)', boxSizing: 'border-box',
+  width: '100%', height: 42, padding: '0 12px',
+  borderRadius: 12, border: '1.5px solid rgba(0,0,0,.07)',
+  fontSize: 13, color: '#0a1628', fontFamily: 'inherit',
+  background: '#f8f9fd', boxSizing: 'border-box',
 }
