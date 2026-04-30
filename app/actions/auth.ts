@@ -37,7 +37,10 @@ function validarCPF(cpf: string): boolean {
 
 // ── LOGIN com CPF ──
 export async function loginAction(formData: FormData) {
+  console.time('loginAction Total')
+  console.time('createClient')
   const supabase = await createClient()
+  console.timeEnd('createClient')
 
   const cpfRaw  = formData.get('cpf') as string
   const senha   = formData.get('senha') as string
@@ -49,11 +52,13 @@ export async function loginAction(formData: FormData) {
   const cpfLimpo = limparCPF(cpfRaw)
 
   // Rate limit: 5 tentativas por CPF/minuto + 20 por IP/minuto
+  console.time('rateLimit')
   const ip = await getClientIp()
   const [byCpf, byIp] = await Promise.all([
     ratelimit.check(`login:cpf:${cpfLimpo}`, 5, 60),
     ratelimit.check(`login:ip:${ip}`, 20, 60),
   ])
+  console.timeEnd('rateLimit')
 
   if (!byCpf.allowed || !byIp.allowed) {
     const retry = Math.max(byCpf.retryAfter, byIp.retryAfter)
@@ -63,24 +68,32 @@ export async function loginAction(formData: FormData) {
   }
 
   // Busca email pelo CPF via RPC
+  console.time('rpc get_email_by_cpf')
   const { data: email, error: rpcError } = await supabase
     .rpc('get_email_by_cpf', { p_cpf: cpfLimpo })
+  console.timeEnd('rpc get_email_by_cpf')
 
   if (rpcError || !email) {
     return { error: 'CPF não encontrado. Verifique ou crie uma conta.' }
   }
 
+  console.time('signInWithPassword')
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password: senha,
   })
+  console.timeEnd('signInWithPassword')
 
   if (authError) {
     return { error: 'CPF ou senha incorretos.' }
   }
 
+  console.time('revalidatePath')
   revalidatePath('/', 'layout')
+  console.timeEnd('revalidatePath')
+  
   const isAdmin = authData.user?.app_metadata?.role === 'admin'
+  console.timeEnd('loginAction Total')
   redirect(isAdmin ? '/admin' : '/loja')
 }
 
@@ -140,48 +153,45 @@ export async function cadastroAction(formData: FormData) {
   }
 
   // ==========================================
-  // [INTEGRAÇÃO ONDA 3] Onboarding Mágico CRM
+  // [INTEGRAÇÃO ONDA 3] Onboarding Mágico (Direto ActiveSoft)
   // ==========================================
   try {
-    const educrmUrl = process.env.EDUCRM_API_URL
-    const educrmKey = process.env.EDUCRM_API_KEY
     const responsavelId = authData.user.id
 
-    if (educrmUrl && educrmKey) {
-      const res = await fetch(`${educrmUrl}/api/webhooks/loja/onboarding?cpf=${cpf}`, {
-        headers: { 'x-webhook-secret': educrmKey }
-      })
+    // Import dinâmico para não quebrar outras funções se o token faltar
+    const { activesoft } = await import('@/lib/activesoft')
+    
+    if (activesoft.isConfigured()) {
+      const alunosSiga = await activesoft.findAlunosByResponsavelCpf(cpf)
+      
+      if (alunosSiga && alunosSiga.length > 0) {
+        // Insere alunos com os mesmos IDs do ERP
+        const { error: alunosError } = await supabase.from('alunos').upsert(
+          alunosSiga.map((s: any) => ({
+            id: s.id.toString(), // Mantém o ID original do ERP
+            nome: s.nome,
+            serie: 'SigaWeb', // Podemos melhorar buscando a série exata depois
+            escola_id: null,
+            ativo: true
+          }))
+        )
 
-      if (res.ok) {
-        const data = await res.json()
-        
-        if (data.students && data.students.length > 0) {
-          // Insere alunos com os mesmos IDs do CRM
-          const { error: alunosError } = await supabase.from('alunos').upsert(
-            data.students.map((s: any) => ({
-              id: s.id, // Mantém o ID original do CRM
-              nome: s.name,
-              serie: s.serie || 'Não informada',
-              escola_id: null,
-              ativo: true
+        if (!alunosError) {
+          // Vincula os alunos ao responsável recém-criado
+          await supabase.from('responsavel_aluno').upsert(
+            alunosSiga.map((s: any) => ({
+              responsavel_id: responsavelId,
+              aluno_id: s.id.toString(),
+              parentesco: 'Responsável'
             }))
           )
-
-          if (!alunosError) {
-            // Vincula os alunos ao responsável recém-criado
-            await supabase.from('responsavel_aluno').upsert(
-              data.students.map((s: any) => ({
-                responsavel_id: responsavelId,
-                aluno_id: s.id,
-                parentesco: 'Responsável'
-              }))
-            )
-          }
         }
       }
+    } else {
+      console.warn('ACTIVESOFT_TOKEN não configurado na Loja. Onboarding Mágico ignorado.')
     }
   } catch (err) {
-    console.error('Erro no onboarding mágico:', err)
+    console.error('Erro no onboarding mágico direto com ActiveSoft:', err)
     // Não trava o cadastro se a integração falhar
   }
 
