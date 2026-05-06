@@ -50,7 +50,7 @@ export function AdminSidebar({
   ]
 
   return (
-    <aside className="mobile-hide md-show-flex flex-col" style={{
+    <aside className="hidden md:flex flex-col" style={{
       width: 260,
       background: 'rgba(10, 22, 40, 0.4)',
       backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',

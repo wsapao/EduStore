@@ -24,7 +24,7 @@ export function AdminMobileNav() {
   ]
 
   return (
-    <nav className="md-hide fixed bottom-0 left-0 right-0 z-[100] flex h-[68px] bg-[#0a1628]/95 backdrop-blur-xl border-t border-white/5 pb-safe">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] flex h-[68px] bg-[#0a1628]/95 backdrop-blur-xl border-t border-white/5 pb-safe">
       {links.map(({ href, label, icon: Icon }) => {
         const isActive = pathname === href
         return (
