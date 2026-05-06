@@ -406,8 +406,8 @@ export async function iniciarRecargaAction(alunoId: string, valor: number) {
       referencia: `recarga:${recargaId}`,
     })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Erro ao criar PIX.'
-    return { error: msg }
+    console.error('[iniciarRecarga] Erro ao criar PIX no Asaas:', err)
+    return { error: 'Erro ao processar pagamento. Tente novamente.' }
   }
 
   if (resultado.metodo !== 'pix') return { error: 'Resposta inválida do gateway.' }
@@ -430,6 +430,7 @@ export async function iniciarRecargaAction(alunoId: string, valor: number) {
     })
 
   if (errRecarga) {
+    console.error('[iniciarRecarga] PIX criado mas insert falhou. gateway_id:', pix.gateway_id, 'erro:', errRecarga.message)
     return { error: 'Erro ao registrar recarga. Tente novamente.' }
   }
 
