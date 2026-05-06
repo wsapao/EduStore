@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hashPin, verifyPin } from '@/lib/cantina/pin'
+import { getGateway } from '@/lib/pagamentos/gateway'
+import type { ResultadoPagamento } from '@/lib/pagamentos/types'
 
 const PAGE_SIZE = 20
 
@@ -346,15 +348,17 @@ export async function confirmarCompraCantinaAction(
   }
 }
 
-// ── Recarga MVP (simula pagamento confirmado) ─────────────────
+// ── Iniciar recarga via PIX real ──────────────────────────────
 export async function iniciarRecargaAction(alunoId: string, valor: number) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Não autenticado.' }
 
-  if (valor <= 0) return { error: 'Valor inválido.' }
+  if (valor < 5 || valor > 2000) {
+    return { error: 'Valor fora do intervalo permitido (R$ 5,00 a R$ 2.000,00).' }
+  }
 
-  // Verificar vínculo
+  // Verifica vínculo responsável↔aluno
   const { data: vinculo } = await supabase
     .from('responsavel_aluno')
     .select('aluno_id')
@@ -364,33 +368,77 @@ export async function iniciarRecargaAction(alunoId: string, valor: number) {
 
   if (!vinculo) return { error: 'Acesso negado.' }
 
-  // Buscar carteira
+  // Busca carteira + verifica se está ativa
   const { data: carteira } = await supabase
     .from('cantina_carteiras')
-    .select('id')
+    .select('id, ativo')
     .eq('aluno_id', alunoId)
     .single()
 
   if (!carteira) return { error: 'Carteira não encontrada.' }
+  if (!carteira.ativo) return { error: 'Carteira bloqueada. Desbloqueie antes de recarregar.' }
 
+  // Busca dados do responsável para criar o cliente no Asaas
+  const { data: responsavel } = await supabase
+    .from('responsaveis')
+    .select('nome, email, cpf')
+    .eq('id', user.id)
+    .single()
+
+  if (!responsavel?.cpf) return { error: 'CPF não cadastrado. Contate a escola.' }
+
+  // Pré-gera o ID da recarga para usá-lo como externalReference no Asaas
+  const recargaId = crypto.randomUUID()
+
+  // Cria o PIX no Asaas
+  const gateway = getGateway('cantina')
+  let resultado: ResultadoPagamento
+  try {
+    resultado = await gateway.criarPagamento({
+      metodo: 'pix',
+      total: valor,
+      responsavel: {
+        nome: responsavel.nome,
+        email: responsavel.email,
+        cpf: responsavel.cpf,
+      },
+      descricao: `Recarga cantina — R$ ${valor.toFixed(2)}`,
+      referencia: `recarga:${recargaId}`,
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erro ao criar PIX.'
+    return { error: msg }
+  }
+
+  if (resultado.metodo !== 'pix') return { error: 'Resposta inválida do gateway.' }
+  const pix = resultado
+
+  // Insere registro de recarga (sem creditar saldo — crédito ocorre após confirmação do webhook)
   const adminClient = createAdminClient()
-
-  const { data: resultado, error } = await adminClient
-    .rpc('creditar_saldo_cantina', {
-      p_carteira_id: carteira.id,
-      p_valor: valor,
-      p_descricao: `Recarga via app — R$ ${valor.toFixed(2)}`,
-      p_operador_id: null,
-      p_gateway_id: null,
+  const { error: errRecarga } = await adminClient
+    .from('cantina_recargas' as any)
+    .insert({
+      id: recargaId,
+      carteira_id: carteira.id,
+      responsavel_id: user.id,
+      valor,
+      status: 'aguardando',
+      gateway_id: pix.gateway_id,
+      pix_qr_code: pix.qr_code,
+      pix_qr_code_imagem: pix.qr_code_imagem,
+      pix_expiracao: pix.expiracao,
     })
 
-  if (error) return { error: error.message }
-  const rpcResult = resultado as { ok: boolean; erro?: string; saldo_apos?: number }
-  if (!rpcResult?.ok) return { error: rpcResult?.erro ?? 'Erro ao creditar.' }
+  if (errRecarga) {
+    return { error: 'Erro ao registrar recarga. Tente novamente.' }
+  }
 
-  revalidatePath('/cantina')
-  revalidatePath(`/cantina/${alunoId}/extrato`)
-  return { success: true, saldo_apos: rpcResult.saldo_apos }
+  return {
+    recarga_id: recargaId,
+    pix_qr_code: pix.qr_code,
+    pix_qr_code_imagem: pix.qr_code_imagem,
+    pix_expiracao: pix.expiracao,
+  }
 }
 
 // ── Ações para admin de produtos ─────────────────────────────
