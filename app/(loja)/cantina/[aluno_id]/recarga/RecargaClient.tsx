@@ -21,7 +21,6 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
   const [pending, startTransition] = useTransition()
   const [valorSelecionado, setValorSelecionado] = useState<number | null>(null)
   const [valorCustom, setValorCustom] = useState('')
-  // futuro: estado para tela de PIX após integração com gateway
   const [erro, setErro] = useState<string | null>(null)
 
   const valorFinal = valorSelecionado ?? (valorCustom ? parseFloat(valorCustom.replace(',', '.')) : null)
@@ -51,12 +50,11 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
 
     startTransition(async () => {
       const res = await iniciarRecargaAction(alunoId, valorFinal)
-      if (!res.success) {
+      if ('error' in res) {
         setErro(res.error ?? 'Erro ao iniciar recarga.')
         return
       }
-      // MVP: recarga creditada diretamente (sem gateway)
-      router.push(`/cantina/${alunoId}/extrato`)
+      router.push(`/cantina/${alunoId}/recarga/${res.recarga_id}`)
     })
   }
 
