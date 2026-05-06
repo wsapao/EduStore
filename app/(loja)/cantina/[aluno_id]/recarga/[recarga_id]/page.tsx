@@ -17,11 +17,19 @@ export default async function AguardandoRecargaPage({
   // RLS já filtra recargas do usuário; validamos explicitamente por segurança
   const { data: recarga } = await supabase
     .from('cantina_recargas' as any)
-    .select('id, valor, status, pix_qr_code, pix_qr_code_imagem, pix_expiracao, responsavel_id')
+    .select('id, valor, status, pix_qr_code, pix_qr_code_imagem, pix_expiracao, responsavel_id, carteira_id')
     .eq('id', recarga_id)
     .single()
 
   if (!recarga || recarga.responsavel_id !== user.id) notFound()
+
+  const { data: carteira } = await supabase
+    .from('cantina_carteiras' as any)
+    .select('aluno_id')
+    .eq('id', recarga.carteira_id)
+    .single()
+
+  if (!carteira || carteira.aluno_id !== aluno_id) notFound()
 
   const { data: aluno } = await supabase
     .from('alunos')

@@ -60,8 +60,6 @@ export function AguardandoClient({
 
   // Supabase Realtime — escuta UPDATE na recarga específica
   useEffect(() => {
-    if (estado !== 'aguardando') return
-
     const supabase = createClient()
     const channel = supabase
       .channel(`recarga-${recargaId}`)
@@ -85,7 +83,7 @@ export function AguardandoClient({
       })
 
     return () => { void supabase.removeChannel(channel) }
-  }, [recargaId, estado])
+  }, [recargaId])
 
   // Countdown — atualiza a cada segundo
   useEffect(() => {
@@ -111,9 +109,13 @@ export function AguardandoClient({
   }, [estado, alunoId, router])
 
   const handleCopiar = useCallback(async () => {
-    await navigator.clipboard.writeText(qrCode)
-    setCopiado(true)
-    setTimeout(() => setCopiado(false), 2000)
+    try {
+      await navigator.clipboard.writeText(qrCode)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch {
+      // clipboard unavailable in non-secure context or old WebView
+    }
   }, [qrCode])
 
   const handleRenovar = useCallback(async () => {
