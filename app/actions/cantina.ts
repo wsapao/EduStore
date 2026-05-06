@@ -458,6 +458,7 @@ export async function renovarRecargaAction(recargaId: string) {
   if (!recarga || recarga.responsavel_id !== user.id) return { error: 'Recarga não encontrada.' }
   if (recarga.status !== 'aguardando') return { error: 'Recarga não pode ser renovada.' }
 
+  if (!recarga.pix_expiracao) return { error: 'Dados de expiração ausentes.' }
   const agora = new Date()
   const expiracao = new Date(recarga.pix_expiracao as string)
   if (expiracao > agora) return { error: 'PIX ainda não expirou.' }
@@ -506,7 +507,10 @@ export async function renovarRecargaAction(recargaId: string) {
     })
     .eq('id', recargaId)
 
-  if (errUpdate) return { error: 'Erro ao atualizar recarga.' }
+  if (errUpdate) {
+    console.error('[renovarRecarga] PIX renovado mas update falhou. gateway_id:', pix.gateway_id, 'erro:', errUpdate.message)
+    return { error: 'Erro ao atualizar recarga.' }
+  }
 
   return {
     pix_qr_code: pix.qr_code,
