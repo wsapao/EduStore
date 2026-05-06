@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hashPin, verifyPin } from '@/lib/cantina/pin'
 
 const PAGE_SIZE = 20
 
@@ -92,7 +93,7 @@ export async function configurarCarteiraAction(
   }
 
   if (senhaPin !== undefined) {
-    updateData.senha_pin = senhaPin || null
+    updateData.senha_pin_hash = senhaPin ? await hashPin(senhaPin) : null
   }
 
   const { error } = await supabase
@@ -237,7 +238,7 @@ export async function buscarAlunoCantinaAction(q: string) {
     .from('alunos')
     .select(`
       id, nome, serie, turma,
-      cantina_carteiras (id, saldo, limite_diario, ativo, bloqueio_motivo, qr_token, senha_pin, nfc_id),
+      cantina_carteiras (id, saldo, limite_diario, ativo, bloqueio_motivo, qr_token, senha_pin_hash, nfc_id),
       cantina_restricoes (produto_id, motivo)
     `)
     .ilike('nome', `%${q.trim()}%`)
@@ -246,13 +247,13 @@ export async function buscarAlunoCantinaAction(q: string) {
 
   if (error) return { error: error.message, data: null }
 
-  // Mapear para não vazar a senha para o front
+  // Mapear para não vazar o hash para o front
   const safeData = data.map(aluno => ({
     ...aluno,
     cantina_carteiras: aluno.cantina_carteiras.map(c => ({
       ...c,
-      has_pin: !!c.senha_pin,
-      senha_pin: undefined // Limpar
+      has_pin: !!c.senha_pin_hash,
+      senha_pin_hash: undefined,
     }))
   }))
 
@@ -279,15 +280,17 @@ export async function confirmarCompraCantinaAction(
   // Buscar carteira
   const { data: carteira } = await adminClient
     .from('cantina_carteiras')
-    .select('id, escola_id, senha_pin')
+    .select('id, escola_id, senha_pin_hash')
     .eq('aluno_id', alunoId)
     .single()
 
   if (!carteira) return { error: 'Carteira não encontrada para este aluno.' }
 
   // Validar PIN se configurado na carteira
-  if (carteira.senha_pin && carteira.senha_pin !== senhaDigitada) {
-    return { error: 'Senha incorreta.', requiresPin: true }
+  if (carteira.senha_pin_hash) {
+    if (!senhaDigitada) return { error: 'PIN necessário.', requiresPin: true }
+    const pinValido = await verifyPin(senhaDigitada, carteira.senha_pin_hash)
+    if (!pinValido) return { error: 'Senha incorreta.', requiresPin: true }
   }
 
   // Debitar saldo via RPC

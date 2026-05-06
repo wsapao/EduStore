@@ -13,6 +13,17 @@ export async function GET(request: Request) {
     return new Response('Acesso negado.', { status: 403 })
   }
 
+  // Busca escola_id do admin autenticado — impede acesso a dados de outras escolas
+  const { data: adminResp } = await supabase
+    .from('responsaveis')
+    .select('escola_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!adminResp?.escola_id) {
+    return new Response('Admin sem escola vinculada.', { status: 403 })
+  }
+
   const { searchParams } = new URL(request.url)
   const q = searchParams.get('q')?.trim().toLocaleLowerCase('pt-BR') ?? ''
 
@@ -24,6 +35,7 @@ export async function GET(request: Request) {
         aluno:alunos(nome, serie, turma, ativo)
       )
     `)
+    .eq('escola_id', adminResp.escola_id)
     .order('created_at', { ascending: false })
 
   const filtered = (rows ?? []).filter((row) => {

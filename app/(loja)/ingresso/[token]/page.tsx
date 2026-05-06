@@ -304,8 +304,7 @@ export default async function IngressoPage({
           textAlign: 'center',
           fontSize: 11, color: '#94a3b8', lineHeight: 1.6,
         }}>
-          Ingresso emitido em {fmtDataHora(ingresso.created_at)}<br />
-          {ingresso.responsavel.nome} · {ingresso.responsavel.email}
+          Ingresso emitido em {fmtDataHora(ingresso.created_at)}
         </div>
       </div>
 

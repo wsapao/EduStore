@@ -15,6 +15,7 @@ export interface DadosCartao {
   validade: string   // MM/AA
   cvv: string
   parcelas: number
+  cep: string        // CEP do titular — obrigatório para antifraude Asaas
 }
 
 export interface CriarPagamentoInput {

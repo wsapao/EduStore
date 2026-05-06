@@ -37,10 +37,7 @@ function validarCPF(cpf: string): boolean {
 
 // ── LOGIN com CPF ──
 export async function loginAction(formData: FormData) {
-  console.time('loginAction Total')
-  console.time('createClient')
   const supabase = await createClient()
-  console.timeEnd('createClient')
 
   const cpfRaw  = formData.get('cpf') as string
   const senha   = formData.get('senha') as string
@@ -52,13 +49,11 @@ export async function loginAction(formData: FormData) {
   const cpfLimpo = limparCPF(cpfRaw)
 
   // Rate limit: 5 tentativas por CPF/minuto + 20 por IP/minuto
-  console.time('rateLimit')
   const ip = await getClientIp()
   const [byCpf, byIp] = await Promise.all([
     ratelimit.check(`login:cpf:${cpfLimpo}`, 5, 60),
     ratelimit.check(`login:ip:${ip}`, 20, 60),
   ])
-  console.timeEnd('rateLimit')
 
   if (!byCpf.allowed || !byIp.allowed) {
     const retry = Math.max(byCpf.retryAfter, byIp.retryAfter)
@@ -68,32 +63,24 @@ export async function loginAction(formData: FormData) {
   }
 
   // Busca email pelo CPF via RPC
-  console.time('rpc get_email_by_cpf')
   const { data: email, error: rpcError } = await supabase
     .rpc('get_email_by_cpf', { p_cpf: cpfLimpo })
-  console.timeEnd('rpc get_email_by_cpf')
 
   if (rpcError || !email) {
     return { error: 'CPF não encontrado. Verifique ou crie uma conta.' }
   }
 
-  console.time('signInWithPassword')
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password: senha,
   })
-  console.timeEnd('signInWithPassword')
 
   if (authError) {
     return { error: 'CPF ou senha incorretos.' }
   }
 
-  console.time('revalidatePath')
   revalidatePath('/', 'layout')
-  console.timeEnd('revalidatePath')
-  
   const isAdmin = authData.user?.app_metadata?.role === 'admin'
-  console.timeEnd('loginAction Total')
   redirect(isAdmin ? '/admin' : '/loja')
 }
 

@@ -249,7 +249,7 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
           name: input.responsavel.nome,
           email: input.responsavel.email,
           cpfCnpj: input.responsavel.cpf.replace(/\D/g, ''),
-          postalCode: '00000000', // fallback — idealmente coleta do usuário
+          postalCode: input.dadosCartao.cep.replace(/\D/g, ''),
           addressNumber: '0',
           phone: '',
         },

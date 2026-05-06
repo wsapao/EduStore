@@ -207,7 +207,7 @@ export interface CantinaCarteira {
   bloqueio_motivo: string | null
   qr_token: string
   nfc_id: string | null
-  senha_pin: string | null
+  senha_pin_hash: string | null
   created_at: string
   updated_at: string
 }

@@ -158,11 +158,17 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     return { success: false, error: 'Erro ao salvar itens do pedido: ' + itensErr.message }
   }
 
-  // Registra uso do voucher
+  // Registra uso do voucher de forma atômica (evita race condition em checkout simultâneo)
   if (voucherIdParaSalvar) {
-    const { data: v } = await supabase.from('vouchers').select('usos_atuais').eq('id', voucherIdParaSalvar).single()
-    if (v) {
-      await supabase.from('vouchers').update({ usos_atuais: v.usos_atuais + 1 }).eq('id', voucherIdParaSalvar)
+    const { data: incrementado } = await supabase
+      .rpc('incrementar_uso_voucher', { p_voucher_id: voucherIdParaSalvar })
+
+    if (!incrementado) {
+      // Limite atingido em concorrência — desfaz pedido e estoque já reservado
+      await supabase.from('itens_pedido').delete().eq('pedido_id', pedido.id)
+      await supabase.from('pedidos').delete().eq('id', pedido.id)
+      await restaurarEstoqueVariantes(supabase, input.items)
+      return { success: false, error: 'Cupom esgotado. Tente finalizar sem o cupom.' }
     }
   }
 

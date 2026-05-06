@@ -21,6 +21,19 @@ type CheckResult = {
 // ── Backend in-memory (dev/preview) ──────────────────────────────────────────
 const memoryStore = new Map<string, { count: number; resetAt: number }>()
 
+// Avisa uma vez por processo se Redis não estiver configurado em produção
+if (
+  typeof process !== 'undefined' &&
+  process.env.NODE_ENV === 'production' &&
+  (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
+) {
+  console.warn(
+    '[ratelimit] ATENÇÃO: UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN não configurados. ' +
+    'Rate limiting rodando em memória — será resetado a cada cold start. ' +
+    'Configure o Upstash Redis em produção para proteção contra brute force.'
+  )
+}
+
 function memoryCheck(key: string, limit: number, windowSec: number): CheckResult {
   const now = Date.now()
   const bucket = memoryStore.get(key)

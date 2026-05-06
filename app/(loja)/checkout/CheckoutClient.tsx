@@ -44,7 +44,7 @@ export function CheckoutClient() {
   )
 
   const [cartao, setCartao] = useState<DadosCartao>({
-    numero: '', nome: '', validade: '', cvv: '', parcelas: 1,
+    numero: '', nome: '', validade: '', cvv: '', parcelas: 1, cep: '',
   })
 
   const maxParcelas = items.reduce(
@@ -116,6 +116,7 @@ export function CheckoutClient() {
       if (!cartao.nome.trim()) { setError('Digite o nome como está no cartão.'); return }
       if (cartao.validade.length < 5) { setError('Data de validade incompleta.'); return }
       if (cartao.cvv.length < 3) { setError('Código de segurança (CVV) inválido.'); return }
+      if (cartao.cep.replace(/\D/g, '').length < 8) { setError('CEP inválido.'); return }
     }
     if (requiresTermo && !termosAceitos) {
       setError('Por favor, leia e aceite os Termos de Responsabilidade para continuar.')
@@ -900,6 +901,17 @@ function CartaoForm({ cartao, onChange, maxParcelas, total, cardNum, cardNome, c
             />
           </BigField>
         </div>
+
+        <BigField label="CEP do titular">
+          <input
+            value={cartao.cep}
+            onChange={e => field('cep')(e.target.value.replace(/\D/g, '').slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2'))}
+            placeholder="00000-000"
+            maxLength={9}
+            inputMode="numeric"
+            style={bigInputStyle}
+          />
+        </BigField>
 
         {maxParcelas > 1 && (
           <BigField label="Parcelamento">

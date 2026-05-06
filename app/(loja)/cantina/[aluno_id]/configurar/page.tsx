@@ -32,7 +32,7 @@ export default async function ConfigurarCartinaPage({
 
   const { data: carteira } = await supabase
     .from('cantina_carteiras')
-    .select('id, saldo, limite_diario, ativo, bloqueio_motivo, senha_pin')
+    .select('id, saldo, limite_diario, ativo, bloqueio_motivo, senha_pin_hash')
     .eq('aluno_id', aluno_id)
     .single()
 
@@ -96,7 +96,7 @@ export default async function ConfigurarCartinaPage({
         limiteDiario={carteira.limite_diario}
         ativo={carteira.ativo}
         bloqueioMotivo={carteira.bloqueio_motivo}
-        hasPin={!!carteira.senha_pin}
+        hasPin={!!carteira.senha_pin_hash}
         restricoes={restricoes || []}
         produtos={produtos || []}
       />
