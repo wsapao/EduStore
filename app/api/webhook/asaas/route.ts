@@ -161,7 +161,22 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Payload sem payment.id.' }, { status: 400 })
   }
 
-  // 4. Localiza pedido pelo gateway_id
+  // 4. Se a referência aponta para uma recarga de cantina, processa separadamente
+  if (payment.externalReference?.startsWith('recarga:')) {
+    const recargaId = payment.externalReference.slice('recarga:'.length)
+    const supabase = createAdminClient()
+    const { error: rpcErr } = await supabase.rpc('confirmar_recarga' as any, {
+      p_recarga_id: recargaId,
+    })
+    if (rpcErr) {
+      console.error(`[webhook/asaas] Erro ao confirmar recarga ${recargaId}:`, rpcErr.message)
+      return Response.json({ ok: false, error: rpcErr.message }, { status: 500 })
+    }
+    console.log(`[webhook/asaas] Recarga ${recargaId} confirmada via webhook.`)
+    return Response.json({ ok: true })
+  }
+
+  // 5. Localiza pedido pelo gateway_id
   const supabase = createAdminClient()
 
   const { data: pagamento, error: pagErr } = await supabase
@@ -176,12 +191,12 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, warning: 'Pagamento não encontrado.' })
   }
 
-  // 5. Idempotência — se já confirmado, ignora
+  // 6. Idempotência — se já confirmado, ignora
   if (pagamento.status === 'confirmado') {
     return Response.json({ ok: true, ignored: true, reason: 'Já confirmado.' })
   }
 
-  // 6. Confirma pagamento e gera ingressos
+  // 7. Confirma pagamento e gera ingressos
   try {
     await confirmarPagamento(pagamento.pedido_id, payment.netValue)
     console.log(`[webhook/asaas] Pedido ${pagamento.pedido_id} confirmado via webhook. netValue=${payment.netValue ?? 'não informado'}`)
