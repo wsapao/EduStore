@@ -442,6 +442,79 @@ export async function iniciarRecargaAction(alunoId: string, valor: number) {
   }
 }
 
+// ── Renovar PIX expirado ──────────────────────────────────────
+export async function renovarRecargaAction(recargaId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  // RLS garante que o usuário só vê suas próprias recargas
+  const { data: recarga } = await supabase
+    .from('cantina_recargas' as any)
+    .select('id, carteira_id, responsavel_id, valor, status, pix_expiracao')
+    .eq('id', recargaId)
+    .single()
+
+  if (!recarga || recarga.responsavel_id !== user.id) return { error: 'Recarga não encontrada.' }
+  if (recarga.status !== 'aguardando') return { error: 'Recarga não pode ser renovada.' }
+
+  const agora = new Date()
+  const expiracao = new Date(recarga.pix_expiracao as string)
+  if (expiracao > agora) return { error: 'PIX ainda não expirou.' }
+
+  // Busca dados do responsável para criar o cliente no Asaas
+  const { data: responsavel } = await supabase
+    .from('responsaveis')
+    .select('nome, email, cpf')
+    .eq('id', user.id)
+    .single()
+
+  if (!responsavel?.cpf) return { error: 'CPF não cadastrado. Contate a escola.' }
+
+  // Cria novo PIX com a mesma referência (mesmo recargaId)
+  const gateway = getGateway('cantina')
+  let resultado: ResultadoPagamento
+  try {
+    resultado = await gateway.criarPagamento({
+      metodo: 'pix',
+      total: recarga.valor as number,
+      responsavel: {
+        nome: responsavel.nome,
+        email: responsavel.email,
+        cpf: responsavel.cpf,
+      },
+      descricao: `Recarga cantina (renovação) — R$ ${(recarga.valor as number).toFixed(2)}`,
+      referencia: `recarga:${recargaId}`,
+    })
+  } catch (err) {
+    console.error('[renovarRecarga] Erro ao criar PIX no Asaas:', err)
+    return { error: 'Erro ao processar pagamento. Tente novamente.' }
+  }
+
+  if (resultado.metodo !== 'pix') return { error: 'Resposta inválida do gateway.' }
+  const pix = resultado
+
+  // Atualiza o registro com o novo QR Code (sem mudar o status)
+  const adminClient = createAdminClient()
+  const { error: errUpdate } = await adminClient
+    .from('cantina_recargas' as any)
+    .update({
+      gateway_id: pix.gateway_id,
+      pix_qr_code: pix.qr_code,
+      pix_qr_code_imagem: pix.qr_code_imagem,
+      pix_expiracao: pix.expiracao,
+    })
+    .eq('id', recargaId)
+
+  if (errUpdate) return { error: 'Erro ao atualizar recarga.' }
+
+  return {
+    pix_qr_code: pix.qr_code,
+    pix_qr_code_imagem: pix.qr_code_imagem,
+    pix_expiracao: pix.expiracao,
+  }
+}
+
 // ── Ações para admin de produtos ─────────────────────────────
 export async function salvarProdutoCantinaAction(formData: FormData) {
   const supabase = await createClient()
