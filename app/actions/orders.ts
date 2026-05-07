@@ -1,7 +1,9 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { getGateway } from '@/lib/pagamentos/gateway'
 import { enviarEmailPedido } from '@/lib/email/send'
 import { sincronizarPixExpiradoPedido } from '@/lib/pagamentos/pix'
@@ -357,4 +359,85 @@ export async function renovarPixAction(pedidoId: string): Promise<RenovarPixResu
     pix_qr_code_imagem: resultado.qr_code_imagem,
     pix_expiracao:      resultado.expiracao,
   }
+}
+
+// ── Solicitar Estorno Parcial por Item ────────────────────────────────────────
+export async function solicitarEstornoParcialAction(
+  pedidoId: string,
+  itemIds: string[],
+  motivo: string,
+): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+  if (!motivo.trim()) return { error: 'Motivo é obrigatório.' }
+  if (!itemIds.length) return { error: 'Selecione ao menos um item.' }
+
+  // Verificar que o pedido é do usuário e está pago
+  const { data: pedido } = await supabase
+    .from('pedidos')
+    .select('id, status')
+    .eq('id', pedidoId)
+    .eq('responsavel_id', user.id)
+    .single()
+
+  if (!pedido) return { error: 'Pedido não encontrado.' }
+  if (pedido.status !== 'pago') return { error: 'Só é possível solicitar estorno em pedidos pagos.' }
+
+  const adminClient = createAdminClient()
+
+  // Verificar que não há solicitação pendente
+  const { data: pendente } = await adminClient
+    .from('pedido_estornos')
+    .select('id')
+    .eq('pedido_id', pedidoId)
+    .eq('status', 'pendente')
+    .maybeSingle()
+
+  if (pendente) return { error: 'Já existe uma solicitação de estorno pendente para este pedido.' }
+
+  // Verificar que os itens pertencem ao pedido e não foram estornados
+  const { data: itens } = await adminClient
+    .from('itens_pedido')
+    .select('id, preco_unitario, estornado_em')
+    .eq('pedido_id', pedidoId)
+    .in('id', itemIds)
+
+  if (!itens || itens.length !== itemIds.length)
+    return { error: 'Um ou mais itens não pertencem a este pedido.' }
+
+  const itemJaEstornado = itens.find(i => i.estornado_em !== null)
+  if (itemJaEstornado) return { error: 'Um ou mais itens já foram estornados.' }
+
+  const valorTotal = itens.reduce((s, i) => s + Number(i.preco_unitario), 0)
+
+  // Criar solicitação
+  const { data: estorno, error: errEstorno } = await adminClient
+    .from('pedido_estornos')
+    .insert({
+      pedido_id: pedidoId,
+      responsavel_id: user.id,
+      motivo: motivo.trim(),
+      valor_total: valorTotal,
+    })
+    .select('id')
+    .single()
+
+  if (errEstorno || !estorno) return { error: errEstorno?.message ?? 'Erro ao criar solicitação.' }
+
+  const { error: errItens } = await adminClient
+    .from('pedido_estornos_itens')
+    .insert(itens.map(i => ({
+      estorno_id: estorno.id,
+      item_pedido_id: i.id,
+      valor_item: Number(i.preco_unitario),
+    })))
+
+  if (errItens) {
+    await adminClient.from('pedido_estornos').delete().eq('id', estorno.id)
+    return { error: errItens.message }
+  }
+
+  revalidatePath('/pedidos')
+  return { success: true }
 }
