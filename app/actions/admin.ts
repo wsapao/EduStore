@@ -628,14 +628,16 @@ export async function estornarRecargaAdminAction(recargaId: string): Promise<{ s
   if (!recarga) return { error: 'Recarga não encontrada.' }
   if (recarga.status !== 'confirmada') return { error: 'Só é possível estornar recargas confirmadas.' }
 
-  // Tenta estornar no Asaas (não bloqueia se falhar — pode já ter expirado o prazo)
+  // Tenta estornar no Asaas — captura o erro para registrar no banco se falhar
+  let gatewayErro: string | null = null
   if (recarga.gateway_id) {
     try {
       const { getGateway } = await import('@/lib/pagamentos/gateway')
       const gateway = getGateway('cantina')
       await gateway.estornarPagamento(recarga.gateway_id)
     } catch (err) {
-      console.warn('[estornarRecarga] Gateway não estornou (pode já ter expirado):', err)
+      gatewayErro = err instanceof Error ? err.message : String(err)
+      console.warn('[estornarRecarga] Gateway não estornou:', gatewayErro)
     }
   }
 
@@ -644,9 +646,24 @@ export async function estornarRecargaAdminAction(recargaId: string): Promise<{ s
     p_operador_id: user.id,
   })
 
-  if (error) return { error: error.message }
+  if (error) {
+    // Persiste o motivo da falha no registro para exibição posterior
+    await adminClient
+      .from('cantina_recargas')
+      .update({ motivo_falha: gatewayErro ?? error.message } as any)
+      .eq('id', recargaId)
+    return { error: error.message }
+  }
+
   const resultado = data as { ok: boolean; erro?: string; saldo_apos?: number }
-  if (!resultado.ok) return { error: resultado.erro ?? 'Erro ao estornar.' }
+  if (!resultado.ok) {
+    const motivo = resultado.erro ?? gatewayErro ?? 'Erro ao estornar.'
+    await adminClient
+      .from('cantina_recargas')
+      .update({ motivo_falha: motivo } as any)
+      .eq('id', recargaId)
+    return { error: motivo }
+  }
 
   revalidatePath('/admin/cantina')
   revalidatePath('/admin/cantina/recargas')

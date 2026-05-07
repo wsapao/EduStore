@@ -13,6 +13,7 @@ interface Recarga {
   cancelada_em: string | null
   estornada_em: string | null
   gateway_id: string | null
+  motivo_falha: string | null
   aluno_nome: string
   aluno_serie: string
 }
@@ -29,12 +30,13 @@ function fmtData(iso: string) {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; cor: string; bg: string }> = {
-  aguardando: { label: 'Aguardando',  cor: '#92400e', bg: '#fef3c7' },
-  confirmada: { label: 'Confirmada',  cor: '#065f46', bg: '#d1fae5' },
-  expirada:   { label: 'Expirada',    cor: '#6b7280', bg: '#f3f4f6' },
-  cancelada:  { label: 'Cancelada',   cor: '#6b7280', bg: '#f3f4f6' },
-  estornada:  { label: 'Estornada',   cor: '#7c3aed', bg: '#ede9fe' },
-  falhou:     { label: 'Falhou',      cor: '#991b1b', bg: '#fee2e2' },
+  aguardando:       { label: 'Aguardando',         cor: '#92400e', bg: '#fef3c7' },
+  confirmada:       { label: 'Confirmada',          cor: '#065f46', bg: '#d1fae5' },
+  expirada:         { label: 'Expirada',            cor: '#6b7280', bg: '#f3f4f6' },
+  cancelada:        { label: 'Cancelada',           cor: '#6b7280', bg: '#f3f4f6' },
+  estornada:        { label: 'Estornada',           cor: '#7c3aed', bg: '#ede9fe' },
+  estorno_aprovado: { label: 'Estorno em andamento', cor: '#92400e', bg: '#fef3c7' },
+  falhou:           { label: 'Falhou',              cor: '#991b1b', bg: '#fee2e2' },
 }
 
 function BadgeStatus({ status }: { status: string }) {
@@ -84,6 +86,7 @@ function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (
       padding: '14px 16px',
       borderBottom: '1px solid rgba(255,255,255,0.06)',
     }}>
+      {/* Linha principal: info + valor/status + botões de ação */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         {/* Info */}
         <div style={{ flex: 1, minWidth: 200 }}>
@@ -138,6 +141,18 @@ function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (
           </div>
         )}
       </div>
+
+      {/* Motivo da falha */}
+      {recarga.status === 'falhou' && recarga.motivo_falha && (
+        <div style={{
+          marginTop: 8, padding: '8px 10px',
+          background: 'rgba(153,27,27,0.1)', border: '1px solid rgba(153,27,27,0.25)',
+          borderRadius: 6, fontSize: 11, color: '#fca5a5',
+        }}>
+          <span style={{ fontWeight: 700, marginRight: 4 }}>Motivo:</span>
+          {recarga.motivo_falha}
+        </div>
+      )}
 
       {/* Confirmação inline */}
       {acao && (

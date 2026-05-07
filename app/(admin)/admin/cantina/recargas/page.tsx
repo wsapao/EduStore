@@ -21,7 +21,7 @@ export default async function RecargasAdminPage() {
       .from('cantina_recargas')
       .select(`
         id, status, metodo, valor, created_at,
-        confirmada_em, cancelada_em, estornada_em, gateway_id,
+        confirmada_em, cancelada_em, estornada_em, gateway_id, motivo_falha,
         carteira:cantina_carteiras!carteira_id(
           aluno:alunos!aluno_id(nome, serie)
         )
@@ -53,6 +53,7 @@ export default async function RecargasAdminPage() {
     cancelada_em: r.cancelada_em,
     estornada_em: r.estornada_em,
     gateway_id: r.gateway_id,
+    motivo_falha: r.motivo_falha ?? null,
     aluno_nome: r.carteira?.aluno?.nome ?? '—',
     aluno_serie: r.carteira?.aluno?.serie ?? '',
   }))
