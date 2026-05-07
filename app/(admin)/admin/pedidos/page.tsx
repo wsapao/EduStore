@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { confirmarPagamentoAction, cancelarPedidoAction } from '@/app/actions/admin'
 import type { StatusPedido, MetodoPagamento } from '@/types/database'
+import { EstornoAdminCard } from './EstornoAdminCard'
 
 function fmtBRL(v: number) {
   return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -175,6 +177,46 @@ export default async function AdminPedidos({
     })),
   }))
 
+  // Buscar estornos pendentes para os pedidos desta página
+  const pedidoIdsPage = pedidos.map(p => p.id)
+  const adminClient = createAdminClient()
+
+  const { data: estornosPendentesRaw } = pedidoIdsPage.length
+    ? await adminClient
+        .from('pedido_estornos')
+        .select('id, pedido_id, motivo, valor_total, created_at, itens:pedido_estornos_itens(item_pedido_id, valor_item)')
+        .in('pedido_id', pedidoIdsPage)
+        .eq('status', 'pendente')
+    : { data: [] }
+
+  // Mapa de detalhes dos itens já carregados nos pedidos
+  const itemDetailsMap = pedidos.flatMap(p => p.itens).reduce<Record<string, { produto_nome: string; aluno_nome: string; variante: string | null }>>(
+    (acc, item) => {
+      acc[item.id] = {
+        produto_nome: item.produto?.nome ?? '—',
+        aluno_nome: item.aluno?.nome ?? '—',
+        variante: item.variante ?? null,
+      }
+      return acc
+    },
+    {}
+  )
+
+  // Enriquecer itens do estorno com nomes de produto/aluno
+  const estornoByPedidoId = ((estornosPendentesRaw ?? []) as any[]).reduce<Record<string, any>>(
+    (acc, e) => {
+      acc[e.pedido_id] = {
+        ...e,
+        itens: (e.itens ?? []).map((i: any) => ({
+          ...i,
+          ...(itemDetailsMap[i.item_pedido_id] ?? { produto_nome: '—', aluno_nome: '—', variante: null }),
+        })),
+      }
+      return acc
+    },
+    {}
+  )
+
   const filtros: { value: string; label: string }[] = [
     { value: 'todos', label: `Todos (${total})` },
     { value: 'pendente', label: `Aguardando (${counts.pendente ?? 0})` },
@@ -299,6 +341,17 @@ export default async function AdminPedidos({
                   }} />
                   {statusCfg.label}
                 </span>
+
+                {estornoByPedidoId[p.id] && (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 700,
+                    background: 'rgba(245,158,11,0.15)', color: '#fcd34d',
+                    border: '1px solid rgba(245,158,11,0.3)',
+                  }}>
+                    ⚠️ Estorno pendente
+                  </span>
+                )}
 
                 {metodoCfg && (
                   <span style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
@@ -428,6 +481,13 @@ export default async function AdminPedidos({
                   )}
                 </div>
               </div>
+
+              {estornoByPedidoId[p.id] && (
+                <EstornoAdminCard
+                  estorno={estornoByPedidoId[p.id]}
+                  metodoPagamento={p.pagamento?.metodo ?? p.metodo_pagamento ?? 'pix'}
+                />
+              )}
             </div>
           )
         })}
