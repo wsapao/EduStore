@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { confirmarPagamentoAction, cancelarPedidoAction } from '@/app/actions/admin'
 import type { StatusPedido, MetodoPagamento } from '@/types/database'
 import { EstornoAdminCard } from './EstornoAdminCard'
+import { EstornoHistoricoAdmin } from './EstornoHistoricoAdmin'
 
 function fmtBRL(v: number) {
   return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -181,12 +182,12 @@ export default async function AdminPedidos({
   const pedidoIdsPage = pedidos.map(p => p.id)
   const adminClient = createAdminClient()
 
-  const { data: estornosPendentesRaw } = pedidoIdsPage.length
+  const { data: todosEstornosRaw } = pedidoIdsPage.length
     ? await adminClient
         .from('pedido_estornos')
-        .select('id, pedido_id, motivo, valor_total, created_at, itens:pedido_estornos_itens(item_pedido_id, valor_item)')
+        .select('id, pedido_id, status, motivo, obs_admin, valor_total, created_at, resolvido_em, itens:pedido_estornos_itens(item_pedido_id, valor_item)')
         .in('pedido_id', pedidoIdsPage)
-        .eq('status', 'pendente')
+        .order('created_at', { ascending: false })
     : { data: [] }
 
   // Mapa de detalhes dos itens já carregados nos pedidos
@@ -202,20 +203,34 @@ export default async function AdminPedidos({
     {}
   )
 
-  // Enriquecer itens do estorno com nomes de produto/aluno
-  const estornoByPedidoId = ((estornosPendentesRaw ?? []) as any[]).reduce<Record<string, any>>(
-    (acc, e) => {
-      acc[e.pedido_id] = {
-        ...e,
-        itens: (e.itens ?? []).map((i: any) => ({
-          ...i,
-          ...(itemDetailsMap[i.item_pedido_id] ?? { produto_nome: '—', aluno_nome: '—', variante: null }),
-        })),
-      }
-      return acc
-    },
-    {}
-  )
+  // Enriquecer itens do estorno pendente com nomes de produto/aluno
+  const estornoByPedidoId = ((todosEstornosRaw ?? []) as any[])
+    .filter(e => e.status === 'pendente')
+    .reduce<Record<string, any>>(
+      (acc, e) => {
+        acc[e.pedido_id] = {
+          ...e,
+          itens: (e.itens ?? []).map((i: any) => ({
+            ...i,
+            ...(itemDetailsMap[i.item_pedido_id] ?? { produto_nome: '—', aluno_nome: '—', variante: null }),
+          })),
+        }
+        return acc
+      },
+      {}
+    )
+
+  // History: all resolved estornos per pedido
+  const estornosHistoricoByPedidoId = ((todosEstornosRaw ?? []) as any[])
+    .filter(e => e.status !== 'pendente')
+    .reduce<Record<string, any[]>>(
+      (acc, e) => {
+        if (!acc[e.pedido_id]) acc[e.pedido_id] = []
+        acc[e.pedido_id].push(e)
+        return acc
+      },
+      {}
+    )
 
   const filtros: { value: string; label: string }[] = [
     { value: 'todos', label: `Todos (${total})` },
@@ -487,6 +502,9 @@ export default async function AdminPedidos({
                   estorno={estornoByPedidoId[p.id]}
                   metodoPagamento={p.pagamento?.metodo ?? p.metodo_pagamento ?? 'pix'}
                 />
+              )}
+              {estornosHistoricoByPedidoId[p.id]?.length > 0 && (
+                <EstornoHistoricoAdmin estornos={estornosHistoricoByPedidoId[p.id]} />
               )}
             </div>
           )

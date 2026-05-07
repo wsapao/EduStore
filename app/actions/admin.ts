@@ -764,7 +764,7 @@ export async function negarEstornoAction(
 export async function aprovarEstornoParcialAction(
   estornoId: string,
 ): Promise<{ success: true } | { error: string }> {
-  const { user } = await verificarAdmin()
+  await verificarAdmin()
   const adminClient = createAdminClient()
 
   function firstOf<T>(v: T | T[] | null | undefined): T | null {
@@ -855,7 +855,6 @@ export async function aprovarEstornoParcialAction(
       .eq('id', (estorno as any).pedido_id)
   }
 
-  void user
   revalidatePath('/admin/pedidos')
   revalidatePath('/pedidos')
   return { success: true }
