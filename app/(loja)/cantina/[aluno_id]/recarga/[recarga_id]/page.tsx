@@ -17,7 +17,7 @@ export default async function AguardandoRecargaPage({
   // RLS já filtra recargas do usuário; validamos explicitamente por segurança
   const { data: recarga } = await supabase
     .from('cantina_recargas' as any)
-    .select('id, valor, status, pix_qr_code, pix_qr_code_imagem, pix_expiracao, responsavel_id, carteira_id')
+    .select('id, valor, status, metodo, pix_qr_code, pix_qr_code_imagem, pix_expiracao, responsavel_id, carteira_id')
     .eq('id', recarga_id)
     .single()
 
@@ -66,6 +66,7 @@ export default async function AguardandoRecargaPage({
         alunoId={aluno_id}
         alunoNome={aluno?.nome ?? ''}
         valor={recarga.valor as number}
+        metodo={(recarga.metodo ?? 'pix') as 'pix' | 'cartao'}
         pixQrCode={(recarga.pix_qr_code ?? '') as string}
         pixQrCodeImagem={(recarga.pix_qr_code_imagem ?? '') as string}
         pixExpiracao={(recarga.pix_expiracao ?? '') as string}
