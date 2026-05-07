@@ -116,4 +116,9 @@ export const mockGateway: GatewayPagamento = {
   async estornarPagamento(gateway_id: string) {
     void gateway_id
   },
+
+  async estornarParcial(gateway_id: string, valor: number) {
+    void gateway_id
+    void valor
+  },
 }

@@ -325,6 +325,12 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
     async estornarPagamento(gateway_id) {
       await asaasPost(`/payments/${gateway_id}/refund`, {}, apiKey)
     },
+
+    async estornarParcial(gateway_id, valor) {
+      await asaasPost(`/payments/${gateway_id}/refund`, {
+        value: valor,
+      }, apiKey)
+    },
   }
 }
 

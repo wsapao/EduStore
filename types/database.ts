@@ -125,6 +125,7 @@ export interface ItemPedido {
   variante_id?: string | null
   variante: string | null
   preco_unitario: number
+  estornado_em: string | null
   created_at: string
 }
 
@@ -148,6 +149,27 @@ export interface Pagamento {
   boleto_url: string | null
   webhook_confirmado_em: string | null
   created_at: string
+}
+
+export type StatusEstorno = 'pendente' | 'aprovado' | 'negado'
+
+export interface PedidoEstorno {
+  id: string
+  pedido_id: string
+  responsavel_id: string
+  status: StatusEstorno
+  motivo: string
+  obs_admin: string | null
+  valor_total: number
+  created_at: string
+  resolvido_em: string | null
+}
+
+export interface PedidoEstornoItem {
+  id: string
+  estorno_id: string
+  item_pedido_id: string
+  valor_item: number
 }
 
 export type StatusIngresso = 'emitido' | 'usado' | 'cancelado' | 'expirado'
