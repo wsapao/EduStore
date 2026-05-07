@@ -85,6 +85,21 @@ export function AguardandoClient({
     return () => { void supabase.removeChannel(channel) }
   }, [recargaId])
 
+  // Polling fallback — verifica status a cada 5s caso Realtime falhe
+  useEffect(() => {
+    if (estado !== 'aguardando') return
+    const supabase = createClient()
+    const iv = setInterval(async () => {
+      const { data } = await supabase
+        .from('cantina_recargas' as any)
+        .select('status')
+        .eq('id', recargaId)
+        .single()
+      if (data?.status === 'confirmada') setEstado('confirmada')
+    }, 5000)
+    return () => clearInterval(iv)
+  }, [estado, recargaId])
+
   // Countdown — atualiza a cada segundo
   useEffect(() => {
     if (estado !== 'aguardando') return
