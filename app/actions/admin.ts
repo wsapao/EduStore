@@ -684,3 +684,61 @@ export async function cancelarRecargaAdminAction(recargaId: string): Promise<{ s
   revalidatePath('/admin/cantina/recargas')
   return { success: true }
 }
+
+// ── Aprovar estorno (admin) ───────────────────────────────────
+export async function aprovarEstornoAction(
+  solicitacaoId: string,
+): Promise<{ success: true } | { error: string }> {
+  const { user } = await verificarAdmin()
+  const adminClient = createAdminClient()
+
+  // Aprova no banco e pega recarga_id
+  const { data, error } = await adminClient.rpc('aprovar_estorno' as any, {
+    p_solicitacao_id: solicitacaoId,
+    p_decisor_id: user.id,
+  })
+  if (error) return { error: error.message }
+  const res = data as { ok: boolean; erro?: string; recarga_id?: string }
+  if (!res.ok) return { error: res.erro ?? 'Erro ao aprovar.' }
+
+  // Busca gateway_id da recarga para chamar Asaas
+  const { data: recarga } = await adminClient
+    .from('cantina_recargas')
+    .select('gateway_id')
+    .eq('id', res.recarga_id!)
+    .single()
+
+  if (recarga?.gateway_id) {
+    try {
+      const { getGateway } = await import('@/lib/pagamentos/gateway')
+      const gateway = getGateway('cantina')
+      await gateway.estornarPagamento(recarga.gateway_id)
+    } catch (err) {
+      console.warn('[aprovarEstorno] Asaas não processou estorno imediato (aguardar webhook):', err)
+    }
+  }
+
+  revalidatePath('/admin/cantina/recargas')
+  return { success: true }
+}
+
+// ── Negar estorno (admin) ─────────────────────────────────────
+export async function negarEstornoAction(
+  solicitacaoId: string,
+  observacao?: string,
+): Promise<{ success: true } | { error: string }> {
+  const { user } = await verificarAdmin()
+  const adminClient = createAdminClient()
+
+  const { data, error } = await adminClient.rpc('negar_estorno' as any, {
+    p_solicitacao_id: solicitacaoId,
+    p_decisor_id: user.id,
+    p_observacao: observacao ?? null,
+  })
+  if (error) return { error: error.message }
+  const res = data as { ok: boolean; erro?: string }
+  if (!res.ok) return { error: res.erro ?? 'Erro ao negar.' }
+
+  revalidatePath('/admin/cantina/recargas')
+  return { success: true }
+}

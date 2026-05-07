@@ -77,6 +77,7 @@ export function CarteirasClient({ carteiras }: Props) {
           width: '100%', padding: '10px 14px', marginBottom: 16,
           borderRadius: 'var(--r-md)', border: '1.5px solid var(--border)',
           fontSize: 14, outline: 'none',
+          background: 'var(--surface)', color: 'var(--text-1)',
         }}
       />
 

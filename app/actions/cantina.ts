@@ -728,3 +728,26 @@ export async function cancelarRecargaAction(recargaId: string): Promise<{ succes
 
   return { success: true }
 }
+
+// ── Solicitar estorno (responsável) ──────────────────────────
+export async function solicitarEstornoAction(
+  recargaId: string,
+  motivo: string,
+): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+  if (!motivo.trim()) return { error: 'Motivo é obrigatório.' }
+
+  const adminClient = createAdminClient()
+  const { data, error } = await adminClient.rpc('solicitar_estorno' as any, {
+    p_recarga_id: recargaId,
+    p_solicitante_id: user.id,
+    p_motivo: motivo.trim(),
+  })
+  if (error) return { error: error.message }
+  const res = data as { ok: boolean; erro?: string }
+  if (!res.ok) return { error: res.erro ?? 'Erro ao solicitar estorno.' }
+
+  return { success: true }
+}

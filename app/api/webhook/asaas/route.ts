@@ -145,23 +145,38 @@ export async function POST(request: Request) {
     externalReference: payment?.externalReference,
   })
 
-  // 3. Processa apenas eventos de confirmação de pagamento
-  const EVENTOS_CONFIRMACAO = [
-    'PAYMENT_RECEIVED',
-    'PAYMENT_CONFIRMED',
-    'PAYMENT_RECEIVED_IN_CASH_UNDONE', // edge case — ignorado abaixo pelo status check
-  ]
-
-  if (!EVENTOS_CONFIRMACAO.includes(event)) {
-    // Retorna 200 para não causar reenvios desnecessários do Asaas
-    return Response.json({ ok: true, ignored: true, event })
-  }
-
   if (!payment?.id) {
     return Response.json({ error: 'Payload sem payment.id.' }, { status: 400 })
   }
 
-  // 4. Se a referência aponta para uma recarga de cantina, processa separadamente
+  // 3. Estorno confirmado pelo Asaas
+  if (event === 'PAYMENT_REFUNDED' || event === 'PAYMENT_REFUND_IN_PROGRESS') {
+    if (payment.externalReference?.startsWith('recarga:')) {
+      const supabase = createAdminClient()
+      const { error: rpcErr } = await supabase.rpc('confirmar_estorno_asaas' as any, {
+        p_gateway_id: payment.id,
+      })
+      if (rpcErr) {
+        console.error(`[webhook/asaas] Erro ao confirmar estorno ${payment.id}:`, rpcErr.message)
+        return Response.json({ ok: false, error: rpcErr.message }, { status: 500 })
+      }
+      console.log(`[webhook/asaas] Estorno ${payment.id} confirmado via webhook (${event}).`)
+    }
+    return Response.json({ ok: true })
+  }
+
+  // 4. Processa apenas eventos de confirmação de pagamento
+  const EVENTOS_CONFIRMACAO = [
+    'PAYMENT_RECEIVED',
+    'PAYMENT_CONFIRMED',
+    'PAYMENT_RECEIVED_IN_CASH_UNDONE',
+  ]
+
+  if (!EVENTOS_CONFIRMACAO.includes(event)) {
+    return Response.json({ ok: true, ignored: true, event })
+  }
+
+  // 5. Se a referência aponta para uma recarga de cantina, processa separadamente
   if (payment.externalReference?.startsWith('recarga:')) {
     const recargaId = payment.externalReference.slice('recarga:'.length)
     const supabase = createAdminClient()

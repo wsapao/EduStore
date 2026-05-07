@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { SolicitarEstornoButton } from './SolicitarEstornoButton'
 
 const PAGE_SIZE = 20
 
@@ -73,6 +74,36 @@ export default async function ExtratoCantinaPage({
     .eq('carteira_id', carteira.id)
     .order('created_at', { ascending: false })
     .range(from, to)
+
+  // Busca status de estorno para movimentações de recarga (gateway_pagamento_id = gateway_id da recarga)
+  const gatewayIds = (movs ?? [])
+    .filter(m => m.tipo === 'recarga' && m.gateway_pagamento_id)
+    .map(m => m.gateway_pagamento_id as string)
+
+  type EstornoInfo = { recarga_id: string; gateway_id: string; status: string; status_sol: string | null; observacao: string | null; confirmada_em: string | null }
+  let estornoMap: Record<string, EstornoInfo> = {}
+
+  if (gatewayIds.length > 0) {
+    const { data: recargas } = await supabase
+      .from('cantina_recargas')
+      .select(`
+        id, gateway_id, status, confirmada_em,
+        solicitacoes:cantina_solicitacoes_estorno(status, observacao_admin)
+      `)
+      .in('gateway_id', gatewayIds)
+
+    for (const r of recargas ?? []) {
+      const solic = (r.solicitacoes as any[])?.[0]
+      estornoMap[r.gateway_id] = {
+        recarga_id: r.id,
+        gateway_id: r.gateway_id,
+        status: r.status,
+        status_sol: solic?.status ?? null,
+        observacao: solic?.observacao_admin ?? null,
+        confirmada_em: r.confirmada_em,
+      }
+    }
+  }
 
   // Busca itens detalhados se houver pedidos
   const pedidoIds = (movs ?? []).map(m => m.pedido_cantina_id).filter(Boolean) as string[]
@@ -224,6 +255,29 @@ export default async function ExtratoCantinaPage({
                   <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
                     {fmtData(mov.created_at)}
                   </div>
+                  {/* Botão de estorno para recargas confirmadas até 60 dias */}
+                  {mov.tipo === 'recarga' && mov.gateway_pagamento_id && (() => {
+                    const info = estornoMap[mov.gateway_pagamento_id]
+                    if (!info) return null
+                    const diasDesdeConfirmacao = info.confirmada_em
+                      ? (Date.now() - new Date(info.confirmada_em).getTime()) / (1000 * 60 * 60 * 24)
+                      : 999
+                    const elegivel = ['confirmada','estorno_pendente','estorno_aprovado','estornada'].includes(info.status)
+                    if (!elegivel || diasDesdeConfirmacao > 60) return null
+                    const statusParaExibir = info.status === 'estornada' ? 'estornada'
+                      : info.status === 'estorno_aprovado' ? 'estorno_aprovado'
+                      : info.status_sol
+                    return (
+                      <div style={{ marginTop: 6 }}>
+                        <SolicitarEstornoButton
+                          recargaId={info.recarga_id}
+                          valor={mov.valor}
+                          statusEstorno={statusParaExibir}
+                          observacaoAdmin={info.observacao}
+                        />
+                      </div>
+                    )
+                  })()}
                 </div>
 
                 {/* Valor + saldo */}
