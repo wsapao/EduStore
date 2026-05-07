@@ -358,8 +358,8 @@ export async function iniciarRecargaAction(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Não autenticado.' }
 
-  if (valor < 5 || valor > 2000) {
-    return { error: 'Valor fora do intervalo permitido (R$ 5,00 a R$ 2.000,00).' }
+  if (valor < 1 || valor > 2000) {
+    return { error: 'Valor fora do intervalo permitido (R$ 1,00 a R$ 2.000,00).' }
   }
 
   // Verifica vínculo responsável↔aluno
