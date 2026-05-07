@@ -22,6 +22,7 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
   const [valorSelecionado, setValorSelecionado] = useState<number | null>(null)
   const [valorCustom, setValorCustom] = useState('')
   const [erro, setErro] = useState<string | null>(null)
+  const [metodoPagamento, setMetodoPagamento] = useState<'pix' | 'cartao'>('pix')
 
   const valorFinal = valorSelecionado ?? (valorCustom ? parseFloat(valorCustom.replace(',', '.')) : null)
 
@@ -49,9 +50,14 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
     }
 
     startTransition(async () => {
-      const res = await iniciarRecargaAction(alunoId, valorFinal)
+      const res = await iniciarRecargaAction(alunoId, valorFinal, metodoPagamento)
       if ('error' in res) {
         setErro(res.error ?? 'Erro ao iniciar recarga.')
+        return
+      }
+      if (res.metodo === 'cartao') {
+        const callbackUrl = `${window.location.origin}/cantina/${alunoId}/recarga/${res.recarga_id}`
+        window.location.href = `${res.checkout_url}?callbackSuccessUrl=${encodeURIComponent(callbackUrl)}`
         return
       }
       router.push(`/cantina/${alunoId}/recarga/${res.recarga_id}`)
@@ -128,16 +134,42 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
         </div>
       </div>
 
-      {/* Método */}
-      <div style={{
-        background: '#eff6ff', border: '1px solid #bfdbfe',
-        borderRadius: 'var(--r-md)', padding: '12px 14px',
-        display: 'flex', alignItems: 'center', gap: 10,
-      }}>
-        <span style={{ fontSize: 20 }}>⚡</span>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#1e40af' }}>Pagamento via PIX</div>
-          <div style={{ fontSize: 12, color: '#1d4ed8' }}>Saldo creditado imediatamente após confirmação</div>
+      {/* Método de pagamento */}
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>
+          Forma de pagamento
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => setMetodoPagamento('pix')}
+            style={{
+              padding: '12px 8px', borderRadius: 'var(--r-md)',
+              border: `2px solid ${metodoPagamento === 'pix' ? 'var(--brand)' : 'var(--border)'}`,
+              background: metodoPagamento === 'pix' ? 'var(--brand)' : 'var(--surface)',
+              color: metodoPagamento === 'pix' ? '#fff' : 'var(--text-1)',
+              cursor: 'pointer', textAlign: 'center', transition: 'all .15s',
+            }}
+          >
+            <div style={{ fontSize: 20 }}>⚡</div>
+            <div style={{ fontSize: 13, fontWeight: 800, marginTop: 4 }}>PIX</div>
+            <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>Instantâneo</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMetodoPagamento('cartao')}
+            style={{
+              padding: '12px 8px', borderRadius: 'var(--r-md)',
+              border: `2px solid ${metodoPagamento === 'cartao' ? 'var(--brand)' : 'var(--border)'}`,
+              background: metodoPagamento === 'cartao' ? 'var(--brand)' : 'var(--surface)',
+              color: metodoPagamento === 'cartao' ? '#fff' : 'var(--text-1)',
+              cursor: 'pointer', textAlign: 'center', transition: 'all .15s',
+            }}
+          >
+            <div style={{ fontSize: 20 }}>💳</div>
+            <div style={{ fontSize: 13, fontWeight: 800, marginTop: 4 }}>Cartão</div>
+            <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>À vista</div>
+          </button>
         </div>
       </div>
 
@@ -176,7 +208,9 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
         fontSize: 15, fontWeight: 800,
         transition: 'all .2s',
       }}>
-        {pending ? 'Gerando PIX…' : `Recarregar ${valorFinal && !isNaN(valorFinal) ? fmtMoeda(valorFinal) : ''}`}
+        {pending
+          ? (metodoPagamento === 'cartao' ? 'Redirecionando…' : 'Gerando PIX…')
+          : `Recarregar ${valorFinal && !isNaN(valorFinal) ? fmtMoeda(valorFinal) : ''}`}
       </button>
     </form>
   )
