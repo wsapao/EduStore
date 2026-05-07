@@ -5,6 +5,8 @@ import { sincronizarPixsExpiradosResponsavel } from '@/lib/pagamentos/pix'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { Pedido, ItemPedido, Produto, Aluno, Pagamento, StatusPedido, MetodoPagamento } from '@/types/database'
 import { ArrowLeft, Receipt, CreditCard, ChevronRight, Ticket } from 'lucide-react'
+import { EstornoParcialForm } from './EstornoParcialForm'
+import type { PedidoEstorno } from '@/types/database'
 
 interface PedidoLista extends Pedido {
   itens: (ItemPedido & { produto: Produto; aluno: Aluno })[]
@@ -91,6 +93,22 @@ export default async function PedidosPage({
       aluno: i.aluno as Aluno,
     })),
   }))
+
+  // Buscar estornos mais recentes de cada pedido
+  const pedidoIds = todosPedidos.map(p => p.id)
+  const { data: estornosRaw } = pedidoIds.length
+    ? await supabase
+        .from('pedido_estornos')
+        .select('id, pedido_id, status, motivo, obs_admin, valor_total, created_at')
+        .in('pedido_id', pedidoIds)
+        .order('created_at', { ascending: false })
+    : { data: [] }
+
+  // Mapa: pedido_id → estorno mais recente
+  const estornoByPedidoId = ((estornosRaw ?? []) as PedidoEstorno[]).reduce<Record<string, PedidoEstorno>>(
+    (acc, e) => { if (!acc[e.pedido_id]) acc[e.pedido_id] = e; return acc },
+    {}
+  )
 
   // Filtrar com base na aba
   const pedidos = todosPedidos.filter(p => {
@@ -194,67 +212,92 @@ export default async function PedidosPage({
             const metodoCfg = pedido.metodo_pagamento ? METODO_CONFIG[pedido.metodo_pagamento] : null
 
             return (
-              <Link
-                href={`/pedido/${pedido.id}`}
-                key={pedido.id}
-                style={{
-                  background: 'white', border: '1.5px solid rgba(0,0,0,.07)', borderRadius: 18,
-                  overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.06)', display: 'block', textDecoration: 'none'
-                }}
-              >
-                <div style={{ padding: '11px 13px', borderBottom: '1px solid rgba(0,0,0,.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 99,
-                    fontSize: 9, fontWeight: 800, letterSpacing: '.04em', background: c.bg, color: c.text
-                  }}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: c.dot }}></span>
-                    {statusLabel}
+              <div key={pedido.id}>
+                <Link
+                  href={`/pedido/${pedido.id}`}
+                  style={{
+                    background: 'white', border: '1.5px solid rgba(0,0,0,.07)', borderRadius: 18,
+                    overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.06)', display: 'block', textDecoration: 'none'
+                  }}
+                >
+                  <div style={{ padding: '11px 13px', borderBottom: '1px solid rgba(0,0,0,.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 99,
+                      fontSize: 9, fontWeight: 800, letterSpacing: '.04em', background: c.bg, color: c.text
+                    }}>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: c.dot }}></span>
+                      {statusLabel}
+                    </div>
+                    {metodoCfg && (
+                      <div style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 3 }}>
+                        {metodoCfg.icon} {metodoCfg.label}
+                      </div>
+                    )}
+                    <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#374151', fontFamily: 'monospace' }}>
+                        #{pedido.numero.replace('PED-', '')}
+                      </div>
+                      <div style={{ fontSize: 9, color: '#9ca3af' }}>
+                        {fmtData(pedido.data_criacao).split(' de ')[0]} de {fmtData(pedido.data_criacao).split(' de ')[1].substring(0,3)}.
+                      </div>
+                    </div>
                   </div>
-                  {metodoCfg && (
-                    <div style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      {metodoCfg.icon} {metodoCfg.label}
-                    </div>
-                  )}
-                  <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#374151', fontFamily: 'monospace' }}>
-                      #{pedido.numero.replace('PED-', '')}
-                    </div>
-                    <div style={{ fontSize: 9, color: '#9ca3af' }}>
-                      {fmtData(pedido.data_criacao).split(' de ')[0]} de {fmtData(pedido.data_criacao).split(' de ')[1].substring(0,3)}.
-                    </div>
-                  </div>
-                </div>
 
-                <div style={{ padding: '10px 13px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {pedido.itens.map((item) => (
-                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0f2f8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
-                        {item.produto.icon ?? CAT_ICONS[item.produto.categoria] ?? '📦'}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#0a1628', lineHeight: 1.2 }}>
-                          {item.produto.nome}
+                  <div style={{ padding: '10px 13px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {pedido.itens.map((item) => (
+                      <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0f2f8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
+                          {item.produto.icon ?? CAT_ICONS[item.produto.categoria] ?? '📦'}
                         </div>
-                        <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1, fontWeight: 600 }}>
-                          {item.aluno.nome.split(' ')[0]} {item.variante && `· Tm ${item.variante}`}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#0a1628', lineHeight: 1.2 }}>
+                            {item.produto.nome}
+                          </div>
+                          <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1, fontWeight: 600 }}>
+                            {item.aluno.nome.split(' ')[0]} {item.variante && `· Tm ${item.variante}`}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0a1628' }}>
+                          {fmtBRL(item.preco_unitario)}
                         </div>
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0a1628' }}>
-                        {fmtBRL(item.preco_unitario)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                <div style={{ padding: '10px 13px', background: '#fafbff', borderTop: '1px solid rgba(0,0,0,.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: 11, color: '#9ca3af' }}>
-                    Total · {pedido.itens.length} {pedido.itens.length === 1 ? 'item' : 'itens'}
+                  <div style={{ padding: '10px 13px', background: '#fafbff', borderTop: '1px solid rgba(0,0,0,.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>
+                      Total · {pedido.itens.length} {pedido.itens.length === 1 ? 'item' : 'itens'}
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: '#0a1628', letterSpacing: '-.03em' }}>
+                      {fmtBRL(pedido.total)}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: '#0a1628', letterSpacing: '-.03em' }}>
-                    {fmtBRL(pedido.total)}
-                  </div>
-                </div>
-              </Link>
+                </Link>
+
+                {pedido.status === 'pago' && (
+                  <EstornoParcialForm
+                    pedidoId={pedido.id}
+                    itens={pedido.itens.map(i => ({
+                      id: i.id,
+                      produto_nome: (i.produto as any)?.nome ?? '—',
+                      aluno_nome: (i.aluno as any)?.nome ?? '—',
+                      variante: i.variante ?? null,
+                      preco_unitario: Number(i.preco_unitario),
+                      estornado_em: (i as any).estornado_em ?? null,
+                    }))}
+                    estorno={estornoByPedidoId[pedido.id]
+                      ? {
+                          id: estornoByPedidoId[pedido.id].id,
+                          status: estornoByPedidoId[pedido.id].status,
+                          motivo: estornoByPedidoId[pedido.id].motivo,
+                          obs_admin: estornoByPedidoId[pedido.id].obs_admin,
+                          valor_total: Number(estornoByPedidoId[pedido.id].valor_total),
+                        }
+                      : null
+                    }
+                  />
+                )}
+              </div>
             )
           })}
         </div>
