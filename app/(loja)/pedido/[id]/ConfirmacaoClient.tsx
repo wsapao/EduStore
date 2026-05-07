@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { renovarPixAction } from '@/app/actions/orders'
-import type { Pedido, Pagamento, ItemPedido, Produto, Aluno, Ingresso } from '@/types/database'
+import type { Pedido, Pagamento, ItemPedido, Produto, Aluno, Ingresso, PedidoEstorno } from '@/types/database'
+import { EstornoParcialForm } from '../../pedidos/EstornoParcialForm'
 
 interface PedidoCompleto extends Pedido {
   pagamento: Pagamento | null
@@ -12,6 +13,7 @@ interface PedidoCompleto extends Pedido {
 
 interface Props {
   pedido: PedidoCompleto
+  estorno: PedidoEstorno | null
 }
 
 const CAT_ICONS: Record<string, string> = {
@@ -42,7 +44,7 @@ function usePixCountdown(expiracao: string | null) {
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-export function ConfirmacaoClient({ pedido }: Props) {
+export function ConfirmacaoClient({ pedido, estorno }: Props) {
   const pag = pedido.pagamento
   const metodo = pag?.metodo ?? pedido.metodo_pagamento
   const isPago = pedido.status === 'pago'
@@ -236,6 +238,32 @@ export function ConfirmacaoClient({ pedido }: Props) {
             <div style={{ fontSize: 18, fontWeight: 900, color: '#0a1628', letterSpacing: '-.03em' }}>{fmtBRL(pedido.total)}</div>
           </div>
         </div>
+
+        {/* ── Estorno Parcial ── */}
+        {isPago && (
+          <EstornoParcialForm
+            pedidoId={pedido.id}
+            itens={pedido.itens.map(i => ({
+              id: i.id,
+              produto_nome: (i.produto as Produto)?.nome ?? '—',
+              aluno_nome: (i.aluno as Aluno)?.nome ?? '—',
+              variante: i.variante ?? null,
+              preco_unitario: Number(i.preco_unitario),
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              estornado_em: (i as any).estornado_em ?? null,
+            }))}
+            estorno={estorno
+              ? {
+                  id: estorno.id,
+                  status: estorno.status,
+                  motivo: estorno.motivo,
+                  obs_admin: estorno.obs_admin,
+                  valor_total: Number(estorno.valor_total),
+                }
+              : null
+            }
+          />
+        )}
 
         {/* ── Ingressos ── */}
         {pedido.itens.some(i => i.ingresso && i.ingresso.status === 'emitido') && (
