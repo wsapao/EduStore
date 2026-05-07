@@ -172,6 +172,31 @@ export function AguardandoClient({
 
   // ── Estado: Expirado ──────────────────────────────────────────
   if (estado === 'expirada') {
+    if (metodo === 'cartao') {
+      return (
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ fontSize: 64 }}>⏰</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', marginTop: 16 }}>
+            Pagamento não confirmado
+          </div>
+          <div style={{ fontSize: 14, color: 'var(--text-2)', marginTop: 8 }}>
+            O pagamento com cartão não foi confirmado. Tente uma nova recarga.
+          </div>
+          <button
+            onClick={() => router.push(`/cantina/${alunoId}/recarga`)}
+            style={{
+              marginTop: 24, padding: '13px 32px',
+              background: 'var(--brand)', color: '#fff',
+              border: 'none', borderRadius: 'var(--r-md)',
+              fontSize: 15, fontWeight: 800, cursor: 'pointer',
+            }}
+          >
+            Nova recarga
+          </button>
+        </div>
+      )
+    }
+
     return (
       <div style={{ textAlign: 'center', padding: '40px 0' }}>
         <div style={{ fontSize: 64 }}>⏰</div>
