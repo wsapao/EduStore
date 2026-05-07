@@ -759,3 +759,131 @@ export async function negarEstornoAction(
   revalidatePath('/admin/cantina/recargas')
   return { success: true }
 }
+
+// ── Aprovar estorno parcial por item (admin) ──────────────────
+export async function aprovarEstornoParcialAction(
+  estornoId: string,
+): Promise<{ success: true } | { error: string }> {
+  const { user } = await verificarAdmin()
+  const adminClient = createAdminClient()
+
+  function firstOf<T>(v: T | T[] | null | undefined): T | null {
+    return Array.isArray(v) ? (v[0] ?? null) : (v ?? null)
+  }
+
+  const { data: estorno } = await adminClient
+    .from('pedido_estornos')
+    .select(`
+      id, pedido_id, status, valor_total,
+      itens:pedido_estornos_itens(item_pedido_id),
+      pedido:pedidos!pedido_id(pagamento:pagamentos(gateway_id, metodo))
+    `)
+    .eq('id', estornoId)
+    .single()
+
+  if (!estorno) return { error: 'Solicitação não encontrada.' }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((estorno as any).status !== 'pendente') return { error: 'Solicitação não está pendente.' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pedido = firstOf((estorno as any).pedido)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pagamento = firstOf((pedido as any)?.pagamento)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const metodo = (pagamento as any)?.metodo as string | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const gatewayId = (pagamento as any)?.gateway_id as string | null
+
+  // Chamar Asaas se PIX ou cartão
+  if (metodo !== 'boleto' && gatewayId) {
+    try {
+      const { getGateway } = await import('@/lib/pagamentos/gateway')
+      const gateway = getGateway()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await gateway.estornarParcial(gatewayId, Number((estorno as any).valor_total))
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      return { error: `Falha no gateway: ${msg}` }
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const itemIds = ((estorno as any).itens as { item_pedido_id: string }[]).map(i => i.item_pedido_id)
+
+  // Marcar itens como estornados
+  const { error: errItems } = await adminClient
+    .from('itens_pedido')
+    .update({ estornado_em: new Date().toISOString() })
+    .in('id', itemIds)
+
+  if (errItems) return { error: errItems.message }
+
+  // Restaurar estoque para itens com variante
+  const { data: itensComVariante } = await adminClient
+    .from('itens_pedido')
+    .select('variante_id')
+    .in('id', itemIds)
+    .not('variante_id', 'is', null)
+
+  for (const item of itensComVariante ?? []) {
+    if (item.variante_id) {
+      await adminClient.rpc('restaurar_estoque_variante', { p_variante_id: item.variante_id })
+    }
+  }
+
+  // Atualizar estorno → aprovado
+  const { error: errEstorno } = await adminClient
+    .from('pedido_estornos')
+    .update({ status: 'aprovado', resolvido_em: new Date().toISOString() })
+    .eq('id', estornoId)
+
+  if (errEstorno) return { error: errEstorno.message }
+
+  // Se todos os itens do pedido estão estornados → pedido reembolsado
+  const { data: todosItens } = await adminClient
+    .from('itens_pedido')
+    .select('id, estornado_em')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .eq('pedido_id', (estorno as any).pedido_id)
+
+  const todosEstornados = (todosItens ?? []).every(i => i.estornado_em !== null)
+  if (todosEstornados) {
+    await adminClient
+      .from('pedidos')
+      .update({ status: 'reembolsado' })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .eq('id', (estorno as any).pedido_id)
+  }
+
+  void user
+  revalidatePath('/admin/pedidos')
+  revalidatePath('/pedidos')
+  return { success: true }
+}
+
+// ── Negar estorno parcial por item (admin) ────────────────────
+export async function negarEstornoParcialAction(
+  estornoId: string,
+  obs_admin: string,
+): Promise<{ success: true } | { error: string }> {
+  await verificarAdmin()
+  if (!obs_admin.trim()) return { error: 'Observação é obrigatória ao negar.' }
+
+  const adminClient = createAdminClient()
+
+  const { error } = await adminClient
+    .from('pedido_estornos')
+    .update({
+      status: 'negado',
+      obs_admin: obs_admin.trim(),
+      resolvido_em: new Date().toISOString(),
+    })
+    .eq('id', estornoId)
+    .eq('status', 'pendente')
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/pedidos')
+  revalidatePath('/pedidos')
+  return { success: true }
+}
