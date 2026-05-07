@@ -16,10 +16,11 @@ function fmtData(iso: string) {
 }
 
 const TIPO_CONFIG: Record<string, { icon: string; label: string; cor: string }> = {
-  recarga:       { icon: '💰', label: 'Recarga',       cor: '#10b981' },
-  consumo:       { icon: '🍽️', label: 'Consumo',       cor: '#ef4444' },
-  estorno:       { icon: '↩️', label: 'Estorno',       cor: '#f59e0b' },
-  ajuste_manual: { icon: '✏️', label: 'Ajuste manual', cor: '#6366f1' },
+  recarga:        { icon: '💰', label: 'Recarga',          cor: '#10b981' },
+  consumo:        { icon: '🍽️', label: 'Consumo',          cor: '#ef4444' },
+  estorno:        { icon: '↩️', label: 'Estorno',          cor: '#f59e0b' },
+  estorno_recarga:{ icon: '↩️', label: 'Estorno recarga',  cor: '#7c3aed' },
+  ajuste_manual:  { icon: '✏️', label: 'Ajuste manual',    cor: '#6366f1' },
 }
 
 export default async function ExtratoCantinaPage({

@@ -79,4 +79,5 @@ export interface GatewayPagamento {
   criarPagamento(input: CriarPagamentoInput): Promise<ResultadoPagamento>
   consultarStatus(gateway_id: string): Promise<'aguardando' | 'confirmado' | 'falhou' | 'expirado' | 'reembolsado'>
   cancelarPagamento(gateway_id: string): Promise<void>
+  estornarPagamento(gateway_id: string): Promise<void>
 }

@@ -111,6 +111,13 @@ export default async function AdminCantinaPage() {
             }}>
               👜 Carteiras
             </Link>
+            <Link href="/admin/cantina/recargas" style={{
+              padding: '0 20px', height: 42, borderRadius: 12, display: 'inline-flex', alignItems: 'center',
+              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+              color: '#f8fafc', fontSize: 13, fontWeight: 800, textDecoration: 'none', transition: 'all .2s'
+            }}>
+              💰 Recargas
+            </Link>
           </div>
         </div>
 

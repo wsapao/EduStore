@@ -112,4 +112,8 @@ export const mockGateway: GatewayPagamento = {
   async cancelarPagamento(gateway_id: string) {
     void gateway_id
   },
+
+  async estornarPagamento(gateway_id: string) {
+    void gateway_id
+  },
 }

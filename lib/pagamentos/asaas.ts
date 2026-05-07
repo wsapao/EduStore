@@ -321,6 +321,10 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
     async cancelarPagamento(gateway_id) {
       await asaasDelete(`/payments/${gateway_id}`, apiKey)
     },
+
+    async estornarPagamento(gateway_id) {
+      await asaasPost(`/payments/${gateway_id}/refund`, {}, apiKey)
+    },
   }
 }
 

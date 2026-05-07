@@ -613,3 +613,74 @@ export async function excluirVouchersLoteAction(ids: string[]) {
   revalidatePath('/admin/vouchers')
   return { success: true }
 }
+
+// ── Estornar recarga confirmada (admin only) ──────────────────
+export async function estornarRecargaAdminAction(recargaId: string): Promise<{ success: true; saldoApos: number } | { error: string }> {
+  const { supabase, user } = await verificarAdmin()
+  const adminClient = createAdminClient()
+
+  const { data: recarga } = await adminClient
+    .from('cantina_recargas')
+    .select('id, status, metodo, gateway_id, valor')
+    .eq('id', recargaId)
+    .single()
+
+  if (!recarga) return { error: 'Recarga não encontrada.' }
+  if (recarga.status !== 'confirmada') return { error: 'Só é possível estornar recargas confirmadas.' }
+
+  // Tenta estornar no Asaas (não bloqueia se falhar — pode já ter expirado o prazo)
+  if (recarga.gateway_id) {
+    try {
+      const { getGateway } = await import('@/lib/pagamentos/gateway')
+      const gateway = getGateway('cantina')
+      await gateway.estornarPagamento(recarga.gateway_id)
+    } catch (err) {
+      console.warn('[estornarRecarga] Gateway não estornou (pode já ter expirado):', err)
+    }
+  }
+
+  const { data, error } = await adminClient.rpc('estornar_recarga' as any, {
+    p_recarga_id: recargaId,
+    p_operador_id: user.id,
+  })
+
+  if (error) return { error: error.message }
+  const resultado = data as { ok: boolean; erro?: string; saldo_apos?: number }
+  if (!resultado.ok) return { error: resultado.erro ?? 'Erro ao estornar.' }
+
+  revalidatePath('/admin/cantina')
+  revalidatePath('/admin/cantina/recargas')
+  return { success: true, saldoApos: resultado.saldo_apos ?? 0 }
+}
+
+// ── Cancelar recarga aguardando (admin — qualquer método) ─────
+export async function cancelarRecargaAdminAction(recargaId: string): Promise<{ success: true } | { error: string }> {
+  const { user } = await verificarAdmin()
+  const adminClient = createAdminClient()
+
+  const { data: recarga } = await adminClient
+    .from('cantina_recargas')
+    .select('id, status, gateway_id')
+    .eq('id', recargaId)
+    .single()
+
+  if (!recarga) return { error: 'Recarga não encontrada.' }
+  if (recarga.status !== 'aguardando') return { error: 'Só é possível cancelar recargas aguardando.' }
+
+  if (recarga.gateway_id) {
+    try {
+      const { getGateway } = await import('@/lib/pagamentos/gateway')
+      const gateway = getGateway('cantina')
+      await gateway.cancelarPagamento(recarga.gateway_id)
+    } catch (err) {
+      console.warn('[cancelarRecargaAdmin] Gateway não cancelou:', err)
+    }
+  }
+
+  const { error } = await adminClient.rpc('cancelar_recarga' as any, { p_recarga_id: recargaId })
+  if (error) return { error: error.message }
+
+  void user
+  revalidatePath('/admin/cantina/recargas')
+  return { success: true }
+}
