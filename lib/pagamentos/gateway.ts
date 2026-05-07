@@ -15,18 +15,13 @@ import { mockGateway } from './mock'
 import { createAsaasGateway } from './asaas'
 
 export function getGateway(contexto: 'loja' | 'cantina' = 'loja'): GatewayPagamento {
-  if (isGatewayReal()) {
-    const mainKey = process.env.ASAAS_API_KEY
-    const cantinaKey = process.env.ASAAS_CANTINA_API_KEY
+  const mainKey = process.env.ASAAS_API_KEY
+  const cantinaKey = process.env.ASAAS_CANTINA_API_KEY
 
-    // Se estiver no contexto cantina E a chave cantina estiver configurada
-    if (contexto === 'cantina' && cantinaKey) {
-      return createAsaasGateway(cantinaKey)
-    }
-
-    if (!mainKey) {
-      throw new Error('ASAAS_API_KEY principal não configurada.')
-    }
+  if (contexto === 'cantina') {
+    const key = cantinaKey || mainKey
+    if (key) return createAsaasGateway(key)
+  } else if (mainKey) {
     return createAsaasGateway(mainKey)
   }
 
@@ -41,5 +36,5 @@ export function getGateway(contexto: 'loja' | 'cantina' = 'loja'): GatewayPagame
 }
 
 export function isGatewayReal(): boolean {
-  return !!process.env.ASAAS_API_KEY
+  return !!(process.env.ASAAS_API_KEY || process.env.ASAAS_CANTINA_API_KEY)
 }
