@@ -67,14 +67,14 @@ export function SolicitarEstornoButton({ recargaId, valor, statusEstorno, observ
       <button
         onClick={() => setAberto(true)}
         style={{
-          padding: '4px 10px', borderRadius: 99,
-          background: 'transparent',
-          border: '1px solid var(--border)',
-          fontSize: 11, fontWeight: 600,
-          color: 'var(--text-3)', cursor: 'pointer',
+          padding: '5px 12px', borderRadius: 99,
+          background: 'rgba(245,158,11,0.12)',
+          border: '1px solid rgba(245,158,11,0.4)',
+          fontSize: 11, fontWeight: 700,
+          color: '#f59e0b', cursor: 'pointer',
         }}
       >
-        Solicitar estorno
+        ↩ Solicitar estorno
       </button>
     )
   }
