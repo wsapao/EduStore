@@ -12,13 +12,7 @@ export default async function RecargasAdminPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: perfil } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (perfil?.role !== 'admin') redirect('/cantina')
+  if (user.app_metadata?.role !== 'admin') redirect('/loja')
 
   const adminClient = createAdminClient()
 
