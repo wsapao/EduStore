@@ -41,6 +41,7 @@ export default async function AdminCantinaPage() {
       { data: pedidosOnlinePendentes, error: e3 },
       { data: movsRecentes, error: e4 },
       { data: produtos, error: e5 },
+      { count: estornosPendentesCount },
     ] = await Promise.all([
       adminClient.from('cantina_carteiras').select('saldo').eq('escola_id', escolaId),
       adminClient.from('cantina_movimentacoes')
@@ -63,6 +64,9 @@ export default async function AdminCantinaPage() {
         .select('id, nome, preco, categoria, icone, ativo, estoque')
         .eq('escola_id', escolaId)
         .order('ordem', { ascending: true }),
+      adminClient.from('cantina_solicitacoes_estorno')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pendente'),
     ])
 
     const errors = [e1, e2, e3, e4, e5].filter(Boolean)
@@ -139,6 +143,38 @@ export default async function AdminCantinaPage() {
             </div>
           ))}
         </div>
+
+        {/* Alerta de estornos pendentes */}
+        {(estornosPendentesCount ?? 0) > 0 && (
+          <Link href="/admin/cantina/recargas" style={{ textDecoration: 'none', display: 'block', marginBottom: 20 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px',
+              background: 'rgba(245,158,11,0.08)',
+              border: '1px solid rgba(245,158,11,0.35)',
+              borderRadius: 'var(--r-xl)',
+              cursor: 'pointer',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+                  background: 'rgba(245,158,11,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 20,
+                }}>↩️</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#f59e0b' }}>
+                    {estornosPendentesCount} solicitação{(estornosPendentesCount ?? 0) > 1 ? 'ões' : ''} de estorno aguardando análise
+                  </div>
+                  <div style={{ fontSize: 12, color: '#92400e', marginTop: 3 }}>
+                    Clique para revisar e aprovar ou negar
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: 18, color: '#f59e0b', flexShrink: 0 }}>→</div>
+            </div>
+          </Link>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }} className="cantina-grid">
           {/* Movimentações recentes */}
