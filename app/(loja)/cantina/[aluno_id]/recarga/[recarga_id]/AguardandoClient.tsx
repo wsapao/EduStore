@@ -10,6 +10,7 @@ interface Props {
   alunoId: string
   alunoNome: string
   valor: number
+  metodo: 'pix' | 'cartao'
   pixQrCode: string
   pixQrCodeImagem: string
   pixExpiracao: string
@@ -35,6 +36,7 @@ function fmtCountdown(segs: number): string {
 
 export function AguardandoClient({
   recargaId, alunoId, alunoNome, valor,
+  metodo,
   pixQrCode: initialQrCode,
   pixQrCodeImagem: initialQrImagem,
   pixExpiracao: initialExpiracao,
@@ -203,10 +205,63 @@ export function AguardandoClient({
   }
 
   // ── Estado: Aguardando (principal) ────────────────────────────
+  if (metodo === 'cartao') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          borderRadius: 'var(--r-md)', padding: '12px 16px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.07em' }}>
+            Valor da recarga
+          </span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--brand)' }}>
+            {fmtMoeda(valor)}
+          </span>
+        </div>
+
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          borderRadius: 'var(--r-xl)', padding: '40px 24px', gap: 16,
+        }}>
+          <div style={{ fontSize: 48 }}>💳</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-1)', textAlign: 'center' }}>
+            Aguardando confirmação
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text-2)', textAlign: 'center', maxWidth: 280 }}>
+            Seu pagamento com cartão está sendo processado. Isso pode levar alguns instantes.
+          </div>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            border: '3px solid var(--border)',
+            borderTopColor: 'var(--brand)',
+            animation: 'spin 0.8s linear infinite',
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+
+        {!realtimeOk && (
+          <button
+            onClick={() => router.refresh()}
+            style={{
+              padding: '10px', borderRadius: 'var(--r-md)',
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text-2)',
+            }}
+          >
+            🔄 Verificar pagamento
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // ── PIX: UI completa com QR code ──────────────────────────────
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* Valor da recarga */}
       <div style={{
         background: 'var(--surface-2)', border: '1px solid var(--border)',
         borderRadius: 'var(--r-md)', padding: '12px 16px',
@@ -220,7 +275,6 @@ export function AguardandoClient({
         </span>
       </div>
 
-      {/* QR Code */}
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         background: '#fff', border: '1px solid var(--border)',
@@ -249,7 +303,6 @@ export function AguardandoClient({
         </div>
       </div>
 
-      {/* Copia e cola */}
       <div>
         <div style={{
           fontSize: 12, fontWeight: 700, color: 'var(--text-3)',
@@ -284,7 +337,6 @@ export function AguardandoClient({
         </div>
       </div>
 
-      {/* Countdown */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         background: segsRestantes < 60 ? '#fff7ed' : 'var(--surface-2)',
@@ -306,7 +358,6 @@ export function AguardandoClient({
         </span>
       </div>
 
-      {/* Fallback: botão manual se Realtime cair */}
       {!realtimeOk && (
         <button
           onClick={() => router.refresh()}
