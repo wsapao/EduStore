@@ -10,6 +10,7 @@ import type {
   GatewayPagamento,
   CriarPagamentoInput,
   ResultadoPagamento,
+  ResultadoCartaoHosted,
 } from './types'
 
 // ── Helpers de URL e fetch ─────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ interface AsaasPayment {
   value: number
   dueDate: string
   bankSlipUrl?: string
+  invoiceUrl?: string
 }
 
 interface AsaasPixQrCode {
@@ -215,6 +217,28 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
           url: payment.bankSlipUrl ?? `https://www.asaas.com/b/${payment.id}`,
           status: 'aguardando',
         }
+      }
+
+      if (input.metodo === 'cartao_hosted') {
+        const payment = await asaasPost<AsaasPayment>('/payments', {
+          customer: customerId,
+          billingType: 'CREDIT_CARD',
+          value: input.total,
+          dueDate,
+          description: input.descricao,
+          externalReference: input.referencia,
+        }, apiKey)
+
+        if (!payment.invoiceUrl) {
+          throw new Error('Asaas não retornou invoiceUrl para o pagamento de cartão.')
+        }
+
+        return {
+          metodo: 'cartao_hosted',
+          gateway_id: payment.id,
+          checkout_url: payment.invoiceUrl,
+          status: 'aguardando',
+        } satisfies ResultadoCartaoHosted
       }
 
       // cartão de crédito
