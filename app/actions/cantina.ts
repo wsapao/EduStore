@@ -252,7 +252,7 @@ export async function buscarAlunoCantinaAction(q: string) {
   // Mapear para não vazar o hash para o front
   const safeData = data.map(aluno => ({
     ...aluno,
-    cantina_carteiras: aluno.cantina_carteiras.map(c => ({
+    cantina_carteiras: (aluno.cantina_carteiras ?? []).map(c => ({
       ...c,
       has_pin: !!c.senha_pin_hash,
       senha_pin_hash: undefined,
@@ -349,7 +349,11 @@ export async function confirmarCompraCantinaAction(
 }
 
 // ── Iniciar recarga via PIX real ──────────────────────────────
-export async function iniciarRecargaAction(alunoId: string, valor: number) {
+export async function iniciarRecargaAction(
+  alunoId: string,
+  valor: number,
+  metodo: 'pix' | 'cartao' = 'pix',
+) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Não autenticado.' }
@@ -390,12 +394,12 @@ export async function iniciarRecargaAction(alunoId: string, valor: number) {
   // Pré-gera o ID da recarga para usá-lo como externalReference no Asaas
   const recargaId = crypto.randomUUID()
 
-  // Cria o PIX no Asaas
+  // Cria pagamento no Asaas (PIX ou cartão hosted)
   const gateway = getGateway('cantina')
   let resultado: ResultadoPagamento
   try {
     resultado = await gateway.criarPagamento({
-      metodo: 'pix',
+      metodo: metodo === 'cartao' ? 'cartao_hosted' : 'pix',
       total: valor,
       responsavel: {
         nome: responsavel.nome,
@@ -406,39 +410,65 @@ export async function iniciarRecargaAction(alunoId: string, valor: number) {
       referencia: `recarga:${recargaId}`,
     })
   } catch (err) {
-    console.error('[iniciarRecarga] Erro ao criar PIX no Asaas:', err)
+    console.error('[iniciarRecarga] Erro ao criar pagamento no Asaas:', err)
     return { error: 'Erro ao processar pagamento. Tente novamente.' }
   }
 
-  if (resultado.metodo !== 'pix') return { error: 'Resposta inválida do gateway.' }
-  const pix = resultado
+  // Monta campos para insert conforme método
+  let insertData: Record<string, unknown>
 
-  // Insere registro de recarga (sem creditar saldo — crédito ocorre após confirmação do webhook)
-  const adminClient = createAdminClient()
-  const { error: errRecarga } = await adminClient
-    .from('cantina_recargas' as any)
-    .insert({
+  if (resultado.metodo === 'pix') {
+    insertData = {
       id: recargaId,
       carteira_id: carteira.id,
       responsavel_id: user.id,
       valor,
+      metodo: 'pix',
       status: 'aguardando',
-      gateway_id: pix.gateway_id,
-      pix_qr_code: pix.qr_code,
-      pix_qr_code_imagem: pix.qr_code_imagem,
-      pix_expiracao: pix.expiracao,
-    })
+      gateway_id: resultado.gateway_id,
+      pix_qr_code: resultado.qr_code,
+      pix_qr_code_imagem: resultado.qr_code_imagem,
+      pix_expiracao: resultado.expiracao,
+    }
+  } else if (resultado.metodo === 'cartao_hosted') {
+    insertData = {
+      id: recargaId,
+      carteira_id: carteira.id,
+      responsavel_id: user.id,
+      valor,
+      metodo: 'cartao',
+      status: 'aguardando',
+      gateway_id: resultado.gateway_id,
+      checkout_url: resultado.checkout_url,
+    }
+  } else {
+    return { error: 'Método de pagamento inválido.' }
+  }
+
+  const adminClient = createAdminClient()
+  const { error: errRecarga } = await adminClient
+    .from('cantina_recargas' as any)
+    .insert(insertData)
 
   if (errRecarga) {
-    console.error('[iniciarRecarga] PIX criado mas insert falhou. gateway_id:', pix.gateway_id, 'erro:', errRecarga.message)
+    console.error('[iniciarRecarga] Pagamento criado mas insert falhou. gateway_id:', resultado.gateway_id, 'erro:', errRecarga.message)
     return { error: 'Erro ao registrar recarga. Tente novamente.' }
+  }
+
+  if (resultado.metodo === 'pix') {
+    return {
+      recarga_id: recargaId,
+      metodo: 'pix' as const,
+      pix_qr_code: resultado.qr_code,
+      pix_qr_code_imagem: resultado.qr_code_imagem,
+      pix_expiracao: resultado.expiracao,
+    }
   }
 
   return {
     recarga_id: recargaId,
-    pix_qr_code: pix.qr_code,
-    pix_qr_code_imagem: pix.qr_code_imagem,
-    pix_expiracao: pix.expiracao,
+    metodo: 'cartao' as const,
+    checkout_url: resultado.checkout_url,
   }
 }
 
