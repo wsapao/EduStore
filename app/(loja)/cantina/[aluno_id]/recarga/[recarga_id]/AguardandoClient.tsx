@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { renovarRecargaAction } from '@/app/actions/cantina'
@@ -43,6 +43,7 @@ export function AguardandoClient({
   statusInicial,
 }: Props) {
   const router = useRouter()
+  const supabaseRef = useRef(createClient())
 
   const estadoInicial: Estado =
     statusInicial === 'confirmada' ? 'confirmada'
@@ -63,7 +64,7 @@ export function AguardandoClient({
 
   // Supabase Realtime — escuta UPDATE na recarga específica
   useEffect(() => {
-    const supabase = createClient()
+    const supabase = supabaseRef.current
     const channel = supabase
       .channel(`recarga-${recargaId}`)
       .on(
@@ -91,9 +92,8 @@ export function AguardandoClient({
   // Polling fallback — verifica status a cada 5s caso Realtime falhe
   useEffect(() => {
     if (estado !== 'aguardando') return
-    const supabase = createClient()
     const iv = setInterval(async () => {
-      const { data } = await supabase
+      const { data } = await supabaseRef.current
         .from('cantina_recargas' as any)
         .select('status')
         .eq('id', recargaId)

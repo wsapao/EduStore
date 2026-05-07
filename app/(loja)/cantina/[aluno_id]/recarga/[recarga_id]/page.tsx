@@ -56,7 +56,7 @@ export default async function AguardandoRecargaPage({
             Aguardando pagamento
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-            {aluno?.nome} · Recarga PIX
+            {aluno?.nome} · Recarga {(recarga.metodo ?? 'pix') === 'cartao' ? 'Cartão' : 'PIX'}
           </div>
         </div>
       </div>

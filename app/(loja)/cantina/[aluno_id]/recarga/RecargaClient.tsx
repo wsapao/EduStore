@@ -56,7 +56,15 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
         return
       }
       if (res.metodo === 'cartao') {
-        window.location.href = res.checkout_url
+        const callbackUrl = `${window.location.origin}/cantina/${alunoId}/recarga/${res.recarga_id}`
+        const checkoutUrl = res.checkout_url
+        if (!checkoutUrl.startsWith('https://checkout.asaas.com') &&
+            !checkoutUrl.startsWith('https://sandbox.asaas.com') &&
+            !checkoutUrl.startsWith('https://www.asaas.com')) {
+          setErro('URL de checkout inválida.')
+          return
+        }
+        window.location.href = `${checkoutUrl}?callbackSuccessUrl=${encodeURIComponent(callbackUrl)}`
         return
       }
       router.push(`/cantina/${alunoId}/recarga/${res.recarga_id}`)
