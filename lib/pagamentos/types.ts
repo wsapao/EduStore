@@ -19,7 +19,7 @@ export interface DadosCartao {
 }
 
 export interface CriarPagamentoInput {
-  metodo: MetodoPagamento
+  metodo: MetodoPagamento | 'cartao_hosted'
   total: number
   parcelas?: number
   dadosCartao?: DadosCartao
@@ -63,7 +63,14 @@ export interface ResultadoBoleto {
   status: 'aguardando'
 }
 
-export type ResultadoPagamento = ResultadoPix | ResultadoCartao | ResultadoBoleto
+export interface ResultadoCartaoHosted {
+  metodo: 'cartao_hosted'
+  gateway_id: string
+  checkout_url: string
+  status: 'aguardando'
+}
+
+export type ResultadoPagamento = ResultadoPix | ResultadoCartao | ResultadoBoleto | ResultadoCartaoHosted
 
 // ── Interface do gateway ──────────────────────────────────────────────────────
 
