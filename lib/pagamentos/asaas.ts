@@ -238,7 +238,7 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
           gateway_id: payment.id,
           checkout_url: payment.invoiceUrl,
           status: 'aguardando',
-        } satisfies ResultadoCartaoHosted
+        }
       }
 
       // cartão de crédito

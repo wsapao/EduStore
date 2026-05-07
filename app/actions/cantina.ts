@@ -348,7 +348,7 @@ export async function confirmarCompraCantinaAction(
   }
 }
 
-// ── Iniciar recarga via PIX real ──────────────────────────────
+// ── Iniciar recarga (PIX ou cartão hosted) ────────────────────
 export async function iniciarRecargaAction(
   alunoId: string,
   valor: number,
