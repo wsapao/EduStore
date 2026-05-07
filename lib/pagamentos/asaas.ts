@@ -227,6 +227,9 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
           dueDate,
           description: input.descricao,
           externalReference: input.referencia,
+          ...(input.callbackUrl && {
+            callback: { successUrl: input.callbackUrl, autoRedirect: true },
+          }),
         }, apiKey)
 
         if (!payment.invoiceUrl) {

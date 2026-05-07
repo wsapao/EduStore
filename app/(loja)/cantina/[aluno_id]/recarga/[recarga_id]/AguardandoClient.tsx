@@ -47,6 +47,7 @@ export function AguardandoClient({
   const estadoInicial: Estado =
     statusInicial === 'confirmada' ? 'confirmada'
     : statusInicial !== 'aguardando' ? 'expirada'
+    : metodo === 'cartao' ? 'aguardando'
     : calcSegs(initialExpiracao) <= 0 ? 'expirada'
     : 'aguardando'
 
@@ -102,9 +103,10 @@ export function AguardandoClient({
     return () => clearInterval(iv)
   }, [estado, recargaId])
 
-  // Countdown — atualiza a cada segundo
+  // Countdown — atualiza a cada segundo (apenas PIX)
   useEffect(() => {
     if (estado !== 'aguardando') return
+    if (metodo === 'cartao') return
     const iv = setInterval(() => {
       const segs = calcSegs(expiracao)
       setSegsRestantes(segs)

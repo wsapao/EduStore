@@ -30,6 +30,7 @@ export interface CriarPagamentoInput {
   }
   descricao: string
   referencia: string  // pedido_id
+  callbackUrl?: string // URL de retorno após pagamento hosted
 }
 
 // ── Saída ─────────────────────────────────────────────────────────────────────

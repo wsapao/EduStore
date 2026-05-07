@@ -56,8 +56,7 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
         return
       }
       if (res.metodo === 'cartao') {
-        const callbackUrl = `${window.location.origin}/cantina/${alunoId}/recarga/${res.recarga_id}`
-        window.location.href = `${res.checkout_url}?callbackSuccessUrl=${encodeURIComponent(callbackUrl)}`
+        window.location.href = res.checkout_url
         return
       }
       router.push(`/cantina/${alunoId}/recarga/${res.recarga_id}`)

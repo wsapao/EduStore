@@ -398,6 +398,7 @@ export async function iniciarRecargaAction(
   const gateway = getGateway('cantina')
   let resultado: ResultadoPagamento
   try {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
     resultado = await gateway.criarPagamento({
       metodo: metodo === 'cartao' ? 'cartao_hosted' : 'pix',
       total: valor,
@@ -408,6 +409,9 @@ export async function iniciarRecargaAction(
       },
       descricao: `Recarga cantina — R$ ${valor.toFixed(2)}`,
       referencia: `recarga:${recargaId}`,
+      callbackUrl: metodo === 'cartao'
+        ? `${siteUrl}/cantina/${alunoId}/recarga/${recargaId}`
+        : undefined,
     })
   } catch (err) {
     console.error('[iniciarRecarga] Erro ao criar pagamento no Asaas:', err)
