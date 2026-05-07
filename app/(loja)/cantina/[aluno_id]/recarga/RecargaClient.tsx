@@ -40,8 +40,8 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
     e.preventDefault()
     setErro(null)
 
-    if (!valorFinal || isNaN(valorFinal) || valorFinal < 5) {
-      setErro('Valor mínimo de recarga é R$ 5,00.')
+    if (!valorFinal || isNaN(valorFinal) || valorFinal < 1) {
+      setErro('Valor mínimo de recarga é R$ 1,00.')
       return
     }
     if (valorFinal > 2000) {
@@ -124,7 +124,7 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
           <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-2)' }}>R$</span>
           <input
             type="number"
-            min="5"
+            min="1"
             max="2000"
             step="0.01"
             placeholder="Ex: 75,00"
