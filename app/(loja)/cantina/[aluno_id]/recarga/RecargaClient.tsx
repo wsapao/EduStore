@@ -73,7 +73,7 @@ export function RecargaClient({ alunoId, alunoNome, saldoAtual }: Props) {
 
   // ── Formulário de recarga ───────────────────────────────────
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Saldo atual */}
       <div style={{
