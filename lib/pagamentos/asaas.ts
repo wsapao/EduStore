@@ -17,7 +17,7 @@ import type {
 function baseUrl() {
   const env = process.env.ASAAS_ENVIRONMENT ?? 'sandbox'
   return env === 'production'
-    ? 'https://api.asaas.com/api/v3'
+    ? 'https://api.asaas.com/v3'
     : 'https://sandbox.asaas.com/api/v3'
 }
 
@@ -172,9 +172,7 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
 
         const qr = await asaasGet<AsaasPixQrCode>(`/payments/${payment.id}/pixQrCode`, apiKey)
 
-        const expiracao = qr.expirationDate
-          ? new Date(qr.expirationDate).toISOString()
-          : new Date(Date.now() + 30 * 60 * 1000).toISOString()
+        const expiracao = new Date(Date.now() + 30 * 60 * 1000).toISOString()
 
         return {
           metodo: 'pix',
