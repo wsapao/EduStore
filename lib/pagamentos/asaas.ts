@@ -36,6 +36,18 @@ async function asaasGet<T>(path: string, apiKey: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function asaasDelete(path: string, apiKey: string): Promise<void> {
+  const res = await fetch(`${baseUrl()}${path}`, {
+    method: 'DELETE',
+    headers: { accept: 'application/json', access_token: apiKey },
+    cache: 'no-store',
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Asaas DELETE ${path} → ${res.status}: ${body}`)
+  }
+}
+
 async function asaasPost<T>(path: string, body: unknown, apiKey: string): Promise<T> {
   const res = await fetch(`${baseUrl()}${path}`, {
     method: 'POST',
@@ -304,6 +316,10 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
     async consultarStatus(gateway_id) {
       const payment = await asaasGet<AsaasPayment>(`/payments/${gateway_id}`, apiKey)
       return mapStatus(payment.status)
+    },
+
+    async cancelarPagamento(gateway_id) {
+      await asaasDelete(`/payments/${gateway_id}`, apiKey)
     },
   }
 }

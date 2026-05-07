@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { renovarRecargaAction } from '@/app/actions/cantina'
+import { renovarRecargaAction, cancelarRecargaAction } from '@/app/actions/cantina'
 
 interface Props {
   recargaId: string
@@ -60,6 +60,8 @@ export function AguardandoClient({
   const [copiado, setCopiado] = useState(false)
   const [renovando, setRenovando] = useState(false)
   const [erroRenovacao, setErroRenovacao] = useState<string | null>(null)
+  const [cancelando, setCancelando] = useState(false)
+  const [confirmandoCancelamento, setConfirmandoCancelamento] = useState(false)
   const [realtimeOk, setRealtimeOk] = useState(true)
 
   // Supabase Realtime — escuta UPDATE na recarga específica
@@ -136,6 +138,17 @@ export function AguardandoClient({
       // clipboard unavailable in non-secure context or old WebView
     }
   }, [qrCode])
+
+  const handleCancelar = useCallback(async () => {
+    setCancelando(true)
+    const res = await cancelarRecargaAction(recargaId)
+    if ('error' in res) {
+      setConfirmandoCancelamento(false)
+      setCancelando(false)
+      return
+    }
+    router.push(`/cantina/${alunoId}/recarga`)
+  }, [recargaId, alunoId, router])
 
   const handleRenovar = useCallback(async () => {
     setRenovando(true)
@@ -396,6 +409,60 @@ export function AguardandoClient({
         >
           🔄 Verificar pagamento
         </button>
+      )}
+
+      {/* Cancelar recarga (só PIX) */}
+      {metodo === 'pix' && (
+        confirmandoCancelamento ? (
+          <div style={{
+            background: '#fff7ed', border: '1px solid #fed7aa',
+            borderRadius: 'var(--r-md)', padding: '14px 16px',
+            display: 'flex', flexDirection: 'column', gap: 10,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#9a3412' }}>
+              Tem certeza que quer cancelar esta recarga?
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={handleCancelar}
+                disabled={cancelando}
+                style={{
+                  flex: 1, padding: '10px',
+                  background: '#dc2626', color: '#fff',
+                  border: 'none', borderRadius: 'var(--r-md)',
+                  fontSize: 13, fontWeight: 700,
+                  cursor: cancelando ? 'not-allowed' : 'pointer',
+                  opacity: cancelando ? 0.7 : 1,
+                }}
+              >
+                {cancelando ? 'Cancelando…' : 'Sim, cancelar'}
+              </button>
+              <button
+                onClick={() => setConfirmandoCancelamento(false)}
+                disabled={cancelando}
+                style={{
+                  flex: 1, padding: '10px',
+                  background: 'var(--surface)', color: 'var(--text-2)',
+                  border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Voltar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmandoCancelamento(true)}
+            style={{
+              padding: '10px', borderRadius: 'var(--r-md)',
+              background: 'transparent', border: '1px solid var(--border)',
+              cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text-3)',
+            }}
+          >
+            Cancelar recarga
+          </button>
+        )
       )}
 
     </div>

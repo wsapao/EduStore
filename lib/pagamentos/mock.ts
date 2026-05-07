@@ -105,8 +105,11 @@ export const mockGateway: GatewayPagamento = {
   },
 
   async consultarStatus(gateway_id: string) {
-    // Mock sempre retorna 'aguardando' em chamadas diretas
     void gateway_id
     return 'aguardando'
+  },
+
+  async cancelarPagamento(gateway_id: string) {
+    void gateway_id
   },
 }

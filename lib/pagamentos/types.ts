@@ -78,4 +78,5 @@ export type ResultadoPagamento = ResultadoPix | ResultadoCartao | ResultadoBolet
 export interface GatewayPagamento {
   criarPagamento(input: CriarPagamentoInput): Promise<ResultadoPagamento>
   consultarStatus(gateway_id: string): Promise<'aguardando' | 'confirmado' | 'falhou' | 'expirado' | 'reembolsado'>
+  cancelarPagamento(gateway_id: string): Promise<void>
 }

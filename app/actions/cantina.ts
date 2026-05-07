@@ -689,3 +689,42 @@ export async function removerRestricaoAction(restricaoId: string, alunoId: strin
   revalidatePath(`/cantina/${alunoId}/configurar`)
   return { success: true }
 }
+
+// ── Cancelar recarga (responsável ou admin) ───────────────────
+export async function cancelarRecargaAction(recargaId: string): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const adminClient = createAdminClient()
+  const { data: recarga, error: fetchErr } = await adminClient
+    .from('cantina_recargas')
+    .select('id, status, metodo, gateway_id, responsavel_id')
+    .eq('id', recargaId)
+    .single()
+
+  if (fetchErr || !recarga) return { error: 'Recarga não encontrada.' }
+  if (recarga.status !== 'aguardando') return { error: 'Só é possível cancelar recargas aguardando pagamento.' }
+
+  const isOwner = recarga.responsavel_id === user.id
+  const isPix = recarga.metodo === 'pix'
+
+  if (!isOwner) return { error: 'Acesso negado.' }
+  if (!isPix) return { error: 'Recargas com cartão só podem ser canceladas pelo administrador.' }
+
+  if (recarga.gateway_id) {
+    try {
+      const gateway = getGateway('cantina')
+      await gateway.cancelarPagamento(recarga.gateway_id)
+    } catch (err) {
+      console.error('[cancelarRecarga] Erro ao cancelar no gateway:', err)
+    }
+  }
+
+  const { error: rpcErr } = await adminClient.rpc('cancelar_recarga' as any, {
+    p_recarga_id: recargaId,
+  })
+  if (rpcErr) return { error: rpcErr.message }
+
+  return { success: true }
+}
