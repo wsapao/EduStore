@@ -75,6 +75,11 @@ export function EstornoParcialForm({ pedidoId, itens, estorno }: Props) {
       return (
         <div style={{ marginTop: 8, padding: '8px 12px', background: cfg.bg, borderRadius: 8, fontSize: 12, color: cfg.text, fontWeight: 600 }}>
           {cfg.label}
+          {estorno.status === 'aprovado' && (
+            <div style={{ fontSize: 11, fontWeight: 400, marginTop: 3, opacity: 0.8 }}>
+              O reembolso pode levar até 1 dia útil para aparecer na sua conta, conforme o método de pagamento.
+            </div>
+          )}
         </div>
       )
     }

@@ -46,6 +46,11 @@ export function SolicitarEstornoButton({ recargaId, valor, statusEstorno, observ
             Motivo: {observacaoAdmin}
           </div>
         )}
+        {(statusEstorno === 'aprovado' || statusEstorno === 'estorno_aprovado') && (
+          <div style={{ fontSize: 11, color: '#374151', marginTop: 4 }}>
+            O reembolso pode levar até 1 dia útil para aparecer na sua conta.
+          </div>
+        )}
       </div>
     )
   }
