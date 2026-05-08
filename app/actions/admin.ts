@@ -628,16 +628,19 @@ export async function estornarRecargaAdminAction(recargaId: string): Promise<{ s
   if (!recarga) return { error: 'Recarga não encontrada.' }
   if (recarga.status !== 'confirmada') return { error: 'Só é possível estornar recargas confirmadas.' }
 
-  // Tenta estornar no Asaas — captura o erro para registrar no banco se falhar
-  let gatewayErro: string | null = null
-  if (recarga.gateway_id) {
+  // Estornar no Asaas PRIMEIRO. Se falhar, não mexe no banco.
+  if (recarga.gateway_id && recarga.metodo !== 'boleto') {
     try {
       const { getGateway } = await import('@/lib/pagamentos/gateway')
       const gateway = getGateway('cantina')
       await gateway.estornarPagamento(recarga.gateway_id)
     } catch (err) {
-      gatewayErro = err instanceof Error ? err.message : String(err)
-      console.warn('[estornarRecarga] Gateway não estornou:', gatewayErro)
+      const msg = err instanceof Error ? err.message : String(err)
+      await adminClient
+        .from('cantina_recargas')
+        .update({ motivo_falha: msg } as any)
+        .eq('id', recargaId)
+      return { error: `Falha ao estornar no Asaas: ${msg}` }
     }
   }
 
@@ -647,17 +650,16 @@ export async function estornarRecargaAdminAction(recargaId: string): Promise<{ s
   })
 
   if (error) {
-    // Persiste o motivo da falha no registro para exibição posterior
     await adminClient
       .from('cantina_recargas')
-      .update({ motivo_falha: gatewayErro ?? error.message } as any)
+      .update({ motivo_falha: error.message } as any)
       .eq('id', recargaId)
     return { error: error.message }
   }
 
   const resultado = data as { ok: boolean; erro?: string; saldo_apos?: number }
   if (!resultado.ok) {
-    const motivo = resultado.erro ?? gatewayErro ?? 'Erro ao estornar.'
+    const motivo = resultado.erro ?? 'Erro ao estornar.'
     await adminClient
       .from('cantina_recargas')
       .update({ motivo_falha: motivo } as any)
@@ -709,7 +711,43 @@ export async function aprovarEstornoAction(
   const { user } = await verificarAdmin()
   const adminClient = createAdminClient()
 
-  // Aprova no banco e pega recarga_id
+  // Buscar solicitação + recarga para obter gateway_id e método ANTES de aprovar
+  const { data: solicitacao, error: errSolic } = await adminClient
+    .from('cantina_solicitacoes_estorno')
+    .select(`
+      id, status,
+      recarga:cantina_recargas!recarga_id(id, gateway_id, metodo)
+    `)
+    .eq('id', solicitacaoId)
+    .single()
+
+  if (errSolic) return { error: errSolic.message }
+  if (!solicitacao) return { error: 'Solicitação não encontrada.' }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((solicitacao as any).status !== 'pendente') return { error: 'Solicitação não está pendente.' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recarga = Array.isArray((solicitacao as any).recarga)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? (solicitacao as any).recarga[0]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    : (solicitacao as any).recarga
+  const gatewayId = recarga?.gateway_id as string | null
+  const metodo = recarga?.metodo as string | undefined
+
+  // Estornar no Asaas PRIMEIRO (PIX/cartão). Boleto não tem estorno via API.
+  if (gatewayId && metodo !== 'boleto') {
+    try {
+      const { getGateway } = await import('@/lib/pagamentos/gateway')
+      const gateway = getGateway('cantina')
+      await gateway.estornarPagamento(gatewayId)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      return { error: `Falha ao estornar no Asaas: ${msg}` }
+    }
+  }
+
+  // Só aprova no banco se o Asaas processou (ou se é boleto/sem gateway)
   const { data, error } = await adminClient.rpc('aprovar_estorno' as any, {
     p_solicitacao_id: solicitacaoId,
     p_decisor_id: user.id,
@@ -717,23 +755,6 @@ export async function aprovarEstornoAction(
   if (error) return { error: error.message }
   const res = data as { ok: boolean; erro?: string; recarga_id?: string }
   if (!res.ok) return { error: res.erro ?? 'Erro ao aprovar.' }
-
-  // Busca gateway_id da recarga para chamar Asaas
-  const { data: recarga } = await adminClient
-    .from('cantina_recargas')
-    .select('gateway_id')
-    .eq('id', res.recarga_id!)
-    .single()
-
-  if (recarga?.gateway_id) {
-    try {
-      const { getGateway } = await import('@/lib/pagamentos/gateway')
-      const gateway = getGateway('cantina')
-      await gateway.estornarPagamento(recarga.gateway_id)
-    } catch (err) {
-      console.warn('[aprovarEstorno] Asaas não processou estorno imediato (aguardar webhook):', err)
-    }
-  }
 
   revalidatePath('/admin/cantina/recargas')
   return { success: true }
