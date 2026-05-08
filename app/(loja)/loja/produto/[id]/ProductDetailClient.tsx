@@ -27,6 +27,19 @@ interface Props {
   initialAlunoId: string | null
 }
 
+function canUseOptimizedImageSrc(src: string | null): src is string {
+  if (!src) return false
+
+  try {
+    const { protocol, hostname } = new URL(src)
+    if (protocol !== 'https:') return false
+
+    return hostname.endsWith('.supabase.co') || hostname.endsWith('.supabase.in')
+  } catch {
+    return false
+  }
+}
+
 export function ProductDetailClient({ produto, variantesDetalhadas, alunos, initialAlunoId }: Props) {
   const router = useRouter()
   const { add, remove, hasItem, open } = useCart()
@@ -46,6 +59,7 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
 
   const theme = CAT_THEMES[produto.categoria] ?? CAT_THEMES.outros
   const icon = produto.icon ?? DEFAULT_ICONS[produto.categoria] ?? '📦'
+  const shouldUseOptimizedImage = canUseOptimizedImageSrc(produto.imagem_url)
 
   function handleToggleCart() {
     if (!selectedAluno) return
@@ -94,7 +108,15 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
           </button>
 
           {produto.imagem_url ? (
-            <Image src={produto.imagem_url} alt={produto.nome} fill sizes="100vw" style={{ objectFit: 'cover' }} priority />
+            shouldUseOptimizedImage ? (
+              <Image src={produto.imagem_url} alt={produto.nome} fill sizes="100vw" style={{ objectFit: 'cover' }} priority />
+            ) : (
+              <img
+                src={produto.imagem_url}
+                alt={produto.nome}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            )
           ) : (
             <span style={{ fontSize: 56, filter: 'drop-shadow(0 5px 14px rgba(0,0,0,.25))', position: 'relative', zIndex: 1 }}>
               {icon}
