@@ -83,7 +83,7 @@ export default async function RecargasAdminPage() {
           <h1 style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', margin: 0 }}>
             💰 Recargas
           </h1>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>
             Gerencie, estorne ou cancele recargas
           </p>
         </div>

@@ -407,7 +407,7 @@ export default async function AdminDashboard({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', margin: 0 }}>Recuperação de PIX</h3>
-              <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>Nas últimas 24h</p>
+              <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0' }}>Nas últimas 24h</p>
             </div>
             <span style={{ fontSize: 24 }}>💸</span>
           </div>
@@ -421,7 +421,7 @@ export default async function AdminDashboard({
                   <div key={pix.id} style={{ background: '#fff', border: '1px solid #f1f5f9', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
                     <div>
                       <p style={{ fontSize: 14, fontWeight: 700, color: '#1e293b', margin: 0 }}>{fmtBRL(pix.total)}</p>
-                      <p style={{ fontSize: 11, color: '#64748b', margin: '2px 0 0', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeResp}</p>
+                      <p style={{ fontSize: 11, color: '#94a3b8', margin: '2px 0 0', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeResp}</p>
                     </div>
                     {fone ? (
                       <a
@@ -449,7 +449,7 @@ export default async function AdminDashboard({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', margin: 0 }}>Adesão de Eventos</h3>
-              <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>Engajamento nas compras</p>
+              <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0' }}>Engajamento nas compras</p>
             </div>
             <span style={{ fontSize: 24 }}>🎟️</span>
           </div>
@@ -495,7 +495,7 @@ export default async function AdminDashboard({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', letterSpacing: '-.01em', margin: 0 }}>Receita confirmada</h2>
-              <p style={{ fontSize: 12, color: '#64748b', fontWeight: 500, marginTop: 2 }}>Visão consolidada de vendas diárias pagas</p>
+              <p style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500, marginTop: 2 }}>Visão consolidada de vendas diárias pagas</p>
             </div>
           </div>
           <div style={{ flex: 1, width: '100%' }}>
@@ -531,7 +531,7 @@ export default async function AdminDashboard({
                 }}
               >
                 <div style={{ fontSize: 15, fontWeight: 900 }}>{action.title}</div>
-                <div style={{ fontSize: 12, lineHeight: 1.55, color: '#64748b', marginTop: 4 }}>{action.desc}</div>
+                <div style={{ fontSize: 12, lineHeight: 1.55, color: '#94a3b8', marginTop: 4 }}>{action.desc}</div>
               </Link>
             ))}
           </div>
@@ -580,7 +580,7 @@ export default async function AdminDashboard({
                     <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {produto.nome}
                     </div>
-                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>
                       {produto.vendas} vendas · {fmtBRL(produto.receita)}
                     </div>
                   </div>
@@ -619,7 +619,7 @@ export default async function AdminDashboard({
                     <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
                       {CATEGORY_META[item.categoria].icon} {CATEGORY_META[item.categoria].label}
                     </span>
-                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>{item.percentual}%</span>
+                    <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{item.percentual}%</span>
                   </div>
                   <div style={{ height: 10, borderRadius: 999, background: '#e2e8f0', overflow: 'hidden' }}>
                     <div
@@ -1046,7 +1046,7 @@ function PanelHeader({
       <h2 style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-.04em', color: '#0a1628', margin: 0, lineHeight: 1.1 }}>
         {title}
       </h2>
-      <p style={{ fontSize: 14, lineHeight: 1.6, color: '#64748b', margin: 0, fontWeight: 500 }}>{description}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.6, color: '#94a3b8', margin: 0, fontWeight: 500 }}>{description}</p>
     </div>
   )
 }

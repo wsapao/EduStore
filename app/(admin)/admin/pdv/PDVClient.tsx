@@ -264,11 +264,11 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
           {selectedAluno ? (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>
                   Aluno Identificado
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>{selectedAluno.nome}</div>
-                <div style={{ fontSize: 13, color: '#64748b' }}>{selectedAluno.serie}</div>
+                <div style={{ fontSize: 13, color: '#94a3b8' }}>{selectedAluno.serie}</div>
                 
                 {carteira ? (
                   <div style={{ marginTop: 12, padding: '8px 12px', backgroundColor: carteira.ativo ? '#ecfdf5' : '#fef2f2', borderRadius: 8, display: 'inline-block' }}>
@@ -387,7 +387,7 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
         {/* Footer do Checkout */}
         <div style={{ padding: 24, borderTop: '1px solid #e2e8f0', backgroundColor: 'white' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Total</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Total</span>
             <span style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{fmtBRL(totalCart)}</span>
           </div>
 
@@ -447,7 +447,7 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
           }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>Digite a Senha</h3>
-            <p style={{ fontSize: 13, color: '#64748b', textAlign: 'center', marginBottom: 24 }}>
+            <p style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', marginBottom: 24 }}>
               Esta carteira requer a senha de 4 dígitos para autorizar a compra.
             </p>
 

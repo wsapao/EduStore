@@ -36,7 +36,7 @@ export function EstornoHistoricoAdmin({ estornos }: Props) {
         onClick={() => setAberto(v => !v)}
         style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          fontSize: 11, color: '#64748b', fontWeight: 600, padding: '4px 0',
+          fontSize: 11, color: '#94a3b8', fontWeight: 600, padding: '4px 0',
           display: 'flex', alignItems: 'center', gap: 4,
         }}
       >

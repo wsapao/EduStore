@@ -61,9 +61,9 @@ function SolicitacaoCard({ sol, onDecidido }: { sol: Solicitacao; onDecidido: (i
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
             {sol.aluno_nome}
-            <span style={{ fontWeight: 400, color: '#64748b', marginLeft: 6 }}>{sol.aluno_serie}</span>
+            <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>{sol.aluno_serie}</span>
           </div>
-          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
             Solicitado em {fmtData(sol.created_at)} · {sol.metodo === 'cartao' ? '💳 Cartão' : '⚡ PIX'}
           </div>
         </div>
@@ -168,7 +168,7 @@ function SolicitacaoCard({ sol, onDecidido }: { sol: Solicitacao; onDecidido: (i
               style={{
                 padding: '8px 14px', background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.1)',
-                color: '#64748b', borderRadius: 7,
+                color: '#94a3b8', borderRadius: 7,
                 fontSize: 12, fontWeight: 600, cursor: 'pointer',
               }}
             >
@@ -193,7 +193,7 @@ export function SolicitacoesClient({ solicitacoes: inicial }: { solicitacoes: So
       <div style={{
         padding: '32px', textAlign: 'center',
         background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 12, color: '#64748b', fontSize: 13,
+        borderRadius: 12, color: '#94a3b8', fontSize: 13,
       }}>
         Nenhuma solicitação pendente.
       </div>

@@ -29,23 +29,24 @@ function fmtData(iso: string) {
   })
 }
 
-const STATUS_CONFIG: Record<string, { label: string; cor: string; bg: string }> = {
-  aguardando:       { label: 'Aguardando',         cor: '#92400e', bg: '#fef3c7' },
-  confirmada:       { label: 'Confirmada',          cor: '#065f46', bg: '#d1fae5' },
-  expirada:         { label: 'Expirada',            cor: '#6b7280', bg: '#f3f4f6' },
-  cancelada:        { label: 'Cancelada',           cor: '#6b7280', bg: '#f3f4f6' },
-  estornada:        { label: 'Estornada',           cor: '#7c3aed', bg: '#ede9fe' },
-  estorno_aprovado: { label: 'Estorno em andamento', cor: '#92400e', bg: '#fef3c7' },
-  falhou:           { label: 'Falhou',              cor: '#991b1b', bg: '#fee2e2' },
+// Badges adaptados para UI escura: fundo semitransparente + borda colorida
+const STATUS_CONFIG: Record<string, { label: string; cor: string; bg: string; border: string }> = {
+  aguardando:       { label: 'Aguardando',          cor: '#fbbf24', bg: 'rgba(245,158,11,0.12)',   border: 'rgba(245,158,11,0.3)' },
+  confirmada:       { label: 'Confirmada',           cor: '#34d399', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.28)' },
+  expirada:         { label: 'Expirada',             cor: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.18)' },
+  cancelada:        { label: 'Cancelada',            cor: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.18)' },
+  estornada:        { label: 'Estornada',            cor: '#a78bfa', bg: 'rgba(124,58,237,0.15)',  border: 'rgba(124,58,237,0.32)' },
+  estorno_aprovado: { label: 'Estorno em andamento', cor: '#fbbf24', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.3)' },
+  falhou:           { label: 'Falhou',               cor: '#f87171', bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.28)' },
 }
 
 function BadgeStatus({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.falhou
   return (
     <span style={{
-      display: 'inline-block', padding: '2px 8px',
-      borderRadius: 99, fontSize: 11, fontWeight: 700,
-      color: cfg.cor, background: cfg.bg,
+      display: 'inline-block', padding: '3px 9px',
+      borderRadius: 99, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap',
+      color: cfg.cor, background: cfg.bg, border: `1px solid ${cfg.border}`,
     }}>
       {cfg.label}
     </span>
@@ -83,70 +84,72 @@ function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (
 
   return (
     <div style={{
-      padding: '14px 16px',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      padding: '13px 16px',
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
     }}>
-      {/* Linha principal: info + valor/status + botões de ação */}
+      {/* Linha principal: info à esq · preço + badge + ação à dir (todos alinhados) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        {/* Info */}
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9' }}>
+
+        {/* Info: nome + data */}
+        <div style={{ flex: 1, minWidth: 160 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', lineHeight: 1.3 }}>
             {recarga.aluno_nome}
-            <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>
+            <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6, fontSize: 12 }}>
               {recarga.aluno_serie}
             </span>
           </div>
-          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-            {fmtData(recarga.created_at)} · {recarga.metodo === 'cartao' ? '💳 Cartão' : '⚡ PIX'}
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>
+            {fmtData(recarga.created_at)}
+            <span style={{ margin: '0 5px', opacity: 0.4 }}>·</span>
+            {recarga.metodo === 'cartao' ? '💳 Cartão' : '⚡ PIX'}
           </div>
         </div>
 
-        {/* Valor + status */}
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#34d399' }}>
+        {/* Direita: preço + badge + botão — todos na mesma linha horizontal */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 800, color: '#34d399', letterSpacing: '-0.01em' }}>
             {fmtMoeda(recarga.valor)}
-          </div>
-          <div style={{ marginTop: 4 }}>
-            <BadgeStatus status={recarga.status} />
-          </div>
-        </div>
+          </span>
 
-        {/* Ações */}
-        {(podeEstornar || podeCancelar) && !acao && (
-          <div style={{ display: 'flex', gap: 6 }}>
-            {podeEstornar && (
-              <button
-                onClick={() => confirmar('estornar')}
-                style={{
-                  padding: '6px 12px', borderRadius: 8,
-                  background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)',
-                  color: '#a78bfa', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                Estornar
-              </button>
-            )}
-            {podeCancelar && (
-              <button
-                onClick={() => confirmar('cancelar')}
-                style={{
-                  padding: '6px 12px', borderRadius: 8,
-                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-                  color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                Cancelar
-              </button>
-            )}
-          </div>
-        )}
+          <BadgeStatus status={recarga.status} />
+
+          {(podeEstornar || podeCancelar) && !acao && (
+            <div style={{ display: 'flex', gap: 6 }}>
+              {podeEstornar && (
+                <button
+                  onClick={() => confirmar('estornar')}
+                  style={{
+                    padding: '5px 12px', borderRadius: 7,
+                    background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.32)',
+                    color: '#a78bfa', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  Estornar
+                </button>
+              )}
+              {podeCancelar && (
+                <button
+                  onClick={() => confirmar('cancelar')}
+                  style={{
+                    padding: '5px 12px', borderRadius: 7,
+                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)',
+                    color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Motivo da falha */}
       {recarga.status === 'falhou' && recarga.motivo_falha && (
         <div style={{
           marginTop: 8, padding: '8px 10px',
-          background: 'rgba(153,27,27,0.1)', border: '1px solid rgba(153,27,27,0.25)',
+          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)',
           borderRadius: 6, fontSize: 11, color: '#fca5a5',
         }}>
           <span style={{ fontWeight: 700, marginRight: 4 }}>Motivo:</span>
@@ -221,7 +224,7 @@ export function RecargasClient({ recargas: inicial }: { recargas: Recarga[] }) {
   }
 
   const FILTROS = [
-    { value: 'todas',     label: 'Todas' },
+    { value: 'todas',      label: 'Todas' },
     { value: 'aguardando', label: 'Aguardando' },
     { value: 'confirmada', label: 'Confirmadas' },
     { value: 'estornada',  label: 'Estornadas' },
@@ -255,7 +258,7 @@ export function RecargasClient({ recargas: inicial }: { recargas: Recarga[] }) {
         borderRadius: 'var(--r-xl)', overflow: 'hidden',
       }}>
         {filtradas.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+          <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
             Nenhuma recarga encontrada.
           </div>
         ) : (

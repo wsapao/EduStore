@@ -139,7 +139,7 @@ export default async function AdminCantinaPage() {
                 {stat.label}
               </div>
               <div style={{ fontSize: 26, fontWeight: 900, color: '#f59e0b', letterSpacing: '-.02em' }}>{stat.value}</div>
-              <div style={{ fontSize: 12, color: '#64748b', marginTop: 6, fontWeight: 600 }}>{stat.note}</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6, fontWeight: 600 }}>{stat.note}</div>
             </div>
           ))}
         </div>
@@ -185,7 +185,7 @@ export default async function AdminCantinaPage() {
             </div>
             <div>
               {(movsRecentes ?? []).length === 0 ? (
-                <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748b', fontSize: 14, fontWeight: 600 }}>
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8', fontSize: 14, fontWeight: 600 }}>
                   Nenhuma movimentação ainda.
                 </div>
               ) : (movsRecentes ?? []).map((mov, i) => {
