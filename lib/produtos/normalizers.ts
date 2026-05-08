@@ -4,6 +4,8 @@ type ProdutoRaw = Produto & {
   variantes_rel?: ProdutoVariante[] | null
 }
 
+const METODOS_ACEITOS_VALIDOS = ['pix', 'cartao', 'boleto'] as const
+
 function coerceStringArray(value: unknown): string[] | null {
   if (Array.isArray(value)) {
     const normalized = value
@@ -41,6 +43,15 @@ function coerceStringArray(value: unknown): string[] | null {
   return null
 }
 
+function coerceMetodosAceitos(value: unknown): Produto['metodos_aceitos'] {
+  const normalized = (coerceStringArray(value) ?? []).filter(
+    (item): item is Produto['metodos_aceitos'][number] =>
+      METODOS_ACEITOS_VALIDOS.includes(item as Produto['metodos_aceitos'][number])
+  )
+
+  return normalized.length > 0 ? normalized : ['pix']
+}
+
 export function normalizarProduto(raw: ProdutoRaw): Produto {
   const variantesLegadas = coerceStringArray(raw.variantes)
   const seriesNormalizadas = coerceStringArray(raw.series)
@@ -51,6 +62,7 @@ export function normalizarProduto(raw: ProdutoRaw): Produto {
 
   return {
     ...raw,
+    metodos_aceitos: coerceMetodosAceitos(raw.metodos_aceitos),
     series: seriesNormalizadas,
     variantes: variantesDisponiveis.length > 0 ? variantesDisponiveis : variantesLegadas,
   }
