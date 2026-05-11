@@ -1,69 +1,69 @@
-import type { Produto, ProdutoVariante } from '@/types/database'
+import type { MetodoPagamento, Produto, ProdutoVariante } from '@/types/database'
 
 type ProdutoRaw = Produto & {
   variantes_rel?: ProdutoVariante[] | null
 }
 
-const METODOS_ACEITOS_VALIDOS = ['pix', 'cartao', 'boleto'] as const
+const METODOS_ACEITOS_VALIDOS: MetodoPagamento[] = ['pix', 'cartao', 'boleto']
 
-function coerceStringArray(value: unknown): string[] | null {
+function coerceStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
-    const normalized = value
-      .map((item) => (typeof item === 'string' ? item.trim() : ''))
-      .filter(Boolean)
-
-    return normalized.length > 0 ? normalized : null
-  }
-
-  if (typeof value === 'string') {
-    const trimmed = value.trim()
-    if (!trimmed) return null
-
-    try {
-      const parsed = JSON.parse(trimmed) as unknown
-      if (Array.isArray(parsed)) {
-        const normalized = parsed
-          .map((item) => (typeof item === 'string' ? item.trim() : ''))
-          .filter(Boolean)
-
-        return normalized.length > 0 ? normalized : null
-      }
-    } catch {
-      // Legacy rows may store comma-separated text instead of a JSON array.
-    }
-
-    const normalized = trimmed
-      .split(',')
+    return value
+      .filter((item): item is string => typeof item === 'string')
       .map((item) => item.trim())
       .filter(Boolean)
-
-    return normalized.length > 0 ? normalized : null
   }
 
-  return null
+  if (typeof value !== 'string') {
+    return []
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return []
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(trimmed)
+    if (parsed !== value) {
+      return coerceStringArray(parsed)
+    }
+  } catch {
+    // Ignora formatos legados não JSON e tenta o fallback abaixo.
+  }
+
+  return trimmed
+    .replace(/^[\[{(]+|[\]})]+$/g, '')
+    .split(/[\n,;|]+/)
+    .map((item) => item.trim().replace(/^['"]+|['"]+$/g, ''))
+    .filter(Boolean)
 }
 
-function coerceMetodosAceitos(value: unknown): Produto['metodos_aceitos'] {
-  const normalized = (coerceStringArray(value) ?? []).filter(
-    (item): item is Produto['metodos_aceitos'][number] =>
-      METODOS_ACEITOS_VALIDOS.includes(item as Produto['metodos_aceitos'][number])
-  )
+function coerceMetodosAceitos(value: unknown): MetodoPagamento[] {
+  const metodos = coerceStringArray(value)
+    .map((item) => item.toLowerCase())
+    .filter((item): item is MetodoPagamento => METODOS_ACEITOS_VALIDOS.includes(item as MetodoPagamento))
 
-  return normalized.length > 0 ? normalized : ['pix']
+  return metodos.length > 0 ? Array.from(new Set(metodos)) : ['pix']
+}
+
+function coerceOptionalStringArray(value: unknown): string[] | null {
+  const items = Array.from(new Set(coerceStringArray(value)))
+  return items.length > 0 ? items : null
 }
 
 export function normalizarProduto(raw: ProdutoRaw): Produto {
-  const variantesLegadas = coerceStringArray(raw.variantes)
-  const seriesNormalizadas = coerceStringArray(raw.series)
   const variantesDisponiveis = (raw.variantes_rel ?? [])
     .filter((variante) => variante.disponivel && (variante.estoque === null || variante.estoque > 0))
     .sort((a, b) => a.ordem - b.ordem)
     .map((variante) => variante.nome)
 
+  const variantesLegadas = coerceOptionalStringArray(raw.variantes)
+
   return {
     ...raw,
     metodos_aceitos: coerceMetodosAceitos(raw.metodos_aceitos),
-    series: seriesNormalizadas,
+    series: coerceOptionalStringArray(raw.series),
     variantes: variantesDisponiveis.length > 0 ? variantesDisponiveis : variantesLegadas,
   }
 }
@@ -74,7 +74,7 @@ export function normalizarVariantes(raw: ProdutoRaw): ProdutoVariante[] {
     return [...variantes].sort((a, b) => a.ordem - b.ordem)
   }
 
-  return (coerceStringArray(raw.variantes) ?? []).map((nome, index) => ({
+  return (coerceOptionalStringArray(raw.variantes) ?? []).map((nome, index) => ({
     id: `fallback-${index}-${nome}`,
     produto_id: raw.id,
     nome,
