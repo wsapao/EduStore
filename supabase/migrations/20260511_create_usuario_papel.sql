@@ -12,14 +12,13 @@ CREATE TABLE IF NOT EXISTS usuario_papel (
   papel_id       UUID NOT NULL REFERENCES papeis(id) ON DELETE RESTRICT,
   suspenso       BOOLEAN NOT NULL DEFAULT false,
   suspenso_em    TIMESTAMPTZ,
-  suspenso_por   UUID REFERENCES auth.users(id),
+  suspenso_por   UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
 
   CONSTRAINT usuario_papel_unico_por_escola UNIQUE (user_id, escola_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_usuario_papel_user   ON usuario_papel(user_id);
 CREATE INDEX IF NOT EXISTS idx_usuario_papel_escola ON usuario_papel(escola_id);
 CREATE INDEX IF NOT EXISTS idx_usuario_papel_papel  ON usuario_papel(papel_id);
 
