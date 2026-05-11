@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { toggleProdutoAtivoAction, toggleEsgotadoAction, duplicarProdutoAction, excluirProdutoAction } from '@/app/actions/admin'
+import { normalizarProduto } from '@/lib/produtos/normalizers'
 import type { Produto, CategoriaProduto, MetodoPagamento, ProdutoVariante } from '@/types/database'
 
 function fmtBRL(v: number) {
@@ -61,7 +62,9 @@ export default async function AdminProdutos({
   const esgotados = (resumo ?? []).filter((p) => p.esgotado).length
   const totalPages = Math.max(1, Math.ceil((totalFiltrado ?? 0) / pageSize))
 
-  const lista = (produtos ?? []) as Array<Produto & { variantes_rel?: ProdutoVariante[] | null }>
+  const lista = ((produtos ?? []) as Array<Produto & { variantes_rel?: ProdutoVariante[] | null }>).map(
+    (produto) => normalizarProduto(produto) as Produto & { variantes_rel?: ProdutoVariante[] | null }
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 80 }}>
@@ -265,8 +268,27 @@ export default async function AdminProdutos({
                           <StockPill tone={variantesBaixoEstoque.length > 0 ? 'warning' : 'neutral'}>
                             {variantesBaixoEstoque.length} baixo est.
                           </StockPill>
+                          <StockPill tone={variantesIndisponiveis.length > 0 ? 'muted' : 'neutral'}>
+                            {variantesIndisponiveis.length} inativas
+                          </StockPill>
                         </div>
                       </div>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {variantes.map((variante) => {
+                        let tone: 'neutral' | 'warning' | 'danger' | 'muted' = 'neutral'
+                        if (!variante.disponivel) tone = 'muted'
+                        else if (variante.estoque === 0) tone = 'danger'
+                        else if (variante.estoque !== null && variante.estoque <= 3) tone = 'warning'
+
+                        const estoqueLabel = variante.estoque === null ? 'livre' : `${variante.estoque}`
+
+                        return (
+                          <StockPill key={variante.id} tone={tone}>
+                            {variante.nome} · {estoqueLabel}
+                          </StockPill>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
