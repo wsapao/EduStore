@@ -44,3 +44,43 @@ CREATE POLICY "usuario_papel_admin_all"
   TO authenticated
   USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
   WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+-- ── Self-read policies (correções pós code review) ─────────────────
+
+-- papeis: usuário pode ler o próprio papel (necessário pra resolver permissões)
+CREATE POLICY "papeis_self_select"
+  ON papeis FOR SELECT
+  TO authenticated
+  USING (
+    id IN (
+      SELECT papel_id FROM usuario_papel
+      WHERE user_id = auth.uid() AND suspenso = false
+    )
+  );
+
+-- papel_permissoes: usuário pode ler as próprias chaves de permissão
+CREATE POLICY "papel_permissoes_self_select"
+  ON papel_permissoes FOR SELECT
+  TO authenticated
+  USING (
+    papel_id IN (
+      SELECT papel_id FROM usuario_papel
+      WHERE user_id = auth.uid() AND suspenso = false
+    )
+  );
+
+-- escola_configuracoes: qualquer usuário autenticado da escola pode ler
+-- (necessário pra renderizar identidade/branding na loja online).
+-- Para responsáveis: a escola é resolvida via responsaveis.escola_id.
+-- Para staff (admin/operador/etc): via usuario_papel.
+CREATE POLICY "escola_configuracoes_self_escola_select"
+  ON escola_configuracoes FOR SELECT
+  TO authenticated
+  USING (
+    escola_id IN (
+      SELECT escola_id FROM usuario_papel
+      WHERE user_id = auth.uid() AND suspenso = false
+      UNION
+      SELECT escola_id FROM responsaveis WHERE id = auth.uid()
+    )
+  );

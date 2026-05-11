@@ -77,7 +77,7 @@ ON CONFLICT (escola_id) DO NOTHING;
 
 -- Trigger para criar configuração automaticamente quando uma escola é criada
 CREATE OR REPLACE FUNCTION criar_escola_configuracoes()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   INSERT INTO escola_configuracoes (escola_id) VALUES (NEW.id)
   ON CONFLICT (escola_id) DO NOTHING;
