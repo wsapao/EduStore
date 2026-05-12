@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <style dangerouslySetInnerHTML={{ __html: escolaThemeStyle(escola) }} />
 
       {/* SIDEBAR — Desktop */}
-      <AdminSidebar escolaNome={escola.nome} iniciais={iniciais} />
+      <AdminSidebar escolaNome={escola.nome} iniciais={iniciais} permissoes={permissoes} />
 
       {/* MAIN CONTENT WRAPPER */}
       <div className="flex-1 md-sidebar-offset flex flex-col min-h-screen">
@@ -62,7 +62,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </div>
 
       {/* Bottom nav — mobile */}
-      <AdminMobileNav />
+      <AdminMobileNav permissoes={permissoes} />
     </div>
   )
 }
