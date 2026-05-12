@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { logoutAction } from '@/app/actions/auth'
 import { getEscolaByUser, escolaThemeStyle } from '@/lib/escola/getEscola'
+import { currentPermissions } from '@/lib/permissoes'
 import { AdminSidebar } from './AdminSidebar'
 import { AdminMobileNav } from './AdminMobileNav'
 
@@ -12,9 +13,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!user) redirect('/login')
 
-  // Verifica se é admin pelo app_metadata (role definido via SQL no raw_app_meta_data)
-  const isAdmin = user.app_metadata?.role === 'admin'
-  if (!isAdmin) redirect('/loja')
+  const permissoes = await currentPermissions()
+  const podeEntrar =
+    permissoes.includes('configuracoes.ver') ||
+    permissoes.includes('produtos.ver') ||
+    permissoes.includes('pedidos.ver')
+  if (!podeEntrar) redirect('/loja')
 
   const iniciais = (user.email ?? 'AD').slice(0, 2).toUpperCase()
   const escola = await getEscolaByUser(user.id)
