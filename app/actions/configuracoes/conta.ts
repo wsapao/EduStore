@@ -19,3 +19,78 @@ export async function atualizarPerfilContaAction(formData: FormData) {
   revalidatePath('/admin/configuracoes/conta')
   return { success: true }
 }
+
+// ── MFA ───────────────────────────────────────────────────────────────────────
+
+export async function iniciarMfaAction() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
+  if (error || !data) return { error: 'Não foi possível iniciar o MFA. Tente novamente.' }
+
+  return {
+    factorId: data.id,
+    qrCode: data.totp.qr_code,
+    secret: data.totp.secret,
+  }
+}
+
+export async function verificarMfaAction(input: { factorId: string; codigo: string }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const { factorId, codigo } = input
+  if (!factorId || !codigo || codigo.length !== 6) {
+    return { error: 'Código inválido.' }
+  }
+
+  const challenge = await supabase.auth.mfa.challenge({ factorId })
+  if (challenge.error || !challenge.data) {
+    return { error: 'Não foi possível validar o código. Tente novamente.' }
+  }
+
+  const verify = await supabase.auth.mfa.verify({
+    factorId,
+    challengeId: challenge.data.id,
+    code: codigo,
+  })
+
+  if (verify.error) {
+    return { error: 'Código incorreto. Verifique o app autenticador.' }
+  }
+
+  revalidatePath('/admin/configuracoes/conta')
+  return { success: true }
+}
+
+export async function desativarMfaAction(input: { factorId: string }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const { error } = await supabase.auth.mfa.unenroll({ factorId: input.factorId })
+  if (error) return { error: 'Erro ao desativar MFA.' }
+
+  revalidatePath('/admin/configuracoes/conta')
+  return { success: true }
+}
+
+export async function listarFatoresMfaAction() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const { data, error } = await supabase.auth.mfa.listFactors()
+  if (error || !data) return { factors: [] as Array<{ id: string; friendly_name: string | null; status: string }> }
+
+  return {
+    factors: (data.totp ?? []).filter(f => f.status === 'verified').map(f => ({
+      id: f.id,
+      friendly_name: f.friendly_name ?? null,
+      status: f.status,
+    })),
+  }
+}
