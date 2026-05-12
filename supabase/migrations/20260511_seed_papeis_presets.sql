@@ -8,7 +8,7 @@
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION seed_papeis_presets(p_escola_id UUID)
-RETURNS VOID LANGUAGE plpgsql AS $$
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
   v_admin_id        UUID;
   v_gerente_id      UUID;
@@ -145,7 +145,7 @@ $$;
 
 -- Trigger pra novas escolas
 CREATE OR REPLACE FUNCTION trg_seed_papeis_nova_escola()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   PERFORM seed_papeis_presets(NEW.id);
   RETURN NEW;
