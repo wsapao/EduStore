@@ -94,3 +94,16 @@ export async function listarFatoresMfaAction() {
     })),
   }
 }
+
+// ── Sessões ───────────────────────────────────────────────────────────────────
+
+export async function encerrarOutrasSessoesAction() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const { error } = await supabase.auth.signOut({ scope: 'others' })
+  if (error) return { error: 'Erro ao encerrar sessões.' }
+
+  return { success: true }
+}

@@ -151,3 +151,33 @@ describe('MFA actions', () => {
     expect(r.factors![0].id).toBe('fac1')
   })
 })
+
+import { encerrarOutrasSessoesAction } from '@/app/actions/configuracoes/conta'
+
+describe('encerrarOutrasSessoesAction', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('chama signOut com scope "others"', async () => {
+    const signOut = vi.fn().mockResolvedValue({ error: null })
+    ;(createClient as any).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }),
+        signOut,
+      },
+    })
+    const r = await encerrarOutrasSessoesAction()
+    expect(r).toEqual({ success: true })
+    expect(signOut).toHaveBeenCalledWith({ scope: 'others' })
+  })
+
+  it('retorna erro se signOut falhar', async () => {
+    ;(createClient as any).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }),
+        signOut: vi.fn().mockResolvedValue({ error: { message: 'x' } }),
+      },
+    })
+    const r = await encerrarOutrasSessoesAction()
+    expect(r.error).toBeDefined()
+  })
+})
