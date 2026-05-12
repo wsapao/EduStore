@@ -108,7 +108,7 @@ describe('atualizarIdentidadeAction', () => {
     ;(createClient as any).mockResolvedValue({ from: vi.fn(() => ({ update })) })
 
     await atualizarIdentidadeAction(fd({ nome: 'Escola X' }))
-    const payload = update.mock.calls[0][0]
+    const payload = (update.mock.calls[0] as unknown[])[0]
     expect(payload).not.toHaveProperty('cor_primaria')
   })
 })
