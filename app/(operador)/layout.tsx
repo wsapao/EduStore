@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { logoutAction } from '@/app/actions/auth'
+import { hasPermission } from '@/lib/permissoes'
 
 export default async function OperadorLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -8,8 +9,8 @@ export default async function OperadorLayout({ children }: { children: React.Rea
 
   if (!user) redirect('/login')
 
-  const role = user.app_metadata?.role
-  if (role !== 'operador' && role !== 'admin') redirect('/loja')
+  const podeUsarPdv = await hasPermission('pdv.usar')
+  if (!podeUsarPdv) redirect('/loja')
 
   const nomeOperador = user.email?.split('@')[0] ?? 'Operador'
 
