@@ -12,6 +12,19 @@ export interface Escola {
   dominio: string | null
   ativo: boolean
   created_at: string
+
+  // Identidade estendida (2026-05-11)
+  razao_social: string | null
+  banner_url: string | null
+  slogan: string | null
+  texto_boas_vindas: string | null
+  favicon_url: string | null
+  endereco_logradouro: string | null
+  endereco_numero: string | null
+  endereco_bairro: string | null
+  endereco_cidade: string | null
+  endereco_uf: string | null
+  endereco_cep: string | null
 }
 
 export interface Responsavel {
@@ -287,4 +300,92 @@ export interface CantinaMovimentacaoComAluno extends CantinaMovimentacao {
   carteira: {
     aluno: Pick<Aluno, 'id' | 'nome'>
   }
+}
+
+// ─────────────────────────────────────────────────────────
+// Configurações
+// ─────────────────────────────────────────────────────────
+
+export type ChavePresetPapel =
+  | 'admin' | 'gerente' | 'financeiro' | 'cantineiro' | 'operador' | 'visualizador'
+
+export interface Papel {
+  id: string
+  escola_id: string
+  nome: string
+  descricao: string | null
+  preset: boolean
+  chave_preset: ChavePresetPapel | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PapelPermissao {
+  papel_id: string
+  chave: string
+  created_at: string
+}
+
+export interface UsuarioPapel {
+  id: string
+  user_id: string
+  escola_id: string
+  papel_id: string
+  suspenso: boolean
+  suspenso_em: string | null
+  suspenso_por: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface EscolaConfiguracoes {
+  escola_id: string
+
+  // Pagamentos
+  metodos_aceitos_padrao: MetodoPagamento[]
+  max_parcelas_padrao: number
+  pix_expiracao_segundos: number
+  taxa_cartao_repassada: boolean
+  taxa_cartao_percentual: number | null
+  asaas_webhook_secret: string | null
+  pix_chave_recebedora: string | null
+
+  // Cantina
+  cantina_recarga_min: number
+  cantina_recarga_max: number
+  cantina_metodos_recarga: MetodoPagamento[]
+  cantina_exige_pin: boolean
+  cantina_pin_tamanho: number
+  cantina_saldo_negativo: boolean
+
+  // Checkout
+  termo_padrao_compra: string | null
+  permite_multiplos_alunos: boolean
+  mensagem_pos_compra: string | null
+  carrinho_expiracao_minutos: number
+  exige_cpf_responsavel: boolean
+
+  // Loja Online
+  modo_manutencao: boolean
+  modo_manutencao_mensagem: string | null
+  layout_home: 'grid' | 'lista'
+  mostrar_estoque_baixo: boolean
+  texto_rodape: string | null
+
+  // E-mail
+  email_remetente_nome: string | null
+  email_remetente_endereco: string | null
+  email_logo_url: string | null
+
+  // LGPD
+  dpo_email: string | null
+
+  // Integrações
+  activesoft_ativo: boolean
+  crm_ativo: boolean
+  ga4_id: string | null
+  meta_pixel_id: string | null
+
+  created_at: string
+  updated_at: string
 }

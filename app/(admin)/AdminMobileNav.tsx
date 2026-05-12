@@ -3,25 +3,23 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard,
-  ReceiptText,
-  PackageSearch,
-  Users,
-  GraduationCap,
-  Store
+  LayoutDashboard, ReceiptText, PackageSearch, Users, GraduationCap, Store,
 } from 'lucide-react'
 
-export function AdminMobileNav() {
-  const pathname = usePathname()
+type MobileLink = { href: string; label: string; icon: any; perm: string | null }
 
-  const links = [
-    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/pedidos', label: 'Pedidos', icon: ReceiptText },
-    { href: '/admin/responsaveis', label: 'Pessoas', icon: Users },
-    { href: '/admin/alunos', label: 'Alunos', icon: GraduationCap },
-    { href: '/admin/produtos', label: 'Produtos', icon: PackageSearch },
-    { href: '/admin/pdv', label: 'PDV', icon: Store },
-  ]
+export function AdminMobileNav({ permissoes }: { permissoes: string[] }) {
+  const pathname = usePathname()
+  const allowed = (p: string | null) => p === null || permissoes.includes(p)
+
+  const links: MobileLink[] = [
+    { href: '/admin',              label: 'Dashboard', icon: LayoutDashboard, perm: null },
+    { href: '/admin/pedidos',      label: 'Pedidos',   icon: ReceiptText,     perm: 'pedidos.ver' },
+    { href: '/admin/responsaveis', label: 'Pessoas',   icon: Users,           perm: 'responsaveis.ver' },
+    { href: '/admin/alunos',       label: 'Alunos',    icon: GraduationCap,   perm: 'alunos.ver' },
+    { href: '/admin/produtos',     label: 'Produtos',  icon: PackageSearch,   perm: 'produtos.ver' },
+    { href: '/admin/pdv',          label: 'PDV',       icon: Store,           perm: 'pdv.usar' },
+  ].filter(l => allowed(l.perm))
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] flex h-[68px] bg-[#0a1628]/95 backdrop-blur-xl border-t border-white/5 pb-safe">
@@ -31,7 +29,7 @@ export function AdminMobileNav() {
           <Link key={href} href={href} style={{
             flex: 1, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', gap: 4,
-            textDecoration: 'none', 
+            textDecoration: 'none',
             color: isActive ? '#f59e0b' : '#64748b',
             position: 'relative'
           }}>

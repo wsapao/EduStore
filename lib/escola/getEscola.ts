@@ -11,6 +11,17 @@ export const ESCOLA_FALLBACK: Escola = {
   dominio: null,
   ativo: true,
   created_at: '',
+  razao_social: null,
+  banner_url: null,
+  slogan: null,
+  texto_boas_vindas: null,
+  favicon_url: null,
+  endereco_logradouro: null,
+  endereco_numero: null,
+  endereco_bairro: null,
+  endereco_cidade: null,
+  endereco_uf: null,
+  endereco_cep: null,
 }
 
 /**

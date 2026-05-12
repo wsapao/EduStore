@@ -16,38 +16,50 @@ import {
   Ticket,
   TrendingUp,
   ExternalLink,
-  LogOut
+  LogOut,
+  Settings,
 } from 'lucide-react'
 
 // Simulando a action caso seja passada via props ou usada em client form
 import { logoutAction } from '@/app/actions/auth'
 
+type LinkItem = {
+  href: string
+  label: string
+  icon: any
+  perm: string | null  // null = sempre mostra (ex: dashboard)
+}
+
 export function AdminSidebar({
   escolaNome,
-  iniciais
+  iniciais,
+  permissoes,
 }: {
   escolaNome: string
   iniciais: string
+  permissoes: string[]
 }) {
   const pathname = usePathname()
+  const allowed = (p: string | null) => p === null || permissoes.includes(p)
 
-  const mainLinks = [
-    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/pedidos', label: 'Pedidos', icon: ReceiptText },
-    { href: '/admin/produtos', label: 'Produtos', icon: PackageSearch },
-    { href: '/admin/responsaveis', label: 'Responsáveis', icon: Users },
-    { href: '/admin/alunos', label: 'Alunos', icon: GraduationCap },
-    { href: '/admin/checkin', label: 'Check-in', icon: Camera },
-    { href: '/admin/relatorio', label: 'Relatório', icon: ClipboardList },
-    { href: '/admin/receita', label: 'Receita Líquida', icon: TrendingUp },
-    { href: '/admin/cantina', label: 'Cantina', icon: Coffee },
-    { href: '/admin/pdv', label: 'PDV Balcão', icon: Store },
-  ]
+  const mainLinks: LinkItem[] = [
+    { href: '/admin',              label: 'Dashboard',       icon: LayoutDashboard, perm: null },
+    { href: '/admin/pedidos',      label: 'Pedidos',         icon: ReceiptText,     perm: 'pedidos.ver' },
+    { href: '/admin/produtos',     label: 'Produtos',        icon: PackageSearch,   perm: 'produtos.ver' },
+    { href: '/admin/responsaveis', label: 'Responsáveis',    icon: Users,           perm: 'responsaveis.ver' },
+    { href: '/admin/alunos',       label: 'Alunos',          icon: GraduationCap,   perm: 'alunos.ver' },
+    { href: '/admin/checkin',      label: 'Check-in',        icon: Camera,          perm: 'checkin.usar' },
+    { href: '/admin/relatorio',    label: 'Relatório',       icon: ClipboardList,   perm: 'relatorios.ver' },
+    { href: '/admin/receita',      label: 'Receita Líquida', icon: TrendingUp,      perm: 'receita.ver' },
+    { href: '/admin/cantina',      label: 'Cantina',         icon: Coffee,          perm: 'cantina.ver' },
+    { href: '/admin/pdv',          label: 'PDV Balcão',      icon: Store,           perm: 'pdv.usar' },
+  ].filter(l => allowed(l.perm))
 
-  const settingsLinks = [
-    { href: '/admin/produtos/categorias', label: 'Categorias', icon: Tags },
-    { href: '/admin/vouchers', label: 'Vouchers', icon: Ticket },
-  ]
+  const settingsLinks: LinkItem[] = [
+    { href: '/admin/produtos/categorias', label: 'Categorias',    icon: Tags,     perm: 'categorias.ver' },
+    { href: '/admin/vouchers',            label: 'Vouchers',      icon: Ticket,   perm: 'vouchers.ver' },
+    { href: '/admin/configuracoes',       label: 'Configurações', icon: Settings, perm: 'configuracoes.ver' },
+  ].filter(l => allowed(l.perm))
 
   return (
     <aside className="hidden md:flex flex-col" style={{
@@ -80,14 +92,14 @@ export function AdminSidebar({
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.3)', marginBottom: 8, paddingLeft: 12 }}>
           Menu Principal
         </div>
-        
+
         {mainLinks.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href
           return (
             <Link key={href} href={href} style={{
               display: 'flex', alignItems: 'center', gap: 12,
               padding: '10px 12px', borderRadius: 12,
-              fontSize: 14, fontWeight: isActive ? 800 : 600, 
+              fontSize: 14, fontWeight: isActive ? 800 : 600,
               color: isActive ? '#fff' : '#cbd5e1',
               background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
               textDecoration: 'none', transition: 'all .2s ease',
@@ -105,33 +117,35 @@ export function AdminSidebar({
         })}
 
         {/* Configurações */}
-        <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.3)', marginBottom: 8, paddingLeft: 12 }}>
-            Ajustes
+        {settingsLinks.length > 0 && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.3)', marginBottom: 8, paddingLeft: 12 }}>
+              Ajustes
+            </div>
+            {settingsLinks.map(({ href, label, icon: Icon }) => {
+              const isActive = pathname === href
+              return (
+                <Link key={href} href={href} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 12px', borderRadius: 12,
+                  fontSize: 14, fontWeight: isActive ? 800 : 600,
+                  color: isActive ? '#fff' : '#cbd5e1',
+                  background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  textDecoration: 'none', transition: 'all .2s ease',
+                  position: 'relative'
+                }}
+                className={!isActive ? "hover:bg-white/5 hover:text-white hover:translate-x-1" : ""}
+                >
+                  {isActive && (
+                    <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 4, height: 16, background: '#f59e0b', borderRadius: '0 4px 4px 0' }} />
+                  )}
+                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ color: isActive ? '#f59e0b' : 'inherit' }} />
+                  <span>{label}</span>
+                </Link>
+              )
+            })}
           </div>
-          {settingsLinks.map(({ href, label, icon: Icon }) => {
-            const isActive = pathname === href
-            return (
-              <Link key={href} href={href} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 12px', borderRadius: 12,
-                fontSize: 14, fontWeight: isActive ? 800 : 600, 
-                color: isActive ? '#fff' : '#cbd5e1',
-                background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                textDecoration: 'none', transition: 'all .2s ease',
-                position: 'relative'
-              }}
-              className={!isActive ? "hover:bg-white/5 hover:text-white hover:translate-x-1" : ""}
-              >
-                {isActive && (
-                  <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 4, height: 16, background: '#f59e0b', borderRadius: '0 4px 4px 0' }} />
-                )}
-                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ color: isActive ? '#f59e0b' : 'inherit' }} />
-                <span>{label}</span>
-              </Link>
-            )
-          })}
-        </div>
+        )}
       </nav>
 
       {/* Bottom Actions */}
