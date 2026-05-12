@@ -112,12 +112,49 @@ export default async function LojaPage({
   return (
     <div className="pb-[100px]">
       {/* 1. Hero */}
-      <StoreHero 
-        responsavel={responsavel} 
-        escola={escola} 
+      <StoreHero
+        responsavel={responsavel}
+        escola={escola}
         selectedAluno={selectedAluno}
         alunos={alunos}
       />
+
+      {/* 1b. Banner + slogan + boas-vindas (personalização da escola) */}
+      {(escola.banner_url || escola.slogan || escola.texto_boas_vindas) && (
+        <div style={{ padding: '14px 14px 0' }}>
+          {escola.banner_url && (
+            <div style={{
+              width: '100%',
+              aspectRatio: '32 / 10',
+              borderRadius: 16,
+              overflow: 'hidden',
+              marginBottom: 12,
+              background: '#0a1628',
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={escola.banner_url}
+                alt={escola.nome}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            </div>
+          )}
+          {(escola.slogan || escola.texto_boas_vindas) && (
+            <div style={{ padding: '0 4px 4px' }}>
+              {escola.slogan && (
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#0a1628', letterSpacing: '-.01em', marginBottom: 2 }}>
+                  {escola.slogan}
+                </div>
+              )}
+              {escola.texto_boas_vindas && (
+                <div style={{ fontSize: 12, fontWeight: 500, color: '#475569', lineHeight: 1.4 }}>
+                  {escola.texto_boas_vindas}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 4. Urgency Strip (Prazos Encerrando) */}
       {!shouldShowFlatResults && urgentes.length > 0 && selectedAluno && (
