@@ -1,20 +1,32 @@
-import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
-import Link from 'next/link'
+
+import {
+  CategoryFilter,
+  getDefaultCategoryMeta,
+  type CategoryTab,
+} from '@/components/loja/CategoryFilter'
+import { ProductCard } from '@/components/loja/ProductCard'
 import { StoreHero } from '@/components/loja/StoreHero'
-import { CategoryFilter, CATEGORIAS } from '@/components/loja/CategoryFilter'
 import { StoreSearch } from '@/components/loja/StoreSearch'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { ProductCard } from '@/components/loja/ProductCard'
+import { ESCOLA_FALLBACK } from '@/lib/escola/getEscola'
+import {
+  buildCategoriasHome,
+  isLojaDisponivelAgora,
+  normalizeLojaFuncionamento,
+  pickProdutosDestaque,
+} from '@/lib/loja-online/config'
+import { createClient } from '@/lib/supabase/server'
 import type {
   Aluno,
-  CategoriaProduto,
+  Categoria,
+  Escola,
+  EscolaConfiguracoes,
   Produto,
   Responsavel,
-  Escola,
 } from '@/types/database'
-import { ESCOLA_FALLBACK } from '@/lib/escola/getEscola'
 
 function fmtBRL(value: number) {
   return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -30,47 +42,79 @@ export default async function LojaPage({
   const normalizedQuery = q?.trim().toLocaleLowerCase('pt-BR') ?? ''
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Dados iniciais
-  const [{ data: vinculos }, { data: resp }, { data: allProdutosRaw }] = await Promise.all([
+  const [{ data: vinculos }, { data: resp }] = await Promise.all([
     supabase.from('responsavel_aluno').select('aluno:alunos(*)').eq('responsavel_id', user.id),
     supabase.from('responsaveis').select('*, escola:escolas(*)').eq('id', user.id).single(),
-    supabase.from('produtos').select('*').eq('ativo', true).order('created_at', { ascending: false }),
   ])
 
   const responsavel = resp as unknown as Responsavel
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const escola: Escola = (resp as any)?.escola ?? ESCOLA_FALLBACK
-  
+  const escolaId = responsavel?.escola_id
+
   const alunos: Aluno[] = (vinculos ?? [])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((v: any) => v.aluno as Aluno | null)
     .filter((aluno): aluno is Aluno => !!aluno && aluno.ativo)
 
   const selectedAluno = alunos.find((aluno) => aluno.id === alunoId) ?? alunos[0] ?? null
-  const escolaId = responsavel?.escola_id
 
-  const allProdutos = (allProdutosRaw ?? []).filter(p =>
-    (!escolaId || p.escola_id === escolaId)
-  )
-  const produtos: Produto[] = allProdutos
+  let produtos: Produto[] = []
+  let configRaw: EscolaConfiguracoes | null = null
+  let categoriasRaw: Array<Pick<Categoria, 'nome' | 'icone'>> = []
+
+  if (escolaId) {
+    const [{ data: produtosData }, { data: configData }, { data: categoriasData }] = await Promise.all([
+      supabase
+        .from('produtos')
+        .select('*')
+        .eq('escola_id', escolaId)
+        .eq('ativo', true)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('escola_configuracoes')
+        .select('*')
+        .eq('escola_id', escolaId)
+        .maybeSingle<EscolaConfiguracoes>(),
+      supabase
+        .from('categorias_produto')
+        .select('nome, icone')
+        .eq('escola_id', escolaId)
+        .eq('ativo', true)
+        .order('nome', { ascending: true }),
+    ])
+
+    produtos = (produtosData ?? []) as Produto[]
+    configRaw = configData
+    categoriasRaw = (categoriasData ?? []) as Array<Pick<Categoria, 'nome' | 'icone'>>
+  }
+
+  const lojaConfig = normalizeLojaConfig(configRaw)
+  const lojaAbertaAgora = isLojaDisponivelAgora(lojaConfig.loja_funcionamento)
+
   const produtosComCapacidade = produtos.filter((produto) => produto.capacidade !== null)
-  const idsCapacidade = produtosComCapacidade.map(p => p.id)
-
-  // Vagas limitadas
+  const idsCapacidade = produtosComCapacidade.map((produto) => produto.id)
   const { data: ingressosRaw } = idsCapacidade.length > 0
-      ? await supabase.from('ingressos').select('produto_id').in('produto_id', idsCapacidade).in('status', ['emitido', 'usado'])
-      : { data: [] }
+    ? await supabase
+      .from('ingressos')
+      .select('produto_id')
+      .in('produto_id', idsCapacidade)
+      .in('status', ['emitido', 'usado'])
+    : { data: [] }
 
-  const vagasMap: Record<string, number | null> = {}
   const countMap: Record<string, number> = {}
   for (const row of ingressosRaw ?? []) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pid = (row as any).produto_id as string
-    countMap[pid] = (countMap[pid] ?? 0) + 1
+    const produtoId = (row as any).produto_id as string
+    countMap[produtoId] = (countMap[produtoId] ?? 0) + 1
   }
+
+  const vagasMap: Record<string, number | null> = {}
   for (const produto of produtosComCapacidade) {
     vagasMap[produto.id] = Math.max(0, (produto.capacidade ?? 0) - (countMap[produto.id] ?? 0))
   }
@@ -81,16 +125,16 @@ export default async function LojaPage({
 
   const produtosFiltradosPorBusca = normalizedQuery
     ? produtosPorAluno.filter((produto) => {
-        const haystack = `${produto.nome} ${produto.descricao ?? ''}`.toLocaleLowerCase('pt-BR')
-        return haystack.includes(normalizedQuery)
-      })
+      const haystack = `${produto.nome} ${produto.descricao ?? ''}`.toLocaleLowerCase('pt-BR')
+      return haystack.includes(normalizedQuery)
+    })
     : produtosPorAluno
 
-  const sortedProdutos = [...produtosFiltradosPorBusca].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  const sortedProdutos = [...produtosFiltradosPorBusca].sort((left, right) => {
+    return new Date(right.created_at).getTime() - new Date(left.created_at).getTime()
   })
 
-  const counts: Partial<Record<CategoriaProduto | 'todas', number>> = { todas: sortedProdutos.length }
+  const counts: Partial<Record<string, number>> = { todas: sortedProdutos.length }
   for (const produto of sortedProdutos) {
     counts[produto.categoria] = (counts[produto.categoria] ?? 0) + 1
   }
@@ -101,17 +145,34 @@ export default async function LojaPage({
     return acc
   }, {})
 
+  const visibleCategoryKeys = buildCategoriasHome({
+    categoriasConfig: lojaConfig.categorias_home_visiveis,
+    categoriasDescobertas: sortedProdutos.map((produto) => produto.categoria),
+  })
+
+  const categoryTabs: CategoryTab[] = visibleCategoryKeys
+    .filter((categoryKey) => (counts[categoryKey] ?? 0) > 0)
+    .map((categoryKey) => ({
+      key: categoryKey,
+      ...getCategoryPresentation(categoryKey, categoriasRaw),
+    }))
+
+  const groupedEntries = visibleCategoryKeys
+    .map((categoryKey) => [categoryKey, grouped[categoryKey] ?? []] as const)
+    .filter(([, produtosCategoria]) => produtosCategoria.length > 0)
+
   const urgentes = sortedProdutos.filter((produto) => {
     if (!produto.prazo_compra || produto.esgotado) return false
     const diff = Math.ceil((new Date(produto.prazo_compra).getTime() - currentTimeMs) / 86400000)
     return diff >= 0 && diff <= 4
   })
 
+  const destaques = pickProdutosDestaque(lojaConfig.produtos_home_destaque, sortedProdutos)
   const shouldShowFlatResults = normalizedQuery.length > 0
+  const productListStyle = getProductListStyle(lojaConfig.layout_home)
 
   return (
     <div className="pb-[100px]">
-      {/* 1. Hero */}
       <StoreHero
         responsavel={responsavel}
         escola={escola}
@@ -119,173 +180,359 @@ export default async function LojaPage({
         alunos={alunos}
       />
 
-      {/* 1b. Banner + slogan + boas-vindas (personalização da escola) */}
-      {(escola.banner_url || escola.slogan || escola.texto_boas_vindas) && (
-        <div style={{ padding: '14px 14px 0' }}>
-          {escola.banner_url && (
-            <div style={{
-              width: '100%',
-              aspectRatio: '32 / 10',
-              borderRadius: 16,
-              overflow: 'hidden',
-              marginBottom: 12,
-              background: '#0a1628',
-            }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={escola.banner_url}
-                alt={escola.nome}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-            </div>
-          )}
-          {(escola.slogan || escola.texto_boas_vindas) && (
-            <div style={{ padding: '0 4px 4px' }}>
-              {escola.slogan && (
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#0a1628', letterSpacing: '-.01em', marginBottom: 2 }}>
-                  {escola.slogan}
-                </div>
-              )}
-              {escola.texto_boas_vindas && (
-                <div style={{ fontSize: 12, fontWeight: 500, color: '#475569', lineHeight: 1.4 }}>
-                  {escola.texto_boas_vindas}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      <SchoolBrandIntro escola={escola} />
 
-      {/* 4. Urgency Strip (Prazos Encerrando) */}
-      {!shouldShowFlatResults && urgentes.length > 0 && selectedAluno && (
-        <div style={{ padding: '12px 0 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', marginBottom: 7 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} className="animate-pulse-red" />
-            <div style={{ fontSize: 10, fontWeight: 800, color: '#dc2626', letterSpacing: '.07em', textTransform: 'uppercase' }}>
-              Prazos encerrando
-            </div>
-          </div>
-          
-          <div className="no-scrollbar" style={{ display: 'flex', gap: 9, overflowX: 'auto', padding: '0 14px 10px' }}>
-            {urgentes.map((produto) => {
-              const diff = Math.ceil((new Date(produto.prazo_compra!).getTime() - currentTimeMs) / 86400000)
-
-              return (
-                <Link
-                  key={produto.id}
-                  href={`/loja/produto/${produto.id}?aluno=${selectedAluno.id}`}
-                  style={{
-                    width: 145, background: 'linear-gradient(135deg,#1a0505,#2d0a0a)',
-                    border: '1px solid rgba(220,38,38,.3)', borderRadius: 15, padding: 12,
-                    display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0,
-                    textDecoration: 'none'
-                  }}
-                >
-                  <div style={{ fontSize: 20 }}>{produto.icon ?? '📦'}</div>
-                  
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.9)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {produto.nome}
-                  </div>
-                  
-                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
-                    <div>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: '#f87171', letterSpacing: '-.03em', lineHeight: 1 }}>
-                        {diff === 0 ? 'Hoje' : `${diff} dias`}
-                      </div>
-                      <div style={{ fontSize: 8, fontWeight: 700, color: 'rgba(248,113,113,.6)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
-                        restante{diff !== 0 && 's'}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: 'white', background: 'rgba(220,38,38,.4)', padding: '3px 6px', borderRadius: 6 }}>
-                      {fmtBRL(produto.preco_promocional ?? produto.preco).replace(',00', '')}
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {!selectedAluno ? (
-        <div style={{ padding: '40px 20px' }}>
+      {lojaConfig.modo_manutencao ? (
+        <div style={{ padding: '36px 20px 0' }}>
           <EmptyState
-            icon="👨‍👩‍👧‍👦"
-            title="Nenhum aluno cadastrado"
-            description="Adicione seus filhos para liberar a home personalizada, a cantina e os produtos da série correta."
-            actionLabel="➕ Adicionar meu filho"
-            actionHref="/perfil/alunos?onboarding=1"
+            icon="🛠️"
+            title="Loja temporariamente em manutencao"
+            description={
+              lojaConfig.modo_manutencao_mensagem
+              ?? 'Estamos fazendo ajustes rapidos na loja. Tente novamente em breve.'
+            }
           />
         </div>
       ) : (
         <>
-          {/* 5. Barra de Busca */}
-          <Suspense>
-            <StoreSearch
-              initialQuery={normalizedQuery}
-              resultCount={sortedProdutos.length}
-            />
-          </Suspense>
-
-          {/* 6. Filtro de Categorias */}
-          {!shouldShowFlatResults && sortedProdutos.length > 0 && (
-            <Suspense>
-              <CategoryFilter counts={counts} />
-            </Suspense>
+          {!lojaAbertaAgora && (
+            <div style={{ padding: '14px 14px 0' }}>
+              <div style={warningBannerStyle}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                  Loja fechada neste horario
+                </div>
+                <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.5 }}>
+                  A vitrine continua visivel, mas novos pedidos so podem ser finalizados durante o horario configurado pela escola.
+                </div>
+              </div>
+            </div>
           )}
 
-          {/* 7. Lista de Produtos */}
-          <section style={{ padding: '14px 18px 0' }}>
-            {sortedProdutos.length === 0 ? (
-              <EmptyState
-                icon="📭"
-                title="Nenhum produto encontrado"
-                description={
-                  normalizedQuery
-                    ? `Nenhum produto encontrado para "${normalizedQuery}".`
-                    : 'A escola ainda não publicou itens para este perfil.'
-                }
-              />
-            ) : shouldShowFlatResults ? (
-              <div style={{ display: 'grid', gap: 12 }}>
-                {sortedProdutos.map((produto, i) => (
-                  <ProductCard key={produto.id} produto={produto} aluno={selectedAluno} index={i} vagasRestantes={vagasMap[produto.id] ?? null} />
-                ))}
+          {!shouldShowFlatResults && urgentes.length > 0 && selectedAluno && (
+            <div style={{ padding: '12px 0 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', marginBottom: 7 }}>
+                <div
+                  style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }}
+                  className="animate-pulse-red"
+                />
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#dc2626', letterSpacing: '.07em', textTransform: 'uppercase' }}>
+                  Prazos encerrando
+                </div>
               </div>
-            ) : (
-              <div style={{ display: 'grid', gap: 28 }}>
-                {Object.entries(grouped).map(([categoriaKey, produtosCategoria]) => (
-                  <section key={categoriaKey} data-cat-key={categoriaKey} style={{ display: 'grid', gap: 12, scrollMarginTop: 120 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: -2 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 18 }}>{CATEGORIAS[categoriaKey as CategoriaProduto]?.icon ?? '📦'}</span>
-                        <h2 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--text-1)', margin: 0 }}>
-                          {CATEGORIAS[categoriaKey as CategoriaProduto]?.label ?? categoriaKey}
-                        </h2>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>
-                          {produtosCategoria.length}
-                        </span>
-                      </div>
-                      <Link
-                        href={`/loja/categoria/${categoriaKey}?aluno=${selectedAluno.id}`}
-                        style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', padding: '5px 10px', borderRadius: 999, textDecoration: 'none' }}
-                      >
-                        Ver tudo
-                      </Link>
-                    </div>
 
-                    <div style={{ display: 'grid', gap: 12 }}>
-                      {produtosCategoria.map((produto, i) => (
-                        <ProductCard key={produto.id} produto={produto} aluno={selectedAluno} index={i} vagasRestantes={vagasMap[produto.id] ?? null} />
-                      ))}
-                    </div>
-                  </section>
-                ))}
+              <div className="no-scrollbar" style={{ display: 'flex', gap: 9, overflowX: 'auto', padding: '0 14px 10px' }}>
+                {urgentes.map((produto) => {
+                  const diff = Math.ceil((new Date(produto.prazo_compra!).getTime() - currentTimeMs) / 86400000)
+
+                  return (
+                    <Link
+                      key={produto.id}
+                      href={`/loja/produto/${produto.id}?aluno=${selectedAluno.id}`}
+                      style={{
+                        width: 145,
+                        background: 'linear-gradient(135deg,#1a0505,#2d0a0a)',
+                        border: '1px solid rgba(220,38,38,.3)',
+                        borderRadius: 15,
+                        padding: 12,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 6,
+                        flexShrink: 0,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <div style={{ fontSize: 20 }}>{produto.icon ?? '📦'}</div>
+
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: 'rgba(255,255,255,.9)',
+                          lineHeight: 1.3,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {produto.nome}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
+                        <div>
+                          <div style={{ fontSize: 18, fontWeight: 900, color: '#f87171', letterSpacing: '-.03em', lineHeight: 1 }}>
+                            {diff === 0 ? 'Hoje' : `${diff} dias`}
+                          </div>
+                          <div style={{ fontSize: 8, fontWeight: 700, color: 'rgba(248,113,113,.6)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
+                            restante{diff !== 0 && 's'}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'white', background: 'rgba(220,38,38,.4)', padding: '3px 6px', borderRadius: 6 }}>
+                          {fmtBRL(produto.preco_promocional ?? produto.preco).replace(',00', '')}
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
-            )}
-          </section>
+            </div>
+          )}
+
+          {!selectedAluno ? (
+            <div style={{ padding: '40px 20px' }}>
+              <EmptyState
+                icon="👨‍👩‍👧‍👦"
+                title="Nenhum aluno cadastrado"
+                description="Adicione seus filhos para liberar a home personalizada, a cantina e os produtos da serie correta."
+                actionLabel="➕ Adicionar meu filho"
+                actionHref="/perfil/alunos?onboarding=1"
+              />
+            </div>
+          ) : (
+            <>
+              <Suspense>
+                <StoreSearch initialQuery={normalizedQuery} resultCount={sortedProdutos.length} />
+              </Suspense>
+
+              {!shouldShowFlatResults && sortedProdutos.length > 0 && (
+                <Suspense>
+                  <CategoryFilter counts={counts} tabs={categoryTabs} />
+                </Suspense>
+              )}
+
+              <section style={{ padding: '14px 18px 0' }}>
+                {sortedProdutos.length === 0 ? (
+                  <EmptyState
+                    icon="📭"
+                    title="Nenhum produto encontrado"
+                    description={
+                      normalizedQuery
+                        ? `Nenhum produto encontrado para "${normalizedQuery}".`
+                        : 'A escola ainda nao publicou itens para este perfil.'
+                    }
+                  />
+                ) : shouldShowFlatResults ? (
+                  <div style={productListStyle}>
+                    {sortedProdutos.map((produto, index) => (
+                      <ProductCard
+                        key={produto.id}
+                        produto={produto}
+                        aluno={selectedAluno}
+                        index={index}
+                        vagasRestantes={vagasMap[produto.id] ?? null}
+                        layout={lojaConfig.layout_home}
+                        showLowStockBadge={lojaConfig.mostrar_estoque_baixo}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gap: 28 }}>
+                    {destaques.length > 0 && (
+                      <section style={{ display: 'grid', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 18 }}>⭐</span>
+                          <h2 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--text-1)', margin: 0 }}>
+                            Destaques da escola
+                          </h2>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>
+                            {destaques.length}
+                          </span>
+                        </div>
+
+                        <div style={productListStyle}>
+                          {destaques.map((produto, index) => (
+                            <ProductCard
+                              key={produto.id}
+                              produto={produto}
+                              aluno={selectedAluno}
+                              index={index}
+                              vagasRestantes={vagasMap[produto.id] ?? null}
+                              layout={lojaConfig.layout_home}
+                              showLowStockBadge={lojaConfig.mostrar_estoque_baixo}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {groupedEntries.map(([categoryKey, produtosCategoria]) => {
+                      const meta = getCategoryPresentation(categoryKey, categoriasRaw)
+
+                      return (
+                        <section key={categoryKey} data-cat-key={categoryKey} style={{ display: 'grid', gap: 12, scrollMarginTop: 120 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: -2 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 18 }}>{meta.icon}</span>
+                              <h2 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--text-1)', margin: 0 }}>
+                                {meta.label}
+                              </h2>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>
+                                {produtosCategoria.length}
+                              </span>
+                            </div>
+                            <Link
+                              href={`/loja/categoria/${categoryKey}?aluno=${selectedAluno.id}`}
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: 'var(--accent)',
+                                background: 'var(--accent-soft)',
+                                padding: '5px 10px',
+                                borderRadius: 999,
+                                textDecoration: 'none',
+                              }}
+                            >
+                              Ver tudo
+                            </Link>
+                          </div>
+
+                          <div style={productListStyle}>
+                            {produtosCategoria.map((produto, index) => (
+                              <ProductCard
+                                key={produto.id}
+                                produto={produto}
+                                aluno={selectedAluno}
+                                index={index}
+                                vagasRestantes={vagasMap[produto.id] ?? null}
+                                layout={lojaConfig.layout_home}
+                                showLowStockBadge={lojaConfig.mostrar_estoque_baixo}
+                              />
+                            ))}
+                          </div>
+                        </section>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+            </>
+          )}
+
+          {lojaConfig.texto_rodape && (
+            <footer style={footerStyle}>
+              {lojaConfig.texto_rodape}
+            </footer>
+          )}
         </>
       )}
     </div>
   )
+}
+
+function SchoolBrandIntro({ escola }: { escola: Escola }) {
+  if (!escola.banner_url && !escola.slogan && !escola.texto_boas_vindas) return null
+
+  return (
+    <div style={{ padding: '14px 14px 0' }}>
+      {escola.banner_url && (
+        <div
+          style={{
+            width: '100%',
+            aspectRatio: '32 / 10',
+            borderRadius: 16,
+            overflow: 'hidden',
+            marginBottom: 12,
+            background: '#0a1628',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={escola.banner_url}
+            alt={escola.nome}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        </div>
+      )}
+
+      {(escola.slogan || escola.texto_boas_vindas) && (
+        <div style={{ padding: '0 4px 4px' }}>
+          {escola.slogan && (
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#0a1628', letterSpacing: '-.01em', marginBottom: 2 }}>
+              {escola.slogan}
+            </div>
+          )}
+          {escola.texto_boas_vindas && (
+            <div style={{ fontSize: 12, fontWeight: 500, color: '#475569', lineHeight: 1.4 }}>
+              {escola.texto_boas_vindas}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function normalizeLojaConfig(config: EscolaConfiguracoes | null): {
+  modo_manutencao: boolean
+  modo_manutencao_mensagem: string | null
+  loja_funcionamento: EscolaConfiguracoes['loja_funcionamento']
+  categorias_home_visiveis: string[] | null
+  produtos_home_destaque: string[]
+  layout_home: 'grid' | 'lista'
+  mostrar_estoque_baixo: boolean
+  texto_rodape: string | null
+} {
+  return {
+    modo_manutencao: config?.modo_manutencao ?? false,
+    modo_manutencao_mensagem: config?.modo_manutencao_mensagem ?? null,
+    loja_funcionamento: normalizeLojaFuncionamento(config?.loja_funcionamento ?? []),
+    categorias_home_visiveis: Array.isArray(config?.categorias_home_visiveis)
+      ? config.categorias_home_visiveis
+      : null,
+    produtos_home_destaque: Array.isArray(config?.produtos_home_destaque)
+      ? config.produtos_home_destaque
+      : [],
+    layout_home: config?.layout_home === 'lista' ? 'lista' : 'grid',
+    mostrar_estoque_baixo: config?.mostrar_estoque_baixo ?? true,
+    texto_rodape: config?.texto_rodape ?? null,
+  }
+}
+
+function getCategoryPresentation(
+  categoryKey: string,
+  categorias: Array<Pick<Categoria, 'nome' | 'icone'>>,
+) {
+  const fromDb = categorias.find((categoria) => categoria.nome === categoryKey)
+  const fallback = getDefaultCategoryMeta(categoryKey)
+
+  return {
+    label: fromDb?.nome ?? fallback.label,
+    icon: fromDb?.icone || fallback.icon,
+  }
+}
+
+function getProductListStyle(layout: 'grid' | 'lista'): React.CSSProperties {
+  if (layout === 'grid') {
+    return {
+      display: 'grid',
+      gap: 12,
+      gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+      alignItems: 'start',
+    }
+  }
+
+  return {
+    display: 'grid',
+    gap: 12,
+  }
+}
+
+const warningBannerStyle: React.CSSProperties = {
+  display: 'grid',
+  gap: 4,
+  borderRadius: 16,
+  border: '1px solid rgba(245,158,11,.3)',
+  background: 'linear-gradient(135deg,rgba(245,158,11,.18),rgba(251,191,36,.22))',
+  padding: '14px 16px',
+}
+
+const footerStyle: React.CSSProperties = {
+  margin: '28px 18px 0',
+  padding: '16px 18px',
+  borderRadius: 16,
+  background: 'rgba(15,23,42,0.06)',
+  color: '#475569',
+  fontSize: 12,
+  lineHeight: 1.6,
+  textAlign: 'center',
 }

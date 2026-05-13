@@ -338,6 +338,12 @@ export interface UsuarioPapel {
   updated_at: string
 }
 
+export interface LojaFuncionamentoSlot {
+  dia: number
+  inicio: string
+  fim: string
+}
+
 export interface EscolaConfiguracoes {
   escola_id: string
 
@@ -368,6 +374,9 @@ export interface EscolaConfiguracoes {
   // Loja Online
   modo_manutencao: boolean
   modo_manutencao_mensagem: string | null
+  loja_funcionamento: LojaFuncionamentoSlot[]
+  categorias_home_visiveis: string[] | null
+  produtos_home_destaque: string[]
   layout_home: 'grid' | 'lista'
   mostrar_estoque_baixo: boolean
   texto_rodape: string | null

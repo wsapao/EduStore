@@ -1,9 +1,8 @@
 'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
-import type { CategoriaProduto } from '@/types/database'
 
-export const CATEGORIAS: Record<CategoriaProduto | 'todas', { label: string; icon: string }> = {
+export const CATEGORIAS: Record<string, { label: string; icon: string }> = {
   todas: { label: 'Tudo', icon: '✦' },
   eventos: { label: 'Eventos', icon: '🎉' },
   passeios: { label: 'Passeios', icon: '🚌' },
@@ -13,18 +12,40 @@ export const CATEGORIAS: Record<CategoriaProduto | 'todas', { label: string; ico
   outros: { label: 'Outros', icon: '📦' },
 }
 
-interface Props {
-  counts: Partial<Record<CategoriaProduto | 'todas', number>>
+export type CategoryTab = {
+  key: string
+  label: string
+  icon: string
 }
 
-export function CategoryFilter({ counts }: Props) {
+interface Props {
+  counts: Partial<Record<string, number>>
+  tabs?: CategoryTab[]
+}
+
+export function getDefaultCategoryMeta(categoryKey: string) {
+  const fallback = CATEGORIAS[categoryKey]
+  if (fallback) return fallback
+
+  return {
+    label: categoryKey.replace(/_/g, ' '),
+    icon: '📦',
+  }
+}
+
+export function CategoryFilter({ counts, tabs }: Props) {
   const [activeCategory, setActiveCategory] = useState<string>('todas')
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const tabs = Object.entries(CATEGORIAS).filter(([cat]) => {
-    if (cat === 'todas') return true
-    return (counts[cat as CategoriaProduto] ?? 0) > 0
-  })
+  const visibleTabs = [
+    { key: 'todas', ...getDefaultCategoryMeta('todas') },
+    ...(
+      tabs?.filter((tab) => (counts[tab.key] ?? 0) > 0)
+      ?? Object.entries(CATEGORIAS)
+        .filter(([cat]) => cat !== 'todas' && (counts[cat] ?? 0) > 0)
+        .map(([key, meta]) => ({ key, ...meta }))
+    ),
+  ]
 
   // ScrollSpy observer
   useEffect(() => {
@@ -75,7 +96,7 @@ export function CategoryFilter({ counts }: Props) {
     }
   }
 
-  if (tabs.length <= 1) return null
+  if (visibleTabs.length <= 1) return null
 
   return (
     <div 
@@ -88,17 +109,17 @@ export function CategoryFilter({ counts }: Props) {
         padding: '10px 14px 4px'
       }}
     >
-      {tabs.map(([cat, { label, icon }]) => {
-        const isActive = activeCategory === cat
-        const count = cat === 'todas'
+      {visibleTabs.map(({ key, label, icon }) => {
+        const isActive = activeCategory === key
+        const count = key === 'todas'
           ? (counts.todas ?? 0)
-          : (counts[cat as CategoriaProduto] ?? 0)
+          : (counts[key] ?? 0)
 
         return (
-          <button 
-            key={cat} 
-            id={`pill-${cat}`}
-            onClick={() => scrollToCat(cat)} 
+          <button
+            key={key}
+            id={`pill-${key}`}
+            onClick={() => scrollToCat(key)}
             style={{
               display: 'flex',
               alignItems: 'center',
