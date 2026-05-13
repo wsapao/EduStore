@@ -40,21 +40,21 @@ describe('criarPapelAction', () => {
     ;(requirePermission as any).mockRejectedValue(new Error('denied'))
     const r = await criarPapelAction(fd({ nome: 'X' }))
     expect(requirePermission).toHaveBeenCalledWith('configuracoes.gerenciar_papeis')
-    expect(r.error).toBeDefined()
+    expect((r as any).error).toBeDefined()
   })
 
   it('rejeita nome com menos de 2 caracteres', async () => {
     setupAuthOk()
     ;(createClient as any).mockResolvedValue({ from: vi.fn() })
     const r = await criarPapelAction(fd({ nome: 'A' }))
-    expect(r.error).toMatch(/nome/i)
+    expect((r as any).error).toMatch(/nome/i)
   })
 
   it('rejeita chaves de permissão desconhecidas', async () => {
     setupAuthOk()
     ;(createClient as any).mockResolvedValue({ from: vi.fn() })
     const r = await criarPapelAction(fd({ nome: 'Custom', chaves: ['produtos.ver', 'foo.bar'] }))
-    expect(r.error).toMatch(/permiss[ãa]o|chave/i)
+    expect((r as any).error).toMatch(/permiss[ãa]o|chave/i)
   })
 
   it('rejeita quando já existe outro papel com o mesmo nome na escola', async () => {
@@ -66,7 +66,7 @@ describe('criarPapelAction', () => {
       })),
     })
     const r = await criarPapelAction(fd({ nome: 'Admin' }))
-    expect(r.error).toMatch(/j[áa] existe/i)
+    expect((r as any).error).toMatch(/j[áa] existe/i)
   })
 
   it('cria papel + permissões e retorna papelId', async () => {
@@ -137,7 +137,7 @@ describe('atualizarPapelAction', () => {
   it('exige permissão configuracoes.gerenciar_papeis', async () => {
     ;(requirePermission as any).mockRejectedValue(new Error('denied'))
     const r = await atualizarPapelAction('p1', fd({ nome: 'X' }))
-    expect(r.error).toBeDefined()
+    expect((r as any).error).toBeDefined()
   })
 
   it('rejeita papel não encontrado', async () => {
@@ -148,7 +148,7 @@ describe('atualizarPapelAction', () => {
       })),
     })
     const r = await atualizarPapelAction('p404', fd({ nome: 'Algum nome' }))
-    expect(r.error).toMatch(/n[ãa]o encontrado/i)
+    expect((r as any).error).toMatch(/n[ãa]o encontrado/i)
   })
 
   it('rejeita nome duplicado em outro papel da mesma escola', async () => {
@@ -175,7 +175,7 @@ describe('atualizarPapelAction', () => {
     })
 
     const r = await atualizarPapelAction('p1', fd({ nome: 'Existente' }))
-    expect(r.error).toMatch(/j[áa] existe/i)
+    expect((r as any).error).toMatch(/j[áa] existe/i)
   })
 
   it('atualiza nome/descricao + substitui permissões', async () => {
@@ -323,7 +323,7 @@ describe('excluirPapelAction', () => {
       })),
     })
     const r = await excluirPapelAction('p1')
-    expect(r.error).toMatch(/preset/i)
+    expect((r as any).error).toMatch(/preset/i)
   })
 
   it('rejeita exclusão de papel em uso', async () => {
@@ -344,7 +344,7 @@ describe('excluirPapelAction', () => {
     })
 
     const r = await excluirPapelAction('p1')
-    expect(r.error).toMatch(/em uso|usu[áa]rio/i)
+    expect((r as any).error).toMatch(/em uso|usu[áa]rio/i)
   })
 
   it('exclui papel customizado sem usuários', async () => {
