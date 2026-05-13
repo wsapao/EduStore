@@ -118,7 +118,7 @@ export function AguardandoClient({
       }
     }, 1000)
     return () => clearInterval(iv)
-  }, [estado, expiracao])
+  }, [estado, expiracao, metodo])
 
   // Auto-redirect 3s após confirmação
   useEffect(() => {

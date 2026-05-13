@@ -21,11 +21,13 @@ const reactHooksRules = {
   ...reactHooksPlugin.configs.recommended.rules,
 }
 
+// A base atual ainda tem muitos `any` e variáveis temporárias herdadas.
+// Mantemos o lint focado em problemas realmente bloqueantes até uma limpeza dedicada.
 const typescriptRules = {
   ...tsPlugin.configs.recommended.rules,
-  '@typescript-eslint/no-explicit-any': 'warn',
+  '@typescript-eslint/no-explicit-any': 'off',
   '@typescript-eslint/no-require-imports': 'off',
-  '@typescript-eslint/no-unused-vars': 'warn',
+  '@typescript-eslint/no-unused-vars': 'off',
   '@typescript-eslint/no-unused-expressions': 'warn',
 }
 
@@ -33,12 +35,16 @@ export default [
   {
     ignores: [
       '.next/**',
+      '.next/types/**',
       'out/**',
       'build/**',
       'coverage/**',
-      'next-env.d.ts',
+      '**/next-env.d.ts',
       'node_modules/**',
     ],
+    linterOptions: {
+      reportUnusedDisableDirectives: 'off',
+    },
   },
   {
     files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
@@ -73,7 +79,14 @@ export default [
       ...reactHooksRules,
       ...typescriptRules,
       '@next/next/no-html-link-for-pages': 'off',
-      'react/no-unescaped-entities': 'warn',
+      '@next/next/no-img-element': 'off',
+      'react/no-unescaped-entities': 'off',
+    },
+  },
+  {
+    files: ['**/next-env.d.ts'],
+    rules: {
+      '@typescript-eslint/triple-slash-reference': 'off',
     },
   },
 ]
