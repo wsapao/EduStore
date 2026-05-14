@@ -56,5 +56,20 @@ export default async function PedidoPage({
 
   const estorno = estornoRaw as PedidoEstorno | null
 
-  return <ConfirmacaoClient pedido={pedidoCompleto} estorno={estorno} />
+  // Mensagem pós-compra customizada pela escola (config opcional)
+  const { data: configRaw } = await supabase
+    .from('escola_configuracoes')
+    .select('mensagem_pos_compra')
+    .eq('escola_id', pedido.escola_id)
+    .maybeSingle<{ mensagem_pos_compra: string | null }>()
+
+  const mensagemPosCompra = configRaw?.mensagem_pos_compra ?? null
+
+  return (
+    <ConfirmacaoClient
+      pedido={pedidoCompleto}
+      estorno={estorno}
+      mensagemPosCompra={mensagemPosCompra}
+    />
+  )
 }
