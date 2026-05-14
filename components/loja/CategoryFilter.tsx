@@ -2,15 +2,10 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 
-export const CATEGORIAS: Record<string, { label: string; icon: string }> = {
-  todas: { label: 'Tudo', icon: '✦' },
-  eventos: { label: 'Eventos', icon: '🎉' },
-  passeios: { label: 'Passeios', icon: '🚌' },
-  segunda_chamada: { label: '2ª Chamada', icon: '📝' },
-  materiais: { label: 'Mat.', icon: '📚' },
-  uniforme: { label: 'Uniforme', icon: '👕' },
-  outros: { label: 'Outros', icon: '📦' },
-}
+import { CATEGORIAS, getDefaultCategoryMeta } from '@/lib/categorias/defaults'
+
+// Reexports preservam imports legados (`import { CATEGORIAS, getDefaultCategoryMeta } from '@/components/loja/CategoryFilter'`)
+export { CATEGORIAS, getDefaultCategoryMeta }
 
 export type CategoryTab = {
   key: string
@@ -21,16 +16,6 @@ export type CategoryTab = {
 interface Props {
   counts: Partial<Record<string, number>>
   tabs?: CategoryTab[]
-}
-
-export function getDefaultCategoryMeta(categoryKey: string) {
-  const fallback = CATEGORIAS[categoryKey]
-  if (fallback) return fallback
-
-  return {
-    label: categoryKey.replace(/_/g, ' '),
-    icon: '📦',
-  }
 }
 
 export function CategoryFilter({ counts, tabs }: Props) {
