@@ -14,6 +14,11 @@ interface PedidoCompleto extends Pedido {
 interface Props {
   pedido: PedidoCompleto
   estorno: PedidoEstorno | null
+  /**
+   * Mensagem customizada pela escola (config /admin/configuracoes/checkout).
+   * Renderizada apenas quando o pedido já foi pago.
+   */
+  mensagemPosCompra?: string | null
 }
 
 const CAT_ICONS: Record<string, string> = {
@@ -44,7 +49,7 @@ function usePixCountdown(expiracao: string | null) {
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-export function ConfirmacaoClient({ pedido, estorno }: Props) {
+export function ConfirmacaoClient({ pedido, estorno, mensagemPosCompra }: Props) {
   const pag = pedido.pagamento
   const metodo = pag?.metodo ?? pedido.metodo_pagamento
   const isPago = pedido.status === 'pago'
@@ -132,7 +137,24 @@ export function ConfirmacaoClient({ pedido, estorno }: Props) {
       </div>
 
       <div style={{ padding: '14px 14px' }}>
-        
+
+        {/* ── Mensagem pós-compra customizada pela escola (apenas em pedidos pagos) ── */}
+        {isPago && mensagemPosCompra && (
+          <div style={{
+            background: '#ecfdf5',
+            border: '1.5px solid #a7f3d0',
+            borderRadius: 14,
+            padding: '14px 16px',
+            marginBottom: 10,
+            color: '#065f46',
+            fontSize: 13,
+            lineHeight: 1.5,
+            whiteSpace: 'pre-wrap',
+          }}>
+            {mensagemPosCompra}
+          </div>
+        )}
+
         {/* ── PIX Panel ── */}
         {isPix && !isPago && !isPixExpirado && !isCancelado && (
           <div style={{ background: 'white', border: '1.5px solid rgba(0,0,0,.07)', borderRadius: 18, overflow: 'hidden', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,.06)' }}>

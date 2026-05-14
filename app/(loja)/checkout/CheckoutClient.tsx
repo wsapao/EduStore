@@ -31,7 +31,7 @@ const CAT_ICONS: Record<string, string> = {
 
 // ── component ─────────────────────────────────────────────────────────────────
 
-export function CheckoutClient() {
+export function CheckoutClient({ termoPadrao = null }: { termoPadrao?: string | null } = {}) {
   const router = useRouter()
   const posthog = usePostHog()
   const { items, total, clear, hydrated } = useCart()
@@ -652,7 +652,11 @@ export function CheckoutClient() {
               fontSize: 16, color: '#374151', lineHeight: 1.7,
               whiteSpace: 'pre-wrap',
             }}>
-              {itensComTermo.find(i => i.produto.id === viewingTermoId)?.produto.texto_termo || 'Texto do termo não disponível.'}
+              {
+                itensComTermo.find(i => i.produto.id === viewingTermoId)?.produto.texto_termo
+                  || termoPadrao
+                  || 'Texto do termo não disponível.'
+              }
             </div>
 
             <div style={{
