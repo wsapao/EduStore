@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requirePermission, PermissionDeniedError } from '@/lib/permissoes'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
+import { auditLog } from '@/lib/auditoria/log'
 
 const PERM_GUARD = 'configuracoes.gerenciar_usuarios'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -80,6 +81,8 @@ export async function convidarUsuarioAction(formData: FormData) {
 
   if (insertErr) return { error: 'Convite enviado, mas falhou ao vincular o papel.' }
 
+  await auditLog({ modulo: 'usuarios', acao: 'convidou', descricao: email })
+
   revalidatePath('/admin/configuracoes/usuarios')
   return { success: true }
 }
@@ -133,6 +136,12 @@ export async function alterarPapelUsuarioAction(targetUserId: string, novoPapelI
 
   if (updErr) return { error: 'Erro ao alterar papel.' }
 
+  await auditLog({
+    modulo: 'usuarios',
+    acao: 'alterou_papel',
+    metadata: { targetUserId, novoPapelId },
+  })
+
   revalidatePath('/admin/configuracoes/usuarios')
   return { success: true }
 }
@@ -179,6 +188,12 @@ export async function toggleSuspensaoUsuarioAction(targetUserId: string, suspend
 
   if (updErr) return { error: 'Erro ao alterar suspensão.' }
 
+  await auditLog({
+    modulo: 'usuarios',
+    acao: suspender ? 'suspendeu' : 'reativou',
+    descricao: targetUserId,
+  })
+
   revalidatePath('/admin/configuracoes/usuarios')
   return { success: true }
 }
@@ -220,6 +235,8 @@ export async function removerUsuarioAction(targetUserId: string) {
     .eq('escola_id', escolaId)
 
   if (delErr) return { error: 'Erro ao remover usuário.' }
+
+  await auditLog({ modulo: 'usuarios', acao: 'removeu', descricao: targetUserId })
 
   revalidatePath('/admin/configuracoes/usuarios')
   return { success: true }

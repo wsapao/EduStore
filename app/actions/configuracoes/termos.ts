@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requirePermission, PermissionDeniedError } from '@/lib/permissoes'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
+import { auditLog } from '@/lib/auditoria/log'
 
 type TipoTermo = 'termos_uso' | 'privacidade'
 const TIPOS_VALIDOS = new Set<TipoTermo>(['termos_uso', 'privacidade'])
@@ -70,6 +71,12 @@ export async function publicarVersaoTermosAction(input: {
   if (insertErr) {
     return { error: 'Erro ao publicar nova versão.' }
   }
+
+  await auditLog({
+    modulo: 'termos',
+    acao: 'publicou_versao',
+    metadata: { tipo: input.tipo, versao: novaVersao },
+  })
 
   revalidatePath('/admin/configuracoes/termos')
   revalidatePath('/termos')

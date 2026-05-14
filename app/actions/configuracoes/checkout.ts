@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermission, PermissionDeniedError } from '@/lib/permissoes'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
+import { auditLog } from '@/lib/auditoria/log'
 
 export async function atualizarCheckoutAction(formData: FormData) {
   try {
@@ -45,6 +46,8 @@ export async function atualizarCheckoutAction(formData: FormData) {
     .eq('escola_id', escolaId)
 
   if (error) return { error: 'Erro ao salvar configurações de checkout.' }
+
+  await auditLog({ modulo: 'checkout', acao: 'atualizou_config' })
 
   revalidatePath('/admin/configuracoes/checkout')
   return { success: true }

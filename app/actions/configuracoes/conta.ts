@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { auditLog } from '@/lib/auditoria/log'
 
 export async function atualizarPerfilContaAction(formData: FormData) {
   const supabase = await createClient()
@@ -16,6 +17,8 @@ export async function atualizarPerfilContaAction(formData: FormData) {
   const { error } = await supabase.auth.updateUser({ data: { nome } })
   if (error) return { error: 'Erro ao atualizar perfil. Tente novamente.' }
 
+  await auditLog({ modulo: 'conta', acao: 'atualizou_perfil' })
+
   revalidatePath('/admin/configuracoes/conta')
   return { success: true }
 }
@@ -29,6 +32,8 @@ export async function iniciarMfaAction() {
 
   const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
   if (error || !data) return { error: 'Não foi possível iniciar o MFA. Tente novamente.' }
+
+  await auditLog({ modulo: 'conta', acao: 'iniciou_mfa' })
 
   return {
     factorId: data.id,
@@ -62,6 +67,8 @@ export async function verificarMfaAction(input: { factorId: string; codigo: stri
     return { error: 'Código incorreto. Verifique o app autenticador.' }
   }
 
+  await auditLog({ modulo: 'conta', acao: 'ativou_mfa' })
+
   revalidatePath('/admin/configuracoes/conta')
   return { success: true }
 }
@@ -73,6 +80,8 @@ export async function desativarMfaAction(input: { factorId: string }) {
 
   const { error } = await supabase.auth.mfa.unenroll({ factorId: input.factorId })
   if (error) return { error: 'Erro ao desativar MFA.' }
+
+  await auditLog({ modulo: 'conta', acao: 'desativou_mfa' })
 
   revalidatePath('/admin/configuracoes/conta')
   return { success: true }
@@ -104,6 +113,8 @@ export async function encerrarOutrasSessoesAction() {
 
   const { error } = await supabase.auth.signOut({ scope: 'others' })
   if (error) return { error: 'Erro ao encerrar sessões.' }
+
+  await auditLog({ modulo: 'conta', acao: 'encerrou_outras_sessoes' })
 
   return { success: true }
 }

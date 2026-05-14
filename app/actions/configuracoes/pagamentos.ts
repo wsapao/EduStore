@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermission, PermissionDeniedError } from '@/lib/permissoes'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
+import { auditLog } from '@/lib/auditoria/log'
 
 const METODOS_VALIDOS = new Set(['pix', 'cartao', 'boleto'])
 
@@ -70,6 +71,8 @@ export async function atualizarPagamentosAction(formData: FormData) {
     .eq('escola_id', escolaId)
 
   if (error) return { error: 'Erro ao salvar configurações de pagamento.' }
+
+  await auditLog({ modulo: 'pagamentos', acao: 'atualizou_config' })
 
   revalidatePath('/admin/configuracoes/pagamentos')
   return { success: true }

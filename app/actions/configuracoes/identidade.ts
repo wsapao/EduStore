@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermission, PermissionDeniedError } from '@/lib/permissoes'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
+import { auditLog } from '@/lib/auditoria/log'
 
 export async function atualizarIdentidadeAction(formData: FormData) {
   try {
@@ -44,6 +45,8 @@ export async function atualizarIdentidadeAction(formData: FormData) {
 
   const { error } = await supabase.from('escolas').update(payload).eq('id', escolaId)
   if (error) return { error: 'Erro ao salvar identidade.' }
+
+  await auditLog({ modulo: 'identidade', acao: 'atualizou_identidade' })
 
   revalidatePath('/admin/configuracoes/loja')
   revalidatePath('/loja')
@@ -95,6 +98,8 @@ export async function atualizarEnderecoAction(formData: FormData) {
     .eq('id', escolaId)
 
   if (error) return { error: 'Erro ao salvar endereço.' }
+
+  await auditLog({ modulo: 'identidade', acao: 'atualizou_endereco' })
 
   revalidatePath('/admin/configuracoes/loja')
   return { success: true }
@@ -160,6 +165,8 @@ export async function uploadAssetEscolaAction(kind: AssetKind, file: File) {
     .eq('id', escolaId)
 
   if (updErr) return { error: 'Upload OK, mas falhou ao atualizar a escola.' }
+
+  await auditLog({ modulo: 'identidade', acao: 'upload_asset', metadata: { kind } })
 
   revalidatePath('/admin/configuracoes/loja')
   revalidatePath('/loja')
