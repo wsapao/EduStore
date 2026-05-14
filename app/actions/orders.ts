@@ -60,14 +60,14 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
       .maybeSingle<{ modo_manutencao: boolean; loja_funcionamento: unknown }>()
 
     if (lojaConfig?.modo_manutencao) {
-      return { success: false, error: 'A loja esta temporariamente em manutencao. Tente novamente mais tarde.' }
+      return { success: false, error: 'A loja está temporariamente em manutenção. Tente novamente mais tarde.' }
     }
 
     const slots = normalizeLojaFuncionamento(lojaConfig?.loja_funcionamento ?? [])
     if (slots.length > 0 && !isLojaDisponivelAgora(slots)) {
       return {
         success: false,
-        error: 'A loja esta fechada neste horario. Tente novamente durante o periodo de funcionamento.',
+        error: 'A loja está fechada neste horário. Tente novamente durante o período de funcionamento.',
       }
     }
   }

@@ -22,11 +22,11 @@ type ProdutoOption = {
 const DIAS_SEMANA = [
   { value: 0, label: 'Domingo' },
   { value: 1, label: 'Segunda' },
-  { value: 2, label: 'Terca' },
+  { value: 2, label: 'Terça' },
   { value: 3, label: 'Quarta' },
   { value: 4, label: 'Quinta' },
   { value: 5, label: 'Sexta' },
-  { value: 6, label: 'Sabado' },
+  { value: 6, label: 'Sábado' },
 ]
 
 export function LojaOnlineForm({
@@ -46,7 +46,7 @@ export function LojaOnlineForm({
   const [lojaFuncionamento, setLojaFuncionamento] = useState<LojaFuncionamentoSlot[]>(
     config.loja_funcionamento ?? [],
   )
-  const [usarCategoriasAutomaticas, setUsarCategoriasAutomaticas] = useState(
+  const [usarCategoriasAutomáticas, setUsarCategoriasAutomáticas] = useState(
     config.categorias_home_visiveis === null,
   )
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<string[]>(
@@ -60,7 +60,7 @@ export function LojaOnlineForm({
     setMsg(null)
 
     formData.set('loja_funcionamento', JSON.stringify(lojaFuncionamento))
-    if (usarCategoriasAutomaticas) {
+    if (usarCategoriasAutomáticas) {
       formData.delete('categorias_home_visiveis')
     } else {
       formData.delete('categorias_home_visiveis')
@@ -81,7 +81,7 @@ export function LojaOnlineForm({
         return
       }
 
-      setMsg({ tipo: 'ok', texto: 'Configuracoes salvas!' })
+      setMsg({ tipo: 'ok', texto: 'Configurações salvas!' })
     })
   }
 
@@ -105,7 +105,7 @@ export function LojaOnlineForm({
   }
 
   function toggleCategoria(nome: string) {
-    setUsarCategoriasAutomaticas(false)
+    setUsarCategoriasAutomáticas(false)
     setCategoriasSelecionadas((current) => (
       current.includes(nome)
         ? current.filter((item) => item !== nome)
@@ -141,12 +141,12 @@ export function LojaOnlineForm({
       <input type="hidden" name="loja_funcionamento" value={JSON.stringify(lojaFuncionamento)} />
 
       <Section
-        title="Modo manutencao"
-        description="Feche a loja temporariamente sem derrubar o restante da operacao."
+        title="Modo manutenção"
+        description="Feche a loja temporariamente sem derrubar o restante da operação."
       >
         <ToggleRow
           checked={modoManutencao}
-          label="Loja em manutencao"
+          label="Loja em manutenção"
           onChange={setModoManutencao}
           name="modo_manutencao"
         />
@@ -163,13 +163,13 @@ export function LojaOnlineForm({
       </Section>
 
       <Section
-        title="Horario de funcionamento"
-        description="Deixe sem horarios para manter a loja aberta 24h."
+        title="Horário de funcionamento"
+        description="Deixe sem horários para manter a loja aberta 24h."
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {lojaFuncionamento.length === 0 ? (
             <div style={hintBoxStyle}>
-              Nenhum horario configurado. A loja ficara aberta 24 horas por dia.
+              Nenhum horário configurado. A loja ficara aberta 24 horas por dia.
             </div>
           ) : (
             lojaFuncionamento.map((slot, index) => (
@@ -255,16 +255,16 @@ export function LojaOnlineForm({
       </Section>
 
       <Section
-        title="Categorias visiveis na home"
-        description="Escolha entre usar todas automaticamente ou definir uma ordem customizada."
+        title="Categorias visíveis na home"
+        description="Escolha entre usar todas automáticamente ou definir uma ordem customizada."
       >
         <ToggleRow
-          checked={usarCategoriasAutomaticas}
-          label="Usar todas as categorias publicadas automaticamente"
-          onChange={setUsarCategoriasAutomaticas}
+          checked={usarCategoriasAutomáticas}
+          label="Usar todas as categorias publicadas automáticamente"
+          onChange={setUsarCategoriasAutomáticas}
         />
 
-        {!usarCategoriasAutomaticas && (
+        {!usarCategoriasAutomáticas && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {categorias.map((categoria) => {
               const isSelected = categoriasSelecionadas.includes(categoria.nome)

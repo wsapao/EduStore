@@ -86,7 +86,7 @@ describe('atualizarLojaOnlineAction', () => {
       loja_funcionamento: '{',
     }))
 
-    expect(result.error).toMatch(/horario/i)
+    expect(result.error).toMatch(/hor[áa]rio/i)
   })
 
   it('rejeita slot com hora invalida', async () => {
@@ -97,7 +97,7 @@ describe('atualizarLojaOnlineAction', () => {
       loja_funcionamento: JSON.stringify([{ dia: 1, inicio: 'ab:cd', fim: '18:00' }]),
     }))
 
-    expect(result.error).toMatch(/horario/i)
+    expect(result.error).toMatch(/hor[áa]rio/i)
   })
 
   it('rejeita slot com inicio maior ou igual ao fim', async () => {
@@ -108,7 +108,7 @@ describe('atualizarLojaOnlineAction', () => {
       loja_funcionamento: JSON.stringify([{ dia: 1, inicio: '18:00', fim: '18:00' }]),
     }))
 
-    expect(result.error).toMatch(/horario/i)
+    expect(result.error).toMatch(/hor[áa]rio/i)
   })
 
   it('rejeita mais de 6 produtos em destaque', async () => {

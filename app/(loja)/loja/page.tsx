@@ -186,10 +186,10 @@ export default async function LojaPage({
         <div style={{ padding: '36px 20px 0' }}>
           <EmptyState
             icon="🛠️"
-            title="Loja temporariamente em manutencao"
+            title="Loja temporariamente em manutenção"
             description={
               lojaConfig.modo_manutencao_mensagem
-              ?? 'Estamos fazendo ajustes rapidos na loja. Tente novamente em breve.'
+              ?? 'Estamos fazendo ajustes rápidos na loja. Tente novamente em breve.'
             }
           />
         </div>
@@ -199,10 +199,10 @@ export default async function LojaPage({
             <div style={{ padding: '14px 14px 0' }}>
               <div style={warningBannerStyle}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: '.06em' }}>
-                  Loja fechada neste horario
+                  Loja fechada neste horário
                 </div>
                 <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.5 }}>
-                  A vitrine continua visivel, mas novos pedidos so podem ser finalizados durante o horario configurado pela escola.
+                  A vitrine continua visível, mas novos pedidos só podem ser finalizados durante o horário configurado pela escola.
                 </div>
               </div>
             </div>

@@ -24,7 +24,7 @@ export default async function LojaOnlineConfigPage() {
         <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 16 }}>
           Loja Online
         </h1>
-        <p style={{ color: '#94a3b8' }}>Sua conta nao esta vinculada a uma escola.</p>
+        <p style={{ color: '#94a3b8' }}>Sua conta não está vinculada a uma escola.</p>
       </div>
     )
   }
@@ -55,7 +55,7 @@ export default async function LojaOnlineConfigPage() {
         <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 16 }}>
           Loja Online
         </h1>
-        <p style={{ color: '#ef4444' }}>Configuracoes da escola nao encontradas.</p>
+        <p style={{ color: '#ef4444' }}>Configurações da escola não encontradas.</p>
       </div>
     )
   }
@@ -73,7 +73,7 @@ export default async function LojaOnlineConfigPage() {
 
       <div style={{ maxWidth: 920 }}>
         <section style={cardStyle}>
-          <h2 style={titleStyle}>Configuracoes da home e da operacao</h2>
+          <h2 style={titleStyle}>Configurações da home e da operação</h2>
           <LojaOnlineForm
             config={normalizedConfig}
             categorias={(categorias ?? []) as CategoriaOption[]}

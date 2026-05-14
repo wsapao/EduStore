@@ -35,13 +35,13 @@ export async function atualizarLojaOnlineAction(formData: FormData) {
   try {
     await requirePermission('configuracoes.editar_identidade')
   } catch (error) {
-    if (error instanceof PermissionDeniedError) return { error: 'Sem permissao.' }
-    return { error: 'Sem permissao.' }
+    if (error instanceof PermissionDeniedError) return { error: 'Sem permissão.' }
+    return { error: 'Sem permissão.' }
   }
 
   const layoutHome = (formData.get('layout_home') as string | null)?.trim() ?? ''
   if (!LAYOUTS_VALIDOS.has(layoutHome)) {
-    return { error: 'Layout da home invalido.' }
+    return { error: 'Layout da home inválido.' }
   }
 
   const horariosRaw = (formData.get('loja_funcionamento') as string | null)?.trim() || '[]'
@@ -50,28 +50,28 @@ export async function atualizarLojaOnlineAction(formData: FormData) {
   try {
     parsedHorarios = JSON.parse(horariosRaw)
   } catch {
-    return { error: 'Horario de funcionamento invalido.' }
+    return { error: 'Horário de funcionamento inválido.' }
   }
 
   if (!Array.isArray(parsedHorarios)) {
-    return { error: 'Horario de funcionamento invalido.' }
+    return { error: 'Horário de funcionamento inválido.' }
   }
 
   const lojaFuncionamento = normalizeLojaFuncionamento(parsedHorarios)
   if (lojaFuncionamento.length !== parsedHorarios.length) {
-    return { error: 'Horario de funcionamento invalido.' }
+    return { error: 'Horário de funcionamento inválido.' }
   }
 
   const categoriasHomeVisiveis = uniqueStrings(formData.getAll('categorias_home_visiveis'))
   const produtosHomeDestaque = uniqueStrings(formData.getAll('produtos_home_destaque'))
 
   if (produtosHomeDestaque.length > 6) {
-    return { error: 'Selecione no maximo 6 produtos em destaque.' }
+    return { error: 'Selecione no máximo 6 produtos em destaque.' }
   }
 
   const supabase = await createClient()
   const escolaId = await getEscolaIdParaAdmin(supabase)
-  if (!escolaId) return { error: 'Escola nao encontrada para este usuario.' }
+  if (!escolaId) return { error: 'Escola não encontrada para este usuário.' }
 
   const { error } = await supabase
     .from('escola_configuracoes')
@@ -87,7 +87,7 @@ export async function atualizarLojaOnlineAction(formData: FormData) {
     })
     .eq('escola_id', escolaId)
 
-  if (error) return { error: 'Erro ao salvar configuracoes da loja online.' }
+  if (error) return { error: 'Erro ao salvar configurações da loja online.' }
 
   revalidatePath('/admin/configuracoes/loja-online')
   revalidatePath('/loja')
