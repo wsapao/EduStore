@@ -284,11 +284,11 @@ function getLowStockBadge({
   if (!showLowStockBadge || produto.esgotado || inCart) return null
 
   if (produto.estoque !== null && produto.estoque <= 10) {
-    return produto.estoque <= 1 ? 'Ultima unidade' : `${produto.estoque} unidades`
+    return produto.estoque <= 1 ? 'Última unidade' : `${produto.estoque} unidades`
   }
 
   if (vagasRestantes !== null && vagasRestantes !== undefined && vagasRestantes <= 10) {
-    return vagasRestantes === 0 ? 'Ultima vaga' : `${vagasRestantes} vagas`
+    return vagasRestantes === 0 ? 'Última vaga' : `${vagasRestantes} vagas`
   }
 
   return null

@@ -151,7 +151,7 @@ export function LojaOnlineForm({
           name="modo_manutencao"
         />
 
-        <Field label="Mensagem exibida ao responsavel">
+        <Field label="Mensagem exibida ao responsável">
           <textarea
             name="modo_manutencao_mensagem"
             rows={3}
@@ -212,7 +212,7 @@ export function LojaOnlineForm({
       </Section>
 
       <Section
-        title="Layout e apresentacao"
+        title="Layout e apresentação"
         description="Controle como a home publica apresenta o catalogo."
       >
         <Field label="Layout da home">
@@ -392,7 +392,7 @@ export function LojaOnlineForm({
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button type="submit" disabled={pending} style={btnPrimary}>
-          {pending ? 'Salvando...' : 'Salvar configuracoes'}
+          {pending ? 'Salvando...' : 'Salvar configurações'}
         </button>
         {msg && (
           <span style={{ fontSize: 13, color: msg.tipo === 'ok' ? '#22c55e' : '#ef4444' }}>
