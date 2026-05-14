@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('@/lib/auditoria/log', () => ({ auditLog: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
 vi.mock('@/lib/permissoes', () => ({
   requirePermission: vi.fn(),
