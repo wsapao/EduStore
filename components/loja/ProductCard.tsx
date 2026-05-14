@@ -47,9 +47,18 @@ interface Props {
   aluno: Aluno
   index?: number
   vagasRestantes?: number | null
+  showLowStockBadge?: boolean
+  layout?: 'grid' | 'lista'
 }
 
-export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props) {
+export function ProductCard({
+  produto,
+  aluno,
+  index = 0,
+  vagasRestantes,
+  showLowStockBadge = true,
+  layout = 'lista',
+}: Props) {
   const { add, remove, hasItem } = useCart()
   const router = useRouter()
   const [isPressing, setIsPressing] = useState(false)
@@ -61,6 +70,12 @@ export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props
   const isUrgent = urgencia.isUrgent && !produto.esgotado
 
   const theme = CAT_THEMES[produto.categoria] ?? CAT_THEMES.outros
+  const lowStockBadge = getLowStockBadge({
+    produto,
+    vagasRestantes,
+    showLowStockBadge,
+    inCart,
+  })
 
   function handleAdd(e: React.MouseEvent) {
     e.stopPropagation()
@@ -84,7 +99,7 @@ export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props
         border: '1.5px solid rgba(0,0,0,.07)',
         borderRadius: 18,
         overflow: 'hidden',
-        margin: '0 14px 10px',
+        margin: layout === 'grid' ? '0' : '0 14px 10px',
         boxShadow: '0 2px 8px rgba(0,0,0,.06)',
         opacity: produto.esgotado ? 0.6 : 1,
         pointerEvents: produto.esgotado ? 'none' : 'auto',
@@ -146,13 +161,13 @@ export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props
             ✓ No carrinho
           </div>
         )}
-        {!produto.esgotado && !inCart && vagasRestantes !== null && vagasRestantes !== undefined && vagasRestantes <= 10 && (
+        {lowStockBadge && (
           <div style={{
             position: 'absolute', top: 7, right: 9, fontSize: 8, fontWeight: 800,
             padding: '3px 7px', borderRadius: 99, background: 'rgba(245,158,11,.85)',
             color: '#78350f', backdropFilter: 'blur(8px)'
           }}>
-            {vagasRestantes === 0 ? 'Última vaga' : `${vagasRestantes} vagas`}
+            {lowStockBadge}
           </div>
         )}
       </div>
@@ -253,4 +268,28 @@ export function ProductCard({ produto, aluno, index = 0, vagasRestantes }: Props
       </div>
     </div>
   )
+}
+
+function getLowStockBadge({
+  produto,
+  vagasRestantes,
+  showLowStockBadge,
+  inCart,
+}: {
+  produto: Produto
+  vagasRestantes: number | null | undefined
+  showLowStockBadge: boolean
+  inCart: boolean
+}) {
+  if (!showLowStockBadge || produto.esgotado || inCart) return null
+
+  if (produto.estoque !== null && produto.estoque <= 10) {
+    return produto.estoque <= 1 ? 'Ultima unidade' : `${produto.estoque} unidades`
+  }
+
+  if (vagasRestantes !== null && vagasRestantes !== undefined && vagasRestantes <= 10) {
+    return vagasRestantes === 0 ? 'Ultima vaga' : `${vagasRestantes} vagas`
+  }
+
+  return null
 }

@@ -3,6 +3,7 @@ import { currentPermissions } from '@/lib/permissoes'
 
 const CARDS = [
   { href: '/admin/configuracoes/loja',       titulo: 'Identidade & Personalização', descricao: 'Logo, banner, cores, dados fiscais', perm: 'configuracoes.editar_identidade' },
+  { href: '/admin/configuracoes/loja-online', titulo: 'Loja Online',                descricao: 'Manutenção, horário, layout e destaque da home', perm: 'configuracoes.editar_identidade' },
   { href: '/admin/configuracoes/usuarios',   titulo: 'Usuários',                     descricao: 'Convidar, suspender, mudar papéis', perm: 'configuracoes.gerenciar_usuarios' },
   { href: '/admin/configuracoes/papeis',     titulo: 'Papéis & Permissões',          descricao: 'Customize quem acessa o quê', perm: 'configuracoes.gerenciar_papeis' },
   { href: '/admin/configuracoes/pagamentos', titulo: 'Pagamentos',                   descricao: 'Métodos, parcelas, PIX, webhook', perm: 'configuracoes.editar_pagamentos' },

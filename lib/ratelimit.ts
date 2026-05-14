@@ -21,17 +21,30 @@ type CheckResult = {
 // ── Backend in-memory (dev/preview) ──────────────────────────────────────────
 const memoryStore = new Map<string, { count: number; resetAt: number }>()
 
-// Avisa uma vez por processo se Redis não estiver configurado em produção
-if (
-  typeof process !== 'undefined' &&
-  process.env.NODE_ENV === 'production' &&
-  (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
-) {
+function isMissingUpstashConfig() {
+  return (
+    typeof process !== 'undefined' &&
+    process.env.NODE_ENV === 'production' &&
+    (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
+  )
+}
+
+function warnMemoryFallbackOnce() {
+  if (!isMissingUpstashConfig()) return
+
+  const globalState = globalThis as typeof globalThis & {
+    __ratelimit_memory_warning__?: boolean
+  }
+
+  if (globalState.__ratelimit_memory_warning__) return
+
   console.warn(
     '[ratelimit] ATENÇÃO: UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN não configurados. ' +
     'Rate limiting rodando em memória — será resetado a cada cold start. ' +
     'Configure o Upstash Redis em produção para proteção contra brute force.'
   )
+
+  globalState.__ratelimit_memory_warning__ = true
 }
 
 function memoryCheck(key: string, limit: number, windowSec: number): CheckResult {
@@ -143,6 +156,7 @@ export const ratelimit = {
   async check(key: string, limit: number, windowSec: number): Promise<CheckResult> {
     const up = await upstashCheck(key, limit, windowSec)
     if (up) return up
+    warnMemoryFallbackOnce()
     return memoryCheck(key, limit, windowSec)
   },
 }

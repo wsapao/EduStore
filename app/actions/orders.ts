@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { getGateway } from '@/lib/pagamentos/gateway'
 import { enviarEmailPedido } from '@/lib/email/send'
+import { isLojaDisponivelAgora, normalizeLojaFuncionamento } from '@/lib/loja-online/config'
 import { sincronizarPixExpiradoPedido } from '@/lib/pagamentos/pix'
 import type { MetodoPagamento } from '@/types/database'
 import type { DadosCartao } from '@/lib/pagamentos/types'
@@ -50,6 +51,26 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     .single()
 
   if (!responsavel) return { success: false, error: 'Responsável não encontrado.' }
+
+  if (responsavel.escola_id) {
+    const { data: lojaConfig } = await supabase
+      .from('escola_configuracoes')
+      .select('modo_manutencao, loja_funcionamento')
+      .eq('escola_id', responsavel.escola_id)
+      .maybeSingle<{ modo_manutencao: boolean; loja_funcionamento: unknown }>()
+
+    if (lojaConfig?.modo_manutencao) {
+      return { success: false, error: 'A loja está temporariamente em manutenção. Tente novamente mais tarde.' }
+    }
+
+    const slots = normalizeLojaFuncionamento(lojaConfig?.loja_funcionamento ?? [])
+    if (slots.length > 0 && !isLojaDisponivelAgora(slots)) {
+      return {
+        success: false,
+        error: 'A loja está fechada neste horário. Tente novamente durante o período de funcionamento.',
+      }
+    }
+  }
 
   // Busca preços reais e vouchers do DB (Segurança)
   const productIds = Array.from(new Set(input.items.map(i => i.produto_id)))

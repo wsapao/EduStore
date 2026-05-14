@@ -5,7 +5,7 @@ import { CartDrawer } from '@/components/loja/CartDrawer'
 import { CartBar } from '@/components/loja/CartBar'
 import { BottomNavigation } from '@/components/loja/BottomNavigation'
 import { escolaThemeStyle, ESCOLA_FALLBACK } from '@/lib/escola/getEscola'
-import type { Escola, Responsavel } from '@/types/database'
+import type { Escola } from '@/types/database'
 
 export default async function LojaLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -22,10 +22,7 @@ export default async function LojaLayout({ children }: { children: React.ReactNo
 
   if (!resp) redirect('/login')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const responsavel = resp as unknown as Responsavel
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const escola: Escola = (resp as any).escola ?? ESCOLA_FALLBACK
+  const escola = ((resp as { escola?: Escola | null }).escola ?? ESCOLA_FALLBACK) as Escola
 
   return (
     <CartProvider>

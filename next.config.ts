@@ -11,6 +11,17 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '*.supabase.in' },
     ],
   },
+  webpack: (config) => {
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings ?? []),
+      {
+        module: /@opentelemetry\/instrumentation\/build\/esm\/platform\/node\/instrumentation\.js$/,
+        message: /Critical dependency: the request of a dependency is an expression/,
+      },
+    ]
+
+    return config
+  },
 }
 
 // Só aplica Sentry quando houver DSN — evita warnings em dev sem SENTRY configurado.
