@@ -1,14 +1,108 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { getVersaoAtualTermos } from '@/app/actions/configuracoes/termos'
 
-const escolaNome = process.env.NEXT_PUBLIC_ESCOLA_NOME ?? 'Loja Escolar'
+const escolaNomeFallback = process.env.NEXT_PUBLIC_ESCOLA_NOME ?? 'Loja Escolar'
 
 export const metadata: Metadata = {
-  title: `Termos de Uso — ${escolaNome}`,
-  description: `Termos e condições de uso da loja virtual ${escolaNome}.`,
+  title: `Termos de Uso — ${escolaNomeFallback}`,
+  description: `Termos e condições de uso da loja virtual ${escolaNomeFallback}.`,
 }
 
-export default function TermosPage() {
+export default async function TermosPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let conteudoBanco: { versao: number; conteudo: string; publicado_em: string } | null = null
+  let escolaNome = escolaNomeFallback
+
+  if (user) {
+    const { data: resp } = await supabase
+      .from('responsaveis')
+      .select('escola_id, escola:escolas(nome)')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    let escolaId: string | null = (resp as any)?.escola_id ?? null
+    if ((resp as any)?.escola?.nome) escolaNome = (resp as any).escola.nome
+
+    if (!escolaId) {
+      const { data: vinculo } = await supabase
+        .from('usuario_papel')
+        .select('escola_id, escola:escolas(nome)')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      escolaId = (vinculo as any)?.escola_id ?? null
+      if ((vinculo as any)?.escola?.nome) escolaNome = (vinculo as any).escola.nome
+    }
+
+    if (escolaId) {
+      conteudoBanco = await getVersaoAtualTermos({ tipo: 'termos_uso', escolaId })
+    }
+  }
+
+  if (conteudoBanco) {
+    return (
+      <main style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px 80px' }}>
+        <Link
+          href="/login"
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--accent)',
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            marginBottom: 24,
+          }}
+        >
+          ← Voltar
+        </Link>
+
+        <h1
+          style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: 'var(--text-1)',
+            letterSpacing: '-0.03em',
+            marginBottom: 8,
+          }}
+        >
+          Termos de Uso — {escolaNome}
+        </h1>
+
+        <article
+          style={{
+            marginTop: 24,
+            fontSize: 15,
+            lineHeight: 1.7,
+            color: 'var(--text-2)',
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          {conteudoBanco.conteudo}
+        </article>
+
+        <footer
+          style={{
+            marginTop: 40,
+            paddingTop: 16,
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+            fontSize: 12,
+            color: 'var(--text-3)',
+          }}
+        >
+          Versão {conteudoBanco.versao} publicada em{' '}
+          {new Date(conteudoBanco.publicado_em).toLocaleDateString('pt-BR')}
+        </footer>
+      </main>
+    )
+  }
+
   return (
     <main style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px 80px' }}>
       <Link
