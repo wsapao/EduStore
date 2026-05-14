@@ -32,7 +32,30 @@ function fmtBRL(value: number) {
   return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-export default async function LojaPage({
+export default async function LojaPage(props: {
+  searchParams: Promise<{ aluno?: string; categoria?: string; q?: string }>
+}) {
+  try {
+    return await renderLojaPage(props)
+  } catch (e) {
+    const err = e as Error
+    return (
+      <div style={{ padding: 24, fontFamily: 'monospace', maxWidth: 900, margin: '0 auto', color: '#7f1d1d' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16 }}>🐛 Debug /loja — erro server-side</h1>
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>name / message</div>
+          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{err?.name}: {err?.message ?? '(sem mensagem)'}</pre>
+        </div>
+        <div style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, color: '#374151' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>stack</div>
+          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 11 }}>{err?.stack ?? '(sem stack)'}</pre>
+        </div>
+      </div>
+    )
+  }
+}
+
+async function renderLojaPage({
   searchParams,
 }: {
   searchParams: Promise<{ aluno?: string; categoria?: string; q?: string }>
