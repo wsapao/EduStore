@@ -9,13 +9,15 @@ export default async function NovoProdutoPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
 
-  const { data: categorias } = await supabase
-    .from('categorias_produto')
-    .select('*')
-    .eq('ativo', true)
-    .order('nome')
-
-  const seriesDisponiveis = await getSeriesDisponiveis()
+  // Paraleliza categorias + séries (CRM com timeout 2s) — antes rodavam em série.
+  const [{ data: categorias }, seriesDisponiveis] = await Promise.all([
+    supabase
+      .from('categorias_produto')
+      .select('*')
+      .eq('ativo', true)
+      .order('nome'),
+    getSeriesDisponiveis(),
+  ])
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', paddingBottom: 80 }}>
