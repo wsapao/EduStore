@@ -120,9 +120,14 @@ export async function getStatusAsaasWebhookAction(): Promise<
     return { ok: false, message: 'ASAAS_API_KEY não configurada.' }
   }
 
+  // Timeout 2s para não travar o render da página de Integrações se o Asaas estiver lento.
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 2000)
+
   try {
     const res = await fetch('https://api.asaas.com/v3/webhooks', {
       headers: { access_token: process.env.ASAAS_API_KEY },
+      signal: controller.signal,
     })
     if (!res.ok) {
       return { ok: false, message: `Asaas respondeu HTTP ${res.status}` }
@@ -137,8 +142,13 @@ export async function getStatusAsaasWebhookAction(): Promise<
     }))
     return { ok: true, webhooks }
   } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return { ok: false, message: 'API do Asaas demorou demais — tente novamente' }
+    }
     const msg = err instanceof Error ? err.message : String(err)
     return { ok: false, message: 'Falha na conexão: ' + msg }
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 

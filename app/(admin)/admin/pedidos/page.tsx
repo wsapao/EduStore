@@ -140,8 +140,6 @@ export default async function AdminPedidos({
 
   pedidosQuery = pedidosQuery.range(from, to)
 
-  const { data: pedidosRaw } = await pedidosQuery
-
   let totalQuery = supabase.from('pedidos').select('id', { count: 'exact', head: true })
   if (filtroAtual !== 'todos') {
     totalQuery = totalQuery.eq('status', filtroAtual)
@@ -157,9 +155,17 @@ export default async function AdminPedidos({
   if (toIso) {
     totalQuery = totalQuery.lte('created_at', toIso)
   }
-  const { count: totalFiltrado } = await totalQuery
 
-  const { data: contagens } = await supabase.from('pedidos').select('status')
+  // Paraleliza queries independentes (antes rodavam em série).
+  const [
+    { data: pedidosRaw },
+    { count: totalFiltrado },
+    { data: contagens },
+  ] = await Promise.all([
+    pedidosQuery,
+    totalQuery,
+    supabase.from('pedidos').select('status'),
+  ])
   const counts = (contagens ?? []).reduce<Record<string, number>>((acc, pedido) => {
     acc[pedido.status] = (acc[pedido.status] ?? 0) + 1
     return acc

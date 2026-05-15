@@ -22,11 +22,18 @@ export default async function IntegracoesConfigPage() {
     )
   }
 
-  const { data: config } = await supabase
-    .from('escola_configuracoes')
-    .select('*')
-    .eq('escola_id', escolaId)
-    .single<EscolaConfiguracoes>()
+  // Paraleliza queries independentes (antes rodavam em série).
+  const [
+    { data: config },
+    asaasStatus,
+  ] = await Promise.all([
+    supabase
+      .from('escola_configuracoes')
+      .select('*')
+      .eq('escola_id', escolaId)
+      .single<EscolaConfiguracoes>(),
+    getStatusAsaasWebhookAction(),
+  ])
 
   if (!config) {
     return (
@@ -36,8 +43,6 @@ export default async function IntegracoesConfigPage() {
       </div>
     )
   }
-
-  const asaasStatus = await getStatusAsaasWebhookAction()
 
   return (
     <div>

@@ -49,15 +49,21 @@ export default async function AdminProdutos({
     query = query.or(`nome.ilike.%${busca}%,descricao.ilike.%${busca}%`)
   }
 
-  const { data: produtos, error: erroQuery } = await query.range(from, to)
-
   let countQuery = supabase.from('produtos').select('id', { count: 'exact', head: true })
   if (busca) {
     countQuery = countQuery.or(`nome.ilike.%${busca}%,descricao.ilike.%${busca}%`)
   }
-  const { count: totalFiltrado } = await countQuery
 
-  const { data: resumo } = await supabase.from('produtos').select('id, ativo, esgotado')
+  // Paraleliza queries independentes (antes rodavam em série).
+  const [
+    { data: produtos, error: erroQuery },
+    { count: totalFiltrado },
+    { data: resumo },
+  ] = await Promise.all([
+    query.range(from, to),
+    countQuery,
+    supabase.from('produtos').select('id, ativo, esgotado'),
+  ])
   const ativos = (resumo ?? []).filter((p) => p.ativo).length
   const inativos = (resumo ?? []).filter((p) => !p.ativo).length
   const esgotados = (resumo ?? []).filter((p) => p.esgotado).length
