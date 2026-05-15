@@ -14,19 +14,24 @@ export default async function EditarPapelPage({ params }: { params: Promise<{ id
   const escolaId = await getEscolaIdParaAdmin(supabase)
   if (!escolaId) redirect('/admin/configuracoes/papeis')
 
-  const { data: papel } = await supabase
-    .from('papeis')
-    .select('id, nome, descricao, preset, chave_preset')
-    .eq('id', id)
-    .eq('escola_id', escolaId)
-    .maybeSingle()
+  // Paraleliza queries independentes (antes rodavam em série).
+  const [
+    { data: papel },
+    { data: perms },
+  ] = await Promise.all([
+    supabase
+      .from('papeis')
+      .select('id, nome, descricao, preset, chave_preset')
+      .eq('id', id)
+      .eq('escola_id', escolaId)
+      .maybeSingle(),
+    supabase
+      .from('papel_permissoes')
+      .select('chave')
+      .eq('papel_id', id),
+  ])
 
   if (!papel) redirect('/admin/configuracoes/papeis')
-
-  const { data: perms } = await supabase
-    .from('papel_permissoes')
-    .select('chave')
-    .eq('papel_id', id)
 
   return (
     <PapelEditor

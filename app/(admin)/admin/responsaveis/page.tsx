@@ -69,12 +69,17 @@ export default async function AdminResponsaveisPage({
     query = query.or(`nome.ilike.%${term}%,email.ilike.%${term}%,cpf.ilike.%${term}%`)
   }
 
-  const { data: rows, count: totalCount } = await query.range(from, to)
-
-  const { data: alunosRows } = await supabase
-    .from('alunos')
-    .select('id, nome, serie, turma, ativo, escola_id, created_at')
-    .order('nome', { ascending: true })
+  // Paraleliza queries independentes (antes rodavam em série).
+  const [
+    { data: rows, count: totalCount },
+    { data: alunosRows },
+  ] = await Promise.all([
+    query.range(from, to),
+    supabase
+      .from('alunos')
+      .select('id, nome, serie, turma, ativo, escola_id, created_at')
+      .order('nome', { ascending: true }),
+  ])
 
   const responsaveis = ((rows ?? []) as unknown as ResponsavelRow[])
     .map((row) => ({
