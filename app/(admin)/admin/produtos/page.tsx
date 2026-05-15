@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { toggleProdutoAtivoAction, toggleEsgotadoAction, duplicarProdutoAction, excluirProdutoAction } from '@/app/actions/admin'
+import { toggleProdutoAtivoAction, toggleEsgotadoAction, duplicarProdutoAction } from '@/app/actions/admin'
+import { ExcluirProdutoButton } from './ExcluirProdutoButton'
 import { normalizarProduto } from '@/lib/produtos/normalizers'
 import type { Produto, CategoriaProduto, MetodoPagamento, ProdutoVariante } from '@/types/database'
 
@@ -23,30 +24,7 @@ const METODO_ICONS: Record<MetodoPagamento, string> = {
   pix: '⚡', cartao: '💳', boleto: '📄',
 }
 
-export default async function AdminProdutos(props: {
-  searchParams: Promise<{ q?: string; page?: string }>
-}) {
-  try {
-    return await renderAdminProdutos(props)
-  } catch (e) {
-    const err = e as Error
-    return (
-      <div style={{ padding: 24, fontFamily: 'monospace', maxWidth: 900, margin: '0 auto', color: '#fef2f2' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: '#ef4444' }}>🐛 Debug /admin/produtos</h1>
-        <div style={{ background: 'rgba(127,29,29,.4)', border: '1px solid rgba(254,202,202,.3)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>name / message</div>
-          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{err?.name}: {err?.message ?? '(sem mensagem)'}</pre>
-        </div>
-        <div style={{ background: 'rgba(0,0,0,.3)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 8, padding: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>stack</div>
-          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 11 }}>{err?.stack ?? '(sem stack)'}</pre>
-        </div>
-      </div>
-    )
-  }
-}
-
-async function renderAdminProdutos({
+export default async function AdminProdutos({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string; page?: string }>
@@ -370,20 +348,7 @@ async function renderAdminProdutos({
                 </div>
 
                 {!isAtivo && (
-                  <form action={excluirProdutoAction.bind(null, produto.id) as any}>
-                    <button
-                      type="submit"
-                      onClick={e => { if (!confirm(`Excluir "${produto.nome}" permanentemente?`)) e.preventDefault() }}
-                      style={{
-                        width: '100%', padding: '10px', borderRadius: 10,
-                        fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                        background: 'transparent', color: '#64748b',
-                        border: '1.5px dashed rgba(255,255,255,.1)',
-                      }}
-                    >
-                      🗑 Excluir produto
-                    </button>
-                  </form>
+                  <ExcluirProdutoButton produtoId={produto.id} nome={produto.nome} />
                 )}
               </div>
             </div>
