@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requirePermission, PermissionDeniedError } from '@/lib/permissoes'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
 import { activesoft } from '@/lib/activesoft'
+import { auditLog } from '@/lib/auditoria/log'
 
 const GA4_RE = /^G-[A-Z0-9]+$/i
 const PIXEL_RE = /^\d+$/
@@ -56,6 +57,8 @@ export async function atualizarIntegracoesAction(formData: FormData) {
     .eq('escola_id', escolaId)
 
   if (error) return { error: 'Erro ao salvar configurações de integrações.' }
+
+  await auditLog({ modulo: 'integracoes', acao: 'atualizou_config' })
 
   revalidatePath('/admin/configuracoes/integracoes')
   return { success: true }
@@ -158,6 +161,11 @@ export async function reativarAsaasWebhookAction({ webhookId }: { webhookId: str
       body: JSON.stringify({ interrupted: false }),
     })
     if (!res.ok) return { error: `Asaas respondeu HTTP ${res.status}` }
+    await auditLog({
+      modulo: 'integracoes',
+      acao: 'reativou_asaas_webhook',
+      metadata: { webhookId },
+    })
     revalidatePath('/admin/configuracoes/integracoes')
     return { success: true }
   } catch (err) {

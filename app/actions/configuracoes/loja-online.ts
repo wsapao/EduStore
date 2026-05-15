@@ -6,6 +6,7 @@ import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
 import { normalizeLojaFuncionamento } from '@/lib/loja-online/config'
 import { PermissionDeniedError, requirePermission } from '@/lib/permissoes'
 import { createClient } from '@/lib/supabase/server'
+import { auditLog } from '@/lib/auditoria/log'
 
 const LAYOUTS_VALIDOS = new Set(['grid', 'lista'])
 
@@ -88,6 +89,8 @@ export async function atualizarLojaOnlineAction(formData: FormData) {
     .eq('escola_id', escolaId)
 
   if (error) return { error: 'Erro ao salvar configurações da loja online.' }
+
+  await auditLog({ modulo: 'loja-online', acao: 'atualizou_config' })
 
   revalidatePath('/admin/configuracoes/loja-online')
   revalidatePath('/loja')
