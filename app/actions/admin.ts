@@ -497,17 +497,25 @@ export async function criarCategoriaAction(formData: FormData) {
   const icone = (formData.get('icone') as string).trim() || '🏷️'
   const tem_variantes = formData.get('tem_variantes') === 'on'
 
-  const { error } = await supabase.from('categorias_produto').insert({
-    escola_id: resp.escola_id,
-    nome,
-    icone,
-    tem_variantes,
-    ativo: true,
-  })
+  if (!nome) return { success: false, error: 'Nome da categoria é obrigatório.' }
+
+  // Retorna a row criada pra o cliente atualizar o select inline (UX do form de produto).
+  const { data, error } = await supabase
+    .from('categorias_produto')
+    .insert({
+      escola_id: resp.escola_id,
+      nome,
+      icone,
+      tem_variantes,
+      ativo: true,
+    })
+    .select('id, escola_id, nome, icone, tem_variantes, ativo, created_at')
+    .single()
 
   if (error) return { success: false, error: error.message }
   revalidatePath('/admin/produtos/categorias')
-  return { success: true }
+  revalidatePath('/admin/produtos/novo')
+  return { success: true, categoria: data }
 }
 
 export async function toggleCategoriaAction(id: string, ativo: boolean) {

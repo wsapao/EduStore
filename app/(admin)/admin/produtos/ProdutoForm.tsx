@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { criarProdutoAction, editarProdutoAction } from '@/app/actions/admin'
 import type { Produto, CategoriaProduto, MetodoPagamento, ProdutoVariante, Categoria } from '@/types/database'
+import { NovaCategoriaModal } from './NovaCategoriaModal'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const METODOS: { value: MetodoPagamento; label: string; icon: string }[] = [
@@ -44,8 +45,12 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias, seriesDi
   const [isPending, startTransition] = useTransition()
   const [error, setError]   = useState('')
 
+  // Lista local de categorias — começa com as do servidor, cresce quando usuário cria nova inline.
+  const [categoriasLocais, setCategoriasLocais] = useState<Categoria[]>(categorias)
+  const [novaCategoriaOpen, setNovaCategoriaOpen] = useState(false)
+
   // Estado do formulário
-  const [categoria,    setCategoria]    = useState<string>(produto?.categoria ?? categorias[0]?.nome ?? 'Outros')
+  const [categoria,    setCategoria]    = useState<string>(produto?.categoria ?? categoriasLocais[0]?.nome ?? 'Outros')
   const [metodos,      setMetodos]      = useState<MetodoPagamento[]>(produto?.metodos_aceitos ?? ['pix'])
   const [series,       setSeries]       = useState<string[]>(produto?.series ?? [])
   const [aceitaVouchers, setAceitaVouchers] = useState(produto?.aceita_vouchers ?? true)
@@ -204,9 +209,27 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias, seriesDi
 
         {/* Categoria */}
         <div>
-          <Label req>CATEGORIA</Label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Label req>CATEGORIA</Label>
+            <button
+              type="button"
+              onClick={() => setNovaCategoriaOpen(true)}
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: 'var(--brand)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                borderRadius: 6,
+              }}
+            >
+              + Nova categoria
+            </button>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
-            {categorias.length > 0 ? categorias.map(c => (
+            {categoriasLocais.length > 0 ? categoriasLocais.map(c => (
               <button
                 key={c.id} type="button"
                 onClick={() => setCategoria(c.nome)}
@@ -221,11 +244,22 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias, seriesDi
                 <span>{c.icone}</span> {c.nome}
               </button>
             )) : (
-              <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Nenhuma categoria cadastrada nas configurações.</p>
+              <p style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                Nenhuma categoria cadastrada — clique em &quot;+ Nova categoria&quot; pra criar a primeira.
+              </p>
             )}
           </div>
           <input type="hidden" name="categoria" value={categoria} />
         </div>
+
+        <NovaCategoriaModal
+          open={novaCategoriaOpen}
+          onClose={() => setNovaCategoriaOpen(false)}
+          onCreated={(nova) => {
+            setCategoriasLocais((prev) => [...prev, nova])
+            setCategoria(nova.nome)
+          }}
+        />
 
         {/* Imagem do Produto */}
         <div>
@@ -367,7 +401,7 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias, seriesDi
         </div>
       </Section>
 
-      {categorias.find(c => c.nome === categoria)?.tem_variantes && <Section title="Variantes e tamanhos">
+      {categoriasLocais.find(c => c.nome === categoria)?.tem_variantes && <Section title="Variantes e tamanhos">
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           <div style={{
             display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(130px, 1fr))', gap:10,
