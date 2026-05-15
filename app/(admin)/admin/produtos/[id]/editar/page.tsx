@@ -17,19 +17,21 @@ export default async function EditarProdutoPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
 
-  const { data } = await supabase
-    .from('produtos')
-    .select('*, variantes_rel:produto_variantes(*)')
-    .eq('id', id)
-    .single()
-
-  const { data: categorias } = await supabase
-    .from('categorias_produto')
-    .select('*')
-    .eq('ativo', true)
-    .order('nome')
-
-  const seriesDisponiveis = await getSeriesDisponiveis()
+  // Paraleliza tudo: produto + categorias + séries (CRM com timeout 2s).
+  // Antes essas 3 chamadas rodavam em série e travavam quando o CRM ficava lento.
+  const [{ data }, { data: categorias }, seriesDisponiveis] = await Promise.all([
+    supabase
+      .from('produtos')
+      .select('*, variantes_rel:produto_variantes(*)')
+      .eq('id', id)
+      .single(),
+    supabase
+      .from('categorias_produto')
+      .select('*')
+      .eq('ativo', true)
+      .order('nome'),
+    getSeriesDisponiveis(),
+  ])
 
   if (!data) notFound()
 
