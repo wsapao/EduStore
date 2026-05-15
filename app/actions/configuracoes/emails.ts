@@ -7,7 +7,8 @@ import { requirePermission, PermissionDeniedError } from '@/lib/permissoes'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
 import { auditLog } from '@/lib/auditoria/log'
 import { getResend, EMAIL_FROM } from '@/lib/email/resend'
-import { renderEmailTemplate, getTemplateEmail } from '@/lib/email/render'
+import { renderEmailTemplate } from '@/lib/email/render'
+import { getTemplateEmail } from '@/lib/email/get-template'
 import {
   EMAIL_TEMPLATE_META,
   EMAIL_TEMPLATE_TYPES,
