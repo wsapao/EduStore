@@ -119,19 +119,19 @@ describe('getPdvSnapshotAction', () => {
   it('rejeita usuário não autenticado', async () => {
     ;(createClient as any).mockResolvedValue(makeSupabaseStub(null))
     const res = await getPdvSnapshotAction()
-    expect(res).toEqual({ error: 'Não autenticado.' })
+    expect(res).toEqual({ ok: false, error: 'Não autenticado.' })
   })
 
   it('rejeita role "responsavel"', async () => {
     ;(createClient as any).mockResolvedValue(makeSupabaseStub({ id: 'u1', role: 'responsavel' }))
     const res = await getPdvSnapshotAction()
-    expect(res).toEqual({ error: 'Acesso negado.' })
+    expect(res).toEqual({ ok: false, error: 'Acesso negado.' })
   })
 
   it('rejeita role indefinida', async () => {
     ;(createClient as any).mockResolvedValue(makeSupabaseStub({ id: 'u1' }))
     const res = await getPdvSnapshotAction()
-    expect(res).toEqual({ error: 'Acesso negado.' })
+    expect(res).toEqual({ ok: false, error: 'Acesso negado.' })
   })
 
   it('aceita role "admin" e devolve snapshot completo', async () => {
@@ -141,7 +141,7 @@ describe('getPdvSnapshotAction', () => {
     ;(createAdminClient as any).mockReturnValue(client)
 
     const res = await getPdvSnapshotAction()
-    if (!('ok' in res) || !res.ok) throw new Error('esperava sucesso, veio: ' + JSON.stringify(res))
+    if (!res.ok) throw new Error('esperava sucesso, veio: ' + JSON.stringify(res))
 
     expect(res.escola_id).toBe('esc-1')
     expect(res.alunos).toHaveLength(2)
@@ -161,7 +161,7 @@ describe('getPdvSnapshotAction', () => {
     ;(createAdminClient as any).mockReturnValue(client)
 
     const res = await getPdvSnapshotAction()
-    expect('ok' in res && res.ok).toBe(true)
+    expect(res.ok).toBe(true)
   })
 
   it('filtra todas as tabelas por escola_id', async () => {
@@ -203,7 +203,7 @@ describe('getPdvSnapshotAction', () => {
     ;(createAdminClient as any).mockReturnValue(client)
 
     const res = await getPdvSnapshotAction()
-    if (!('ok' in res) || !res.ok) throw new Error('esperava sucesso')
+    if (!res.ok) throw new Error('esperava sucesso')
 
     for (const c of res.carteiras) {
       expect(c).not.toHaveProperty('senha_pin_hash')
@@ -222,7 +222,7 @@ describe('getPdvSnapshotAction', () => {
     ;(createAdminClient as any).mockReturnValue(client)
 
     const res = await getPdvSnapshotAction()
-    if (!('ok' in res) || !res.ok) throw new Error('esperava sucesso')
+    if (!res.ok) throw new Error('esperava sucesso')
 
     const c1 = res.carteiras.find((c) => c.id === 'c1')!
     expect(c1.saldo).toBe(50)
@@ -237,7 +237,7 @@ describe('getPdvSnapshotAction', () => {
     ;(getEscolaIdParaAdmin as any).mockResolvedValue(null)
 
     const res = await getPdvSnapshotAction()
-    expect(res).toEqual({ error: 'Escola não encontrada para o usuário.' })
+    expect(res).toEqual({ ok: false, error: 'Escola não encontrada para o usuário.' })
   })
 
   it('propaga erro de query como mensagem amigável', async () => {
@@ -247,6 +247,6 @@ describe('getPdvSnapshotAction', () => {
     ;(createAdminClient as any).mockReturnValue(client)
 
     const res = await getPdvSnapshotAction()
-    expect(res).toEqual({ error: 'boom alunos' })
+    expect(res).toEqual({ ok: false, error: 'boom alunos' })
   })
 })

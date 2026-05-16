@@ -72,8 +72,8 @@ export class PdvOfflineDB extends Dexie {
     this.version(1).stores({
       // PK + índices secundários separados por vírgula (convenção Dexie).
       alunos:     'id, nome, serie, turma, escola_id',
-      carteiras:  'id, aluno_id, escola_id, saldo, limite_diario, ativo',
-      restricoes: '++localId, aluno_id, produto_id',
+      carteiras:  'id, aluno_id, escola_id, ativo',
+      restricoes: '++localId, aluno_id',
       produtos:   'id, escola_id, nome, ativo',
       meta:       'chave',
     })

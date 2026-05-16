@@ -60,7 +60,7 @@ export interface PdvSnapshotSuccess {
 }
 
 export interface PdvSnapshotError {
-  ok?: false
+  ok: false
   error: string
 }
 
@@ -78,17 +78,17 @@ export async function getPdvSnapshotAction(
 ): Promise<PdvSnapshotResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Não autenticado.' }
+  if (!user) return { ok: false, error: 'Não autenticado.' }
 
   // Mesmo padrão de autorização de `buscarAlunoCantinaAction`:
   // apenas admin ou operador podem operar o PDV.
   const role = user.app_metadata?.role
   if (role !== 'admin' && role !== 'operador') {
-    return { error: 'Acesso negado.' }
+    return { ok: false, error: 'Acesso negado.' }
   }
 
   const escola_id = await getEscolaIdParaAdmin(supabase)
-  if (!escola_id) return { error: 'Escola não encontrada para o usuário.' }
+  if (!escola_id) return { ok: false, error: 'Escola não encontrada para o usuário.' }
 
   // Usa client admin para bypassar RLS — autorização já foi feita acima.
   const admin = createAdminClient()
@@ -105,7 +105,7 @@ export async function getPdvSnapshotAction(
       .eq('escola_id', escola_id),
     admin
       .from('cantina_produtos')
-      .select('id, escola_id, nome, ativo, preco, disponivel_presencial')
+      .select('id, escola_id, nome, ativo, preco')
       .eq('escola_id', escola_id)
       .eq('disponivel_presencial', true)
       .eq('ativo', true),
@@ -117,14 +117,14 @@ export async function getPdvSnapshotAction(
       .eq('alunos.escola_id', escola_id),
   ])
 
-  if (alunosRes.error)     return { error: alunosRes.error.message }
-  if (carteirasRes.error)  return { error: carteirasRes.error.message }
-  if (produtosRes.error)   return { error: produtosRes.error.message }
-  if (restricoesRes.error) return { error: restricoesRes.error.message }
+  if (alunosRes.error)     return { ok: false, error: alunosRes.error.message }
+  if (carteirasRes.error)  return { ok: false, error: carteirasRes.error.message }
+  if (produtosRes.error)   return { ok: false, error: produtosRes.error.message }
+  if (restricoesRes.error) return { ok: false, error: restricoesRes.error.message }
 
   type AlunoRow     = PdvSnapshotAluno
   type CarteiraRow  = PdvSnapshotCarteira
-  type ProdutoRow   = PdvSnapshotProduto & { disponivel_presencial: boolean }
+  type ProdutoRow   = PdvSnapshotProduto
   type RestricaoRow = PdvSnapshotRestricao & { alunos?: unknown }
 
   const alunos: PdvSnapshotAluno[] = ((alunosRes.data ?? []) as AlunoRow[]).map((a) => ({
