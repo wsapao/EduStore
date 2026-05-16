@@ -137,6 +137,40 @@ describe('createOnlineStatusController', () => {
     ctrl.stop()
   })
 
+  it('heartbeat: não sobrepõe probes — se anterior ainda roda, pula o tick', async () => {
+    vi.useFakeTimers()
+    // Probe nunca resolve por conta própria — controlamos manualmente
+    // pra simular um request lento (ex.: 10s) com intervalo curto (1s).
+    let resolveAtual: ((v: boolean) => void) = () => {}
+    const probe = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveAtual = resolve
+        }),
+    )
+
+    const ctrl = createOnlineStatusController({
+      heartbeatUrl: '/api/ping',
+      heartbeatIntervalMs: 1000,
+      probeFn: probe,
+    })
+
+    // Dispara primeiro tick (kick-off do probe).
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(probe).toHaveBeenCalledTimes(1)
+
+    // Avança vários ticks SEM resolver o probe atual — não pode acumular.
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(probe).toHaveBeenCalledTimes(1)
+
+    // Resolve o probe em andamento e libera o próximo tick.
+    resolveAtual(true)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(probe).toHaveBeenCalledTimes(2)
+
+    ctrl.stop()
+  })
+
   it('heartbeat: stop() para o interval', async () => {
     vi.useFakeTimers()
     const probe = vi.fn().mockResolvedValue(true)

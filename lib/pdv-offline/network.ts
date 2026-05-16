@@ -97,11 +97,21 @@ export function createOnlineStatusController(
 
   // Heartbeat opcional. Substitui o estado apenas quando o probe diverge
   // de navigator.onLine (ex.: WiFi conectado mas backend offline).
+  // Flag `probeInFlight` evita empilhar requests caso o probe demore mais
+  // que o intervalo — sem isso, respostas fora de ordem causam flapping
+  // do estado online (mesmo padrão de `startBackgroundSync` em sync.ts).
   let heartbeatHandle: ReturnType<typeof setInterval> | null = null
   if (opts.heartbeatUrl) {
     const url = opts.heartbeatUrl
+    let probeInFlight = false
     heartbeatHandle = setInterval(() => {
-      void probeFn(url).then((alive) => setOnline(alive))
+      if (probeInFlight) return
+      probeInFlight = true
+      void probeFn(url)
+        .then((alive) => setOnline(alive))
+        .finally(() => {
+          probeInFlight = false
+        })
     }, heartbeatIntervalMs)
   }
 

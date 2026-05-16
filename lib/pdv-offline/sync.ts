@@ -109,12 +109,11 @@ export async function pullSnapshot(): Promise<PullSnapshotResult> {
         await db.restricoes.clear()
 
         // bulkPut substitui por PK; bulkAdd lançaria erro em duplicatas.
+        // Arrays vazios são no-op seguro em Dexie, então não há guarda.
         await db.alunos.bulkPut(alunos)
         await db.carteiras.bulkPut(carteiras)
         await db.produtos.bulkPut(produtos)
-        if (restricoes.length > 0) {
-          await db.restricoes.bulkPut(restricoes)
-        }
+        await db.restricoes.bulkPut(restricoes)
 
         await db.meta.put({ chave: META_LAST_SYNC, valor: snapshot.server_time })
         await db.meta.put({ chave: META_ESCOLA_ID, valor: snapshot.escola_id })

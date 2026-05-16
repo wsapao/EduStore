@@ -37,10 +37,8 @@ const SNAPSHOT_OK = {
 }
 
 /**
- * Cada teste usa um nome de DB diferente para isolar dados entre cases
- * sem precisar deletar o IDB inteiro (mais rápido com fake-indexeddb).
- * Como `resetDbForTests()` zera o singleton, a próxima `getDb()` cria um
- * novo banco; aqui forçamos um nome novo via spy do construtor.
+ * Limpa o estado entre testes: reseta o singleton e zera todas as stores
+ * do banco em memória (fake-indexeddb).
  */
 async function clearDb() {
   resetDbForTests()
