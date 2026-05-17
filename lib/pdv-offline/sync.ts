@@ -46,7 +46,40 @@ const META_ESCOLA_ID = 'escola_id'
 
 // ── Pull principal ───────────────────────────────────────────
 
-export async function pullSnapshot(): Promise<PullSnapshotResult> {
+/**
+ * Lock módulo-level que dedupa callers concorrentes externos do
+ * `pullSnapshot` (bootstrap, botão "sincronizar", etc.). Enquanto um
+ * pull está em andamento, novas chamadas recebem a MESMA promise em
+ * vez de disparar um pull paralelo — evita race de UI, banda duplicada
+ * e carga desnecessária no servidor.
+ *
+ * O `startBackgroundSync` mantém um `inFlight` local adicional como
+ * defesa em profundidade contra ticks concorrentes do mesmo loop.
+ */
+let _activePull: Promise<PullSnapshotResult> | null = null
+
+// Sem `async` na assinatura de propósito: queremos retornar EXATAMENTE
+// a mesma referência de promise pros callers concorrentes (um wrapper
+// async re-envelopa o retorno e quebra a identidade de referência, o
+// que confunde quem faz `Promise.all([pullSnapshot(), pullSnapshot()])`
+// esperando dedup).
+export function pullSnapshot(): Promise<PullSnapshotResult> {
+  if (_activePull) return _activePull
+  _activePull = doPullSnapshot().finally(() => {
+    _activePull = null
+  })
+  return _activePull
+}
+
+/**
+ * Reseta o lock de pulls ativos. APENAS para uso em testes — limpa
+ * estado módulo-level entre casos pra evitar interferência.
+ */
+export function resetPullLockForTests(): void {
+  _activePull = null
+}
+
+async function doPullSnapshot(): Promise<PullSnapshotResult> {
   let snapshot
   try {
     snapshot = await getPdvSnapshotAction()

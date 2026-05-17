@@ -2,24 +2,15 @@
 
 import { useEffect, useState, useTransition, useRef } from 'react'
 import { buscarAlunoCantinaAction, confirmarCompraCantinaAction } from '@/app/actions/cantina'
-import { buscarAlunoLocal, contarAlunosLocais } from '@/lib/pdv-offline/busca'
+import { buscarAlunoLocal, contarAlunosLocais, type AlunoBuscaResultado } from '@/lib/pdv-offline/busca'
 import { useOnlineStatus } from '@/lib/pdv-offline/network'
 import type { CantinaProduto } from '@/types/database'
 
-interface AlunoInfo {
-  id: string
-  nome: string
-  serie: string
-  carteira: {
-    id: string
-    saldo: number
-    limite_diario: number | null
-    ativo: boolean
-    bloqueio_motivo: string | null
-  }
-  gastoHoje: number
-  restricoes: { produto_id: string | null; categoria: string | null }[]
-}
+// `AlunoInfo` é estruturalmente idêntico a `AlunoBuscaResultado` (mesmos
+// campos), então reusamos o tipo direto pra evitar casts no path local.
+// O retorno da action online (`buscarAlunoCantinaAction`) tem shape
+// ligeiramente diferente e ainda exige cast — só no path online.
+type AlunoInfo = AlunoBuscaResultado
 
 interface ItemCarrinho {
   produto: CantinaProduto
@@ -69,8 +60,7 @@ export function PdvClient({ produtos, operadorId }: Props) {
       if (!snapshotVazio) {
         // Path offline-first: IDB local já tem dados.
         const localResults = await buscarAlunoLocal(q)
-        // Shape de AlunoBuscaResultado é compatível com AlunoInfo (mesmos campos).
-        setResultados(localResults as unknown as AlunoInfo[])
+        setResultados(localResults)
         setUsandoSnapshot(true)
       } else if (online) {
         // Primeira sessão (IDB vazia) e com internet — usa action online.

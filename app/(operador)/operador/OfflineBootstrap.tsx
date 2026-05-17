@@ -19,6 +19,23 @@ import { registerPdvServiceWorker } from '@/lib/pdv-offline/sw-register'
 
 type EstadoBootstrap = 'verificando' | 'baixando' | 'pronto' | 'erro'
 
+// Tempo máximo que o overlay de bootstrap fica esperando o pull inicial.
+// Sem timeout, uma rede pendurada (ex.: captive portal) deixava o operador
+// preso na tela "Sincronizando…" sem botão de retry.
+const BOOTSTRAP_TIMEOUT_MS = 30_000
+
+async function pullComTimeout() {
+  return Promise.race([
+    pullSnapshot(),
+    new Promise<{ ok: false; error: string }>((resolve) =>
+      setTimeout(
+        () => resolve({ ok: false, error: 'Tempo esgotado (30s). Verifique sua conexão.' }),
+        BOOTSTRAP_TIMEOUT_MS,
+      ),
+    ),
+  ])
+}
+
 export function OfflineBootstrap() {
   const [estado, setEstado] = useState<EstadoBootstrap>('verificando')
   const [mensagem, setMensagem] = useState('Verificando dados locais…')
@@ -39,7 +56,7 @@ export function OfflineBootstrap() {
       if (count === 0) {
         setEstado('baixando')
         setMensagem('Sincronizando dados para uso offline (pode levar alguns segundos)…')
-        const res = await pullSnapshot()
+        const res = await pullComTimeout()
         if (cancelled) return
         if (!res.ok) {
           setEstado('erro')
@@ -57,7 +74,10 @@ export function OfflineBootstrap() {
     return () => { cancelled = true; stop?.() }
   }, [])
 
-  if (estado === 'pronto') return null
+  // 'verificando' é tipicamente instantâneo (count na IDB local); renderizar
+  // overlay nele causaria flash visual. Só mostramos overlay quando há
+  // trabalho real ('baixando') ou quando algo deu errado ('erro').
+  if (estado === 'pronto' || estado === 'verificando') return null
 
   return (
     <div style={{

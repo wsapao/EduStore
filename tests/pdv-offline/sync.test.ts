@@ -12,6 +12,7 @@ import {
   startBackgroundSync,
   getLastSyncAt,
   getCachedEscolaId,
+  resetPullLockForTests,
 } from '@/lib/pdv-offline/sync'
 
 // ── Fixtures ─────────────────────────────────────────────────
@@ -41,6 +42,7 @@ const SNAPSHOT_OK = {
  * do banco em memória (fake-indexeddb).
  */
 async function clearDb() {
+  resetPullLockForTests()
   resetDbForTests()
   const db = getDb()
   await db.alunos.clear()
@@ -128,6 +130,35 @@ describe('pullSnapshot', () => {
     expect(await db.alunos.count()).toBe(2)
     expect(await db.carteiras.count()).toBe(2)
     expect(await getLastSyncAt()).toBe(lastSyncAntes)
+  })
+
+  it('dedupa chamadas concorrentes: 2 callers compartilham a mesma promise', async () => {
+    // Mock manual que segura a resolução pra garantir overlap das chamadas.
+    let resolveAtual: ((v: unknown) => void) = () => {}
+    ;(getPdvSnapshotAction as any).mockImplementation(
+      () => new Promise((resolve) => { resolveAtual = (v) => resolve(v as never) }),
+    )
+
+    // Dispara 2 callers em paralelo enquanto o pull está pendente.
+    const p1 = pullSnapshot()
+    const p2 = pullSnapshot()
+
+    // A action só deve ter sido chamada UMA vez — o segundo caller
+    // reutilizou a promise em andamento.
+    expect((getPdvSnapshotAction as any).mock.calls.length).toBe(1)
+    // E ambas as promises devem ser literalmente a MESMA referência.
+    expect(p1).toBe(p2)
+
+    // Resolve e ambos veem o mesmo resultado.
+    resolveAtual(SNAPSHOT_OK)
+    const [r1, r2] = await Promise.all([p1, p2])
+    expect(r1.ok).toBe(true)
+    expect(r2.ok).toBe(true)
+
+    // Depois que o lock libera, uma nova chamada dispara nova ação.
+    ;(getPdvSnapshotAction as any).mockResolvedValue(SNAPSHOT_OK)
+    await pullSnapshot()
+    expect((getPdvSnapshotAction as any).mock.calls.length).toBe(2)
   })
 
   it('em erro inesperado (throw), retorna ok:false sem corromper IDB', async () => {
