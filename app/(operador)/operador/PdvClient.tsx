@@ -1,23 +1,16 @@
 'use client'
 
-import { useState, useTransition, useRef } from 'react'
+import { useEffect, useState, useTransition, useRef } from 'react'
 import { buscarAlunoCantinaAction, confirmarCompraCantinaAction } from '@/app/actions/cantina'
+import { buscarAlunoLocal, contarAlunosLocais, type AlunoBuscaResultado } from '@/lib/pdv-offline/busca'
+import { useOnlineStatus } from '@/lib/pdv-offline/network'
 import type { CantinaProduto } from '@/types/database'
 
-interface AlunoInfo {
-  id: string
-  nome: string
-  serie: string
-  carteira: {
-    id: string
-    saldo: number
-    limite_diario: number | null
-    ativo: boolean
-    bloqueio_motivo: string | null
-  }
-  gastoHoje: number
-  restricoes: { produto_id: string | null; categoria: string | null }[]
-}
+// `AlunoInfo` é estruturalmente idêntico a `AlunoBuscaResultado` (mesmos
+// campos), então reusamos o tipo direto pra evitar casts no path local.
+// O retorno da action online (`buscarAlunoCantinaAction`) tem shape
+// ligeiramente diferente e ainda exige cast — só no path online.
+type AlunoInfo = AlunoBuscaResultado
 
 interface ItemCarrinho {
   produto: CantinaProduto
@@ -47,15 +40,38 @@ export function PdvClient({ produtos, operadorId }: Props) {
   const [sucesso, setSucesso] = useState<{ alunoNome: string; total: number; hora: string; itens: ItemCarrinho[] } | null>(null)
   const buscaRef = useRef<HTMLInputElement>(null)
 
+  const { online } = useOnlineStatus()
+  const [usandoSnapshot, setUsandoSnapshot] = useState(false)
+  const [snapshotVazio, setSnapshotVazio] = useState(false)
+
+  // Verifica se há snapshot local. Re-checa quando a tela volta a ficar
+  // online (o bootstrap pode ter populado o IDB nesse meio tempo).
+  useEffect(() => {
+    void contarAlunosLocais().then((n) => setSnapshotVazio(n === 0))
+  }, [online])
+
   const total = carrinho.reduce((s, i) => s + i.produto.preco * i.quantidade, 0)
 
   function handleBusca(q: string) {
     setBusca(q)
+    setErro(null)
     if (q.trim().length < 2) { setResultados([]); return }
     startTransition(async () => {
-      const res = await buscarAlunoCantinaAction(q)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (res.data) setResultados(res.data as any as AlunoInfo[])
+      if (!snapshotVazio) {
+        // Path offline-first: IDB local já tem dados.
+        const localResults = await buscarAlunoLocal(q)
+        setResultados(localResults)
+        setUsandoSnapshot(true)
+      } else if (online) {
+        // Primeira sessão (IDB vazia) e com internet — usa action online.
+        const res = await buscarAlunoCantinaAction(q)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (res.data) setResultados(res.data as any as AlunoInfo[])
+        setUsandoSnapshot(false)
+      } else {
+        setErro('Sem snapshot local e sem internet. Aguarde conexão.')
+        setResultados([])
+      }
     })
   }
 
@@ -92,6 +108,12 @@ export function PdvClient({ produtos, operadorId }: Props) {
   function handleConfirmar() {
     if (!alunoSelecionado || carrinho.length === 0) return
     setErro(null)
+
+    // Fase 1: compra exige internet. Sem rede, bloqueia logo.
+    if (!online) {
+      setErro('Compra precisa de internet (Fase 1). Conecte para continuar.')
+      return
+    }
 
     // Validações client-side
     if (!alunoSelecionado.carteira.ativo) {
@@ -179,7 +201,29 @@ export function PdvClient({ produtos, operadorId }: Props) {
     : null
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: 18, alignItems: 'start' }}>
+    <div>
+
+      {/* Banner de status offline (Fase 1: só busca disponível) */}
+      {!online && (
+        <div style={{
+          marginBottom: 14,
+          padding: '10px 14px',
+          borderRadius: 10,
+          background: '#fef2f2',
+          border: '1.5px solid #fecaca',
+          color: '#991b1b',
+          fontSize: 13,
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <span>🔌</span>
+          <span>Offline — apenas busca disponível. Conecte para finalizar compras.</span>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: 18, alignItems: 'start' }}>
 
       {/* Coluna esquerda — identificação do aluno */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -208,6 +252,15 @@ export function PdvClient({ produtos, operadorId }: Props) {
                   fontSize: 14, outline: 'none',
                 }}
               />
+              {usandoSnapshot && busca.trim().length >= 2 && (
+                <div style={{
+                  fontSize: 11, color: '#64748b', marginTop: 4,
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}>
+                  <span>🔌</span>
+                  <span>busca offline</span>
+                </div>
+              )}
               {resultados.length > 0 && (
                 <div style={{
                   position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 50,
@@ -398,17 +451,19 @@ export function PdvClient({ produtos, operadorId }: Props) {
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={handleConfirmar}
-              disabled={pending || !alunoSelecionado || carrinho.length === 0}
+              disabled={pending || !alunoSelecionado || carrinho.length === 0 || !online}
+              title={!online ? 'Sem internet' : undefined}
               style={{
                 flex: 1, padding: '14px',
                 borderRadius: 10, border: 'none',
-                background: (!alunoSelecionado || carrinho.length === 0) ? '#cbd5e1' : '#1e3a5f',
+                background: (!alunoSelecionado || carrinho.length === 0 || !online) ? '#cbd5e1' : '#1e3a5f',
                 color: '#fff', fontSize: 14, fontWeight: 800,
-                cursor: (!alunoSelecionado || carrinho.length === 0) ? 'not-allowed' : 'pointer',
+                cursor: (!alunoSelecionado || carrinho.length === 0 || !online) ? 'not-allowed' : 'pointer',
+                opacity: !online ? 0.5 : 1,
                 transition: 'all .2s',
               }}
             >
-              {pending ? 'Processando…' : `✅ Confirmar — ${fmtMoeda(total)}`}
+              {pending ? 'Processando…' : !online ? '🔌 Sem internet' : `✅ Confirmar — ${fmtMoeda(total)}`}
             </button>
             {carrinho.length > 0 && (
               <button onClick={() => setCarrinho([])} style={{
@@ -427,6 +482,7 @@ export function PdvClient({ produtos, operadorId }: Props) {
           .pdv-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
+      </div>
     </div>
   )
 }

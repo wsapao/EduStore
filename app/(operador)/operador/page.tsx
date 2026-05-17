@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { PdvClient } from './PdvClient'
+import { OfflineBootstrap } from './OfflineBootstrap'
+import { SyncStatusBadge } from './SyncStatusBadge'
 
 export default async function OperadorPdvPage() {
   const supabase = await createClient()
@@ -33,9 +35,13 @@ export default async function OperadorPdvPage() {
     .order('nome', { ascending: true })
 
   return (
-    <PdvClient
-      produtos={produtos ?? []}
-      operadorId={user.id}
-    />
+    <>
+      <OfflineBootstrap />
+      <SyncStatusBadge />
+      <PdvClient
+        produtos={produtos ?? []}
+        operadorId={user.id}
+      />
+    </>
   )
 }
