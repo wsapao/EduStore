@@ -17,6 +17,14 @@
  * no `activate`. Combinado com `skipWaiting` + `clientsClaim`, garante que
  * cliente novo entra em ação assim que o usuário aceitar a notificação de
  * update (ver `lib/pdv-offline/sw-register.ts`).
+ *
+ * ── RISCO CONHECIDO — PII em HTML cacheado ──────────────────────
+ * O HTML do `/operador` inclui `user.id` do operador autenticado embutido
+ * no shell (server component). Em deploys single-operator-per-machine
+ * (configuração típica de PDV de balcão), isso é aceitável: o dispositivo
+ * é dedicado àquele operador. Se mais de um operador usar o mesmo
+ * dispositivo offline no futuro, considerar limpar o cache no logout
+ * (`caches.delete(SHELL_CACHE)`) ou usar header `Vary` por usuário.
  */
 
 const CACHE_VERSION = 'pdv-v1'
@@ -38,6 +46,13 @@ const PRECACHE_URLS = [
 
 // TTL pra cache de imagens (7 dias).
 const IMAGE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+
+// Timeout do fetch no NetworkFirst. Sem isso, uma conexão pendurada
+// (slow loris, DNS travado) deixa o usuário esperando até o browser
+// desistir — pior UX que offline real. 3s é o sweet spot: longo o
+// suficiente pra rede ruim funcionar, curto o bastante pra cair no
+// cache rapidamente quando algo está errado.
+const NETWORK_TIMEOUT_MS = 3000
 
 // ── Install ──────────────────────────────────────────────────
 
@@ -106,6 +121,15 @@ self.addEventListener('fetch', (event) => {
 
   // Allow-list de paths que o SW pode tocar. Qualquer coisa fora dessa lista
   // (ex.: `/loja`, `/admin`, `/checkout`, `/login`) passa direto pra rede.
+  //
+  // Blast-radius intencional de `/_next/*`: chunks do Next são compartilhados
+  // entre TODAS as seções do app (loja, admin, checkout, operador) — não há
+  // como discriminar "chunk-de-operador" de "chunk-de-loja" sem parser de
+  // bundle. Cachear todos é seguro porque:
+  //   1. URLs do Next incluem hash de conteúdo → imutáveis por design.
+  //   2. SWR revalida em background → bundle novo entra no cache na próxima
+  //      visita, sem precisar invalidar manualmente.
+  //   3. Não inclui HTML de outras seções, só JS/CSS sem PII.
   const path = url.pathname
   const isAllowed =
     path.startsWith('/operador') ||
@@ -158,7 +182,15 @@ function isImageRequest(url, req) {
 async function networkFirstWithFallback(req, cacheName) {
   const cache = await caches.open(cacheName)
   try {
-    const res = await fetch(req)
+    // Race com timeout: se rede demorar mais que NETWORK_TIMEOUT_MS, cai
+    // direto no cache em vez de esperar o browser desistir (que pode levar
+    // dezenas de segundos). Conexão pendurada não pode degradar UX.
+    const res = await Promise.race([
+      fetch(req),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('network-timeout')), NETWORK_TIMEOUT_MS),
+      ),
+    ])
     if (res && res.ok) {
       // Atualiza cache em background — clonar pra não consumir o body.
       cache.put(req, res.clone()).catch(() => {})
@@ -212,9 +244,13 @@ async function cacheFirstWithTtl(req, cacheName, maxAgeMs) {
 
 function isExpired(response, maxAgeMs) {
   const dateHeader = response.headers.get('sw-cached-at') || response.headers.get('date')
-  if (!dateHeader) return false
+  // Header ausente = trata como expirado pra forçar revalidação (mais seguro).
+  // Caso edge: resposta cacheada por versão antiga do SW antes do header
+  // existir — sem essa defesa, viraria imortal no cache.
+  if (!dateHeader) return true
   const cachedAt = Date.parse(dateHeader)
-  if (Number.isNaN(cachedAt)) return false
+  // Data inválida = mesma lógica: revalida em vez de servir possivelmente stale.
+  if (Number.isNaN(cachedAt)) return true
   return Date.now() - cachedAt > maxAgeMs
 }
 

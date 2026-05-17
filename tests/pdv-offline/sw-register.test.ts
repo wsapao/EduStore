@@ -193,6 +193,28 @@ describe('registerPdvServiceWorker', () => {
     expect(onUpdate).toHaveBeenCalledWith(reg)
   })
 
+  it('NÃO chama onUpdate quando updatefound dispara mas installing é null (defesa)', async () => {
+    const reg = makeFakeRegistration()
+    const onUpdate = vi.fn()
+    vi.stubGlobal('window', {})
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(reg),
+        ready: Promise.resolve(reg),
+        controller: {},
+      },
+    })
+
+    await registerPdvServiceWorker({ onUpdate })
+
+    // Edge case: evento updatefound dispara mas registration.installing é null
+    // (race entre o evento e a transição de estado). Helper deve no-op em vez
+    // de lançar TypeError ao tentar addEventListener em null.
+    reg.installing = null
+    expect(() => reg.triggerUpdateFound()).not.toThrow()
+    expect(onUpdate).not.toHaveBeenCalled()
+  })
+
   it('NÃO chama onUpdate na primeira instalação (sem controller anterior)', async () => {
     const reg = makeFakeRegistration()
     const onUpdate = vi.fn()
