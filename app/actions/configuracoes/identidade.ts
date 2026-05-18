@@ -43,7 +43,11 @@ export async function atualizarIdentidadeAction(formData: FormData) {
     payload.cor_primaria = cor_primaria_raw
   }
 
-  const { error } = await supabase.from('escolas').update(payload).eq('id', escolaId)
+  const { data: updated, error } = await supabase
+    .from('escolas')
+    .update(payload)
+    .eq('id', escolaId)
+    .select('id')
   if (error) {
     console.error('[atualizarIdentidadeAction] supabase update failed', {
       escolaId,
@@ -53,6 +57,10 @@ export async function atualizarIdentidadeAction(formData: FormData) {
       hint: error.hint,
     })
     return { error: 'Erro ao salvar identidade.' }
+  }
+  if (!updated || updated.length === 0) {
+    console.error('[atualizarIdentidadeAction] update affected zero rows', { escolaId })
+    return { error: 'Não foi possível salvar (sem permissão no banco).' }
   }
 
   await auditLog({ modulo: 'identidade', acao: 'atualizou_identidade' })
@@ -94,7 +102,7 @@ export async function atualizarEnderecoAction(formData: FormData) {
     cep = digits
   }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('escolas')
     .update({
       endereco_logradouro: logradouro,
@@ -105,6 +113,7 @@ export async function atualizarEnderecoAction(formData: FormData) {
       endereco_cep: cep,
     })
     .eq('id', escolaId)
+    .select('id')
 
   if (error) {
     console.error('[atualizarEnderecoAction] supabase update failed', {
@@ -115,6 +124,10 @@ export async function atualizarEnderecoAction(formData: FormData) {
       hint: error.hint,
     })
     return { error: 'Erro ao salvar endereço.' }
+  }
+  if (!updated || updated.length === 0) {
+    console.error('[atualizarEnderecoAction] update affected zero rows', { escolaId })
+    return { error: 'Não foi possível salvar (sem permissão no banco).' }
   }
 
   await auditLog({ modulo: 'identidade', acao: 'atualizou_endereco' })
@@ -186,10 +199,11 @@ export async function uploadAssetEscolaAction(kind: AssetKind, file: File) {
   const { data: pub } = supabase.storage.from('escola-assets').getPublicUrl(upData.path)
   const url = pub.publicUrl
 
-  const { error: updErr } = await supabase
+  const { data: updRows, error: updErr } = await supabase
     .from('escolas')
     .update({ [COLUNAS[kind]]: url })
     .eq('id', escolaId)
+    .select('id')
 
   if (updErr) {
     console.error('[uploadAssetEscolaAction] supabase update failed', {
@@ -202,6 +216,10 @@ export async function uploadAssetEscolaAction(kind: AssetKind, file: File) {
       hint: updErr.hint,
     })
     return { error: 'Upload OK, mas falhou ao atualizar a escola.' }
+  }
+  if (!updRows || updRows.length === 0) {
+    console.error('[uploadAssetEscolaAction] update affected zero rows', { escolaId, kind, path: upData.path })
+    return { error: 'Upload OK, mas sem permissão pra atualizar a escola.' }
   }
 
   await auditLog({ modulo: 'identidade', acao: 'upload_asset', metadata: { kind } })
