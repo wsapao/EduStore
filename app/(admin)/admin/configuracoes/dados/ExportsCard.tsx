@@ -193,7 +193,7 @@ export function ExportsCard() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <label style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{label}</label>
+      <label style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 700 }}>{label}</label>
       {children}
     </div>
   )
@@ -201,18 +201,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(15,23,42,.6)',
-  border: '1px solid rgba(255,255,255,.08)',
+  border: '1px solid var(--border)',
   borderRadius: 16,
   padding: 24,
 }
 const titleStyle: React.CSSProperties = {
   fontSize: 18,
   fontWeight: 800,
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   margin: 0,
 }
 const subStyle: React.CSSProperties = {
-  color: '#94a3b8',
+  color: 'var(--text-3)',
   fontSize: 13,
   marginTop: 4,
   marginBottom: 0,
@@ -241,14 +241,14 @@ const checkRow: React.CSSProperties = {
   alignItems: 'center',
   gap: 8,
   cursor: 'pointer',
-  color: '#cbd5e1',
+  color: 'var(--text-2)',
 }
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,.3)',
-  border: '1px solid rgba(255,255,255,.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 8,
   padding: '8px 10px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 13,
   fontFamily: 'inherit',
 }

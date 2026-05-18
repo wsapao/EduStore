@@ -10,7 +10,7 @@ const cellHeader: React.CSSProperties = {
   fontWeight: 800,
   textTransform: 'uppercase',
   letterSpacing: '.05em',
-  color: '#94a3b8',
+  color: 'var(--text-3)',
   borderBottom: '1px solid rgba(255,255,255,.08)',
 }
 
@@ -49,7 +49,7 @@ export function AuditoriaTable({
 
   if (loading) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+      <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
         Carregando…
       </div>
     )
@@ -61,11 +61,11 @@ export function AuditoriaTable({
         style={{
           padding: 32,
           textAlign: 'center',
-          color: '#94a3b8',
+          color: 'var(--text-3)',
           fontSize: 13,
           border: '1px solid rgba(255,255,255,.06)',
           borderRadius: 12,
-          background: 'rgba(0,0,0,.2)',
+          background: 'var(--surface-2)',
         }}
       >
         Nenhum evento de auditoria encontrado para os filtros atuais.
@@ -76,7 +76,7 @@ export function AuditoriaTable({
   return (
     <div
       style={{
-        background: 'rgba(0,0,0,.2)',
+        background: 'var(--surface-2)',
         border: '1px solid rgba(255,255,255,.06)',
         borderRadius: 12,
         overflow: 'hidden',
@@ -103,7 +103,7 @@ export function AuditoriaTable({
                   style={{ cursor: hasMetadata ? 'pointer' : 'default' }}
                 >
                   <td style={cell}>{formatDate(e.created_at)}</td>
-                  <td style={cell}>{e.user_email ?? <span style={{ color: '#64748b' }}>—</span>}</td>
+                  <td style={cell}>{e.user_email ?? <span style={{ color: 'var(--text-3)' }}>—</span>}</td>
                   <td style={cell}>
                     <span
                       style={{
@@ -121,14 +121,14 @@ export function AuditoriaTable({
                   </td>
                   <td style={{ ...cell, fontFamily: 'monospace', fontSize: 12 }}>{e.acao}</td>
                   <td style={cell}>
-                    <div>{e.descricao ?? <span style={{ color: '#64748b' }}>—</span>}</div>
+                    <div>{e.descricao ?? <span style={{ color: 'var(--text-3)' }}>—</span>}</div>
                     {e.ip && (
-                      <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
                         IP: {e.ip}
                       </div>
                     )}
                     {hasMetadata && !expanded && (
-                      <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
                         clique para ver metadata
                       </div>
                     )}
@@ -136,11 +136,11 @@ export function AuditoriaTable({
                 </tr>
                 {expanded && hasMetadata && (
                   <tr>
-                    <td colSpan={5} style={{ ...cell, background: 'rgba(0,0,0,.3)' }}>
+                    <td colSpan={5} style={{ ...cell, background: 'var(--surface-2)' }}>
                       <pre
                         style={{
                           fontSize: 11,
-                          color: '#cbd5e1',
+                          color: 'var(--text-2)',
                           margin: 0,
                           whiteSpace: 'pre-wrap',
                           wordBreak: 'break-word',

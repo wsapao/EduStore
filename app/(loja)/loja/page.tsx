@@ -13,6 +13,11 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { getDefaultCategoryMeta } from '@/lib/categorias/defaults'
 import { ESCOLA_FALLBACK } from '@/lib/escola/getEscola'
 import {
+  buildLojaCategoryHref,
+  filterGroupedEntriesByCategory,
+  resolveSelectedCategoryKey,
+} from '@/lib/loja/browse'
+import {
   buildCategoriasHome,
   isLojaDisponivelAgora,
   normalizeLojaFuncionamento,
@@ -37,7 +42,7 @@ export default async function LojaPage({
 }: {
   searchParams: Promise<{ aluno?: string; categoria?: string; q?: string }>
 }) {
-  const { aluno: alunoId, q } = await searchParams
+  const { aluno: alunoId, categoria, q } = await searchParams
   const currentTimeMs = Date.now()
   const normalizedQuery = q?.trim().toLocaleLowerCase('pt-BR') ?? ''
 
@@ -160,6 +165,12 @@ export default async function LojaPage({
   const groupedEntries = visibleCategoryKeys
     .map((categoryKey) => [categoryKey, grouped[categoryKey] ?? []] as const)
     .filter(([, produtosCategoria]) => produtosCategoria.length > 0)
+
+  const selectedCategoryKey = resolveSelectedCategoryKey(categoria, visibleCategoryKeys)
+  const selectedCategoryMeta = selectedCategoryKey
+    ? getCategoryPresentation(selectedCategoryKey, categoriasRaw)
+    : null
+  const visibleGroupedEntries = filterGroupedEntriesByCategory(groupedEntries, selectedCategoryKey)
 
   const urgentes = sortedProdutos.filter((produto) => {
     if (!produto.prazo_compra || produto.esgotado) return false
@@ -294,13 +305,67 @@ export default async function LojaPage({
                 <StoreSearch initialQuery={normalizedQuery} resultCount={sortedProdutos.length} />
               </Suspense>
 
-              {!shouldShowFlatResults && sortedProdutos.length > 0 && (
+              {!shouldShowFlatResults && sortedProdutos.length > 0 && !selectedCategoryKey && (
                 <Suspense>
                   <CategoryFilter counts={counts} tabs={categoryTabs} />
                 </Suspense>
               )}
 
               <section style={{ padding: '14px 18px 0' }}>
+                {selectedCategoryMeta && selectedAluno && !shouldShowFlatResults && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      padding: '0 2px 12px',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div
+                        style={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: 12,
+                          background: 'var(--surface)',
+                          border: '1px solid var(--border)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 18,
+                        }}
+                      >
+                        {selectedCategoryMeta.icon}
+                      </div>
+                      <div style={{ display: 'grid', gap: 2 }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
+                          Categoria
+                        </span>
+                        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--text-1)' }}>
+                          {selectedCategoryMeta.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/loja?aluno=${selectedAluno.id}`}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: 'var(--accent)',
+                        background: 'var(--accent-soft)',
+                        padding: '6px 12px',
+                        borderRadius: 999,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      ← Voltar para todas
+                    </Link>
+                  </div>
+                )}
+
                 {sortedProdutos.length === 0 ? (
                   <EmptyState
                     icon="📭"
@@ -327,7 +392,7 @@ export default async function LojaPage({
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gap: 28 }}>
-                    {destaques.length > 0 && (
+                    {!selectedCategoryKey && destaques.length > 0 && (
                       <section style={{ display: 'grid', gap: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: 18 }}>⭐</span>
@@ -355,7 +420,7 @@ export default async function LojaPage({
                       </section>
                     )}
 
-                    {groupedEntries.map(([categoryKey, produtosCategoria]) => {
+                    {visibleGroupedEntries.map(([categoryKey, produtosCategoria]) => {
                       const meta = getCategoryPresentation(categoryKey, categoriasRaw)
 
                       return (
@@ -370,20 +435,22 @@ export default async function LojaPage({
                                 {produtosCategoria.length}
                               </span>
                             </div>
-                            <Link
-                              href={`/loja/categoria/${categoryKey}?aluno=${selectedAluno.id}`}
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: 'var(--accent)',
-                                background: 'var(--accent-soft)',
-                                padding: '5px 10px',
-                                borderRadius: 999,
-                                textDecoration: 'none',
-                              }}
-                            >
-                              Ver tudo
-                            </Link>
+                            {!selectedCategoryKey && (
+                              <Link
+                                href={buildLojaCategoryHref(categoryKey, selectedAluno.id)}
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  color: 'var(--accent)',
+                                  background: 'var(--accent-soft)',
+                                  padding: '5px 10px',
+                                  borderRadius: 999,
+                                  textDecoration: 'none',
+                                }}
+                              >
+                                Ver tudo
+                              </Link>
+                            )}
                           </div>
 
                           <div style={productListStyle}>

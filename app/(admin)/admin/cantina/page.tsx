@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAdminTone } from '@/lib/admin-ui-tones'
+import { summarizeCantinaMovementsMonth } from '@/lib/cantina/dashboard'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
@@ -17,6 +19,8 @@ function fmtData(iso: string) {
 const TIPO_ICON: Record<string, string> = {
   recarga: '💰', consumo: '🍽️', estorno: '↩️', ajuste_manual: '✏️',
 }
+
+const dangerTone = getAdminTone('danger')
 
 export default async function AdminCantinaPage() {
   try {
@@ -75,17 +79,16 @@ export default async function AdminCantinaPage() {
     }
 
     const saldoTotal = (carteiras ?? []).reduce((s, c) => s + (c.saldo ?? 0), 0)
-    const recargasMes = (movsDoMes ?? []).filter(m => m.tipo === 'recarga').reduce((s, m) => s + m.valor, 0)
-    const consumoMes = (movsDoMes ?? []).filter(m => m.tipo === 'consumo').reduce((s, m) => s + m.valor, 0)
+    const { recargasMes, consumoMes, estornosMes } = summarizeCantinaMovementsMonth(movsDoMes ?? [])
 
     const cardStyle = {
-      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+      background: 'var(--surface)', border: '1px solid var(--border)',
       borderRadius: 'var(--r-xl)', padding: '20px',
       boxShadow: 'var(--shadow-sm)', backdropFilter: 'blur(12px)',
     }
 
     const panelStyle = {
-      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+      background: 'var(--surface)', border: '1px solid var(--border)',
       borderRadius: 'var(--r-xl)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden',
       backdropFilter: 'blur(16px)',
     }
@@ -95,30 +98,30 @@ export default async function AdminCantinaPage() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 14 }}>
           <div>
-            <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', margin: 0, letterSpacing: '-.03em' }}>🍽️ Cantina</h1>
-            <p style={{ fontSize: 13, color: '#94a3b8', margin: '6px 0 0', fontWeight: 500 }}>
+            <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-1)', margin: 0, letterSpacing: '-.03em' }}>🍽️ Cantina</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '6px 0 0', fontWeight: 500 }}>
               Gestão de carteiras, produtos e movimentações
             </p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <Link href="/admin/cantina/produtos" style={{
               padding: '0 20px', height: 42, borderRadius: 12, display: 'inline-flex', alignItems: 'center',
-              background: '#f59e0b', color: '#fff', border: '1px solid #d97706',
+              background: 'linear-gradient(135deg, #f97316, #fb923c)', color: '#fff', border: '1px solid #ea580c',
               fontSize: 13, fontWeight: 800, textDecoration: 'none', transition: 'all .2s'
             }}>
               📦 Produtos
             </Link>
             <Link href="/admin/cantina/carteiras" style={{
               padding: '0 20px', height: 42, borderRadius: 12, display: 'inline-flex', alignItems: 'center',
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-              color: '#f8fafc', fontSize: 13, fontWeight: 800, textDecoration: 'none', transition: 'all .2s'
+              background: 'var(--surface-2)', border: '1px solid var(--border)',
+              color: 'var(--text-1)', fontSize: 13, fontWeight: 800, textDecoration: 'none', transition: 'all .2s'
             }}>
               👜 Carteiras
             </Link>
             <Link href="/admin/cantina/recargas" style={{
               padding: '0 20px', height: 42, borderRadius: 12, display: 'inline-flex', alignItems: 'center',
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-              color: '#f8fafc', fontSize: 13, fontWeight: 800, textDecoration: 'none', transition: 'all .2s'
+              background: 'var(--surface-2)', border: '1px solid var(--border)',
+              color: 'var(--text-1)', fontSize: 13, fontWeight: 800, textDecoration: 'none', transition: 'all .2s'
             }}>
               💰 Recargas
             </Link>
@@ -126,20 +129,31 @@ export default async function AdminCantinaPage() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }} className="cantina-stats">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 16, marginBottom: 24 }} className="cantina-stats">
           {[
             { label: 'Saldo em carteiras', value: fmtMoeda(saldoTotal), note: 'Disponível para consumo', icon: '💳' },
             { label: 'Recargas do mês', value: fmtMoeda(recargasMes), note: 'Entradas na carteira', icon: '💰' },
             { label: 'Consumo do mês', value: fmtMoeda(consumoMes), note: 'Compras realizadas', icon: '🍽️' },
+            {
+              label: 'Estornos do mês',
+              value: fmtMoeda(estornosMes),
+              note: 'Recargas revertidas no período',
+              icon: '↩️',
+              valueColor: dangerTone.text,
+              labelColor: '#991b1b',
+              noteColor: '#7f1d1d',
+              background: 'linear-gradient(180deg, #fff8f8 0%, #ffffff 100%)',
+              border: `1px solid ${dangerTone.border}`,
+            },
             { label: 'Pedidos online', value: String(pedidosOnlinePendentes?.length ?? 0), note: 'Aguardando retirada', icon: '📱' },
           ].map(stat => (
-            <div key={stat.label} style={cardStyle}>
+            <div key={stat.label} style={{ ...cardStyle, background: stat.background ?? cardStyle.background, border: stat.border ?? cardStyle.border }}>
               <div style={{ fontSize: 24, marginBottom: 10 }}>{stat.icon}</div>
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#94a3b8', marginBottom: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: stat.labelColor ?? 'var(--text-3)', marginBottom: 6 }}>
                 {stat.label}
               </div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: '#f59e0b', letterSpacing: '-.02em' }}>{stat.value}</div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6, fontWeight: 600 }}>{stat.note}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: stat.valueColor ?? '#f59e0b', letterSpacing: '-.02em' }}>{stat.value}</div>
+              <div style={{ fontSize: 12, color: stat.noteColor ?? 'var(--text-3)', marginTop: 6, fontWeight: 600 }}>{stat.note}</div>
             </div>
           ))}
         </div>
@@ -179,13 +193,13 @@ export default async function AdminCantinaPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }} className="cantina-grid">
           {/* Movimentações recentes */}
           <div style={panelStyle}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
-              <div style={{ fontSize: 15, fontWeight: 900, color: '#f8fafc' }}>Movimentações recentes</div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Últimas 10 operações</div>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
+              <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--text-1)' }}>Movimentações recentes</div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4, fontWeight: 500 }}>Últimas 10 operações</div>
             </div>
             <div>
               {(movsRecentes ?? []).length === 0 ? (
-                <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8', fontSize: 14, fontWeight: 600 }}>
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-3)', fontSize: 14, fontWeight: 600 }}>
                   Nenhuma movimentação ainda.
                 </div>
               ) : (movsRecentes ?? []).map((mov, i) => {
@@ -196,16 +210,16 @@ export default async function AdminCantinaPage() {
                   <div key={m.id} style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '14px 20px',
-                    borderBottom: i < (movsRecentes?.length ?? 0) - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    borderBottom: i < (movsRecentes?.length ?? 0) - 1 ? '1px solid var(--border)' : 'none',
                   }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
                       {TIPO_ICON[m.tipo] ?? '📋'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {m.carteira?.aluno?.nome ?? '—'}
                       </div>
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+                      <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
                         <span style={{ textTransform: 'capitalize' }}>{m.descricao ?? m.tipo}</span> · {fmtData(m.created_at)}
                       </div>
                     </div>
@@ -216,7 +230,7 @@ export default async function AdminCantinaPage() {
                 )
               })}
             </div>
-            <div style={{ padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', background: 'rgba(0,0,0,0.1)' }}>
+            <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', textAlign: 'center', background: 'var(--surface-2)' }}>
               <Link href="/admin/cantina/carteiras" style={{ fontSize: 13, fontWeight: 800, color: '#f59e0b', textDecoration: 'none' }}>
                 Ver extrato completo →
               </Link>
@@ -225,9 +239,9 @@ export default async function AdminCantinaPage() {
 
           {/* Produtos */}
           <div style={panelStyle}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
-              <div style={{ fontSize: 15, fontWeight: 900, color: '#f8fafc' }}>Cardápio</div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
+              <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--text-1)' }}>Cardápio</div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4, fontWeight: 500 }}>
                 {(produtos ?? []).filter(p => p.ativo).length} ativos de {(produtos ?? []).length} cadastrados
               </div>
             </div>
@@ -236,14 +250,14 @@ export default async function AdminCantinaPage() {
                 <div key={p.id} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '14px 20px',
-                  borderBottom: i < Math.min(8, (produtos?.length ?? 0)) - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                  borderBottom: i < Math.min(8, (produtos?.length ?? 0)) - 1 ? '1px solid var(--border)' : 'none',
                 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
                     {p.icone ?? '🍽️'}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc' }}>{p.nome}</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{p.categoria}</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-1)' }}>{p.nome}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{p.categoria}</div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 900, color: '#f59e0b' }}>{fmtMoeda(p.preco)}</div>
@@ -259,7 +273,7 @@ export default async function AdminCantinaPage() {
                 </div>
               ))}
             </div>
-            <div style={{ padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', background: 'rgba(0,0,0,0.1)' }}>
+            <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', textAlign: 'center', background: 'var(--surface-2)' }}>
               <Link href="/admin/cantina/produtos" style={{ fontSize: 13, fontWeight: 800, color: '#f59e0b', textDecoration: 'none' }}>
                 Gerenciar cardápio →
               </Link>
@@ -268,9 +282,17 @@ export default async function AdminCantinaPage() {
         </div>
 
         <style>{`
+          @media (max-width: 1280px) {
+            .cantina-stats { grid-template-columns: repeat(3,1fr) !important; }
+          }
+
           @media (max-width: 900px) {
             .cantina-grid { grid-template-columns: 1fr !important; }
             .cantina-stats { grid-template-columns: repeat(2,1fr) !important; }
+          }
+
+          @media (max-width: 560px) {
+            .cantina-stats { grid-template-columns: 1fr !important; }
           }
         `}</style>
       </div>

@@ -18,10 +18,10 @@ export default async function TermosConfigPage() {
   if (!escolaId) {
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 16 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 16 }}>
           Termos &amp; LGPD
         </h1>
-        <p style={{ color: '#94a3b8' }}>Sua conta não está vinculada a uma escola.</p>
+        <p style={{ color: 'var(--text-3)' }}>Sua conta não está vinculada a uma escola.</p>
       </div>
     )
   }
@@ -38,10 +38,10 @@ export default async function TermosConfigPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 8 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 8 }}>
         Termos &amp; LGPD
       </h1>
-      <p style={{ color: '#94a3b8', fontSize: 13, marginBottom: 24 }}>
+      <p style={{ color: 'var(--text-3)', fontSize: 13, marginBottom: 24 }}>
         Edite e versione os Termos de Uso e a Política de Privacidade da sua escola.
         Cada nova publicação cria uma versão imutável e fica visível em /termos e /privacidade imediatamente.
       </p>

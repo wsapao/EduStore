@@ -21,8 +21,8 @@ export function EmailsView({ templates }: { templates: TemplateEntry[] }) {
     <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20, alignItems: 'start' }}>
       <aside
         style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
           borderRadius: 14,
           padding: 8,
           position: 'sticky',
@@ -46,7 +46,7 @@ export function EmailsView({ templates }: { templates: TemplateEntry[] }) {
                 background: isActive ? 'rgba(99,102,241,0.18)' : 'transparent',
                 border: '1px solid ' + (isActive ? 'rgba(99,102,241,0.45)' : 'transparent'),
                 borderRadius: 10,
-                color: isActive ? '#fff' : '#cbd5e1',
+                color: isActive ? '#fff' : 'var(--text-2)',
                 fontSize: 13,
                 fontWeight: isActive ? 800 : 600,
                 cursor: 'pointer',

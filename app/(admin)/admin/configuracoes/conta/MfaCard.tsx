@@ -75,7 +75,7 @@ export function MfaCard({
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ width: 8, height: 8, borderRadius: 4, background: '#22c55e' }} />
-          <span style={{ fontSize: 14, color: '#cbd5e1' }}>MFA ativo</span>
+          <span style={{ fontSize: 14, color: 'var(--text-2)' }}>MFA ativo</span>
         </div>
         <button onClick={desativar} disabled={pending} style={btnDanger}>
           {pending ? 'Desativando…' : 'Desativar MFA'}
@@ -87,7 +87,7 @@ export function MfaCard({
   if (estado.kind === 'enrolling') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <p style={{ fontSize: 13, color: '#94a3b8' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-3)' }}>
           Escaneie o QR no seu app autenticador (Authy, 1Password, Google Authenticator…)
           e cole o código de 6 dígitos abaixo.
         </p>
@@ -97,7 +97,7 @@ export function MfaCard({
           style={{ background: '#fff', padding: 12, borderRadius: 10, width: 'fit-content' }}
         />
 
-        <code style={{ fontSize: 12, color: '#94a3b8', wordBreak: 'break-all' }}>
+        <code style={{ fontSize: 12, color: 'var(--text-3)', wordBreak: 'break-all' }}>
           Secret manual: {estado.secret}
         </code>
 
@@ -120,7 +120,7 @@ export function MfaCard({
 
   return (
     <div>
-      <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>
+      <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 12 }}>
         Adicione uma camada extra de segurança usando um app autenticador.
       </p>
       <button onClick={iniciar} disabled={pending} style={btnPrimary}>
@@ -134,11 +134,11 @@ export function MfaCard({
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.25)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   padding: '10px 12px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 18,
   outline: 'none',
   textAlign: 'center',

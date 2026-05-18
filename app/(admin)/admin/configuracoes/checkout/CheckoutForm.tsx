@@ -85,7 +85,7 @@ export function CheckoutForm({ config }: { config: EscolaConfiguracoes }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)' }}>{label}</span>
       {children}
     </label>
   )
@@ -95,17 +95,17 @@ function Toggle({ name, defaultChecked, label }: { name: string; defaultChecked?
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
       <input type="checkbox" name={name} defaultChecked={defaultChecked} style={checkboxStyle} />
-      <span style={{ fontSize: 13, color: '#cbd5e1' }}>{label}</span>
+      <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{label}</span>
     </label>
   )
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.25)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   padding: '10px 12px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 14,
   outline: 'none',
 }

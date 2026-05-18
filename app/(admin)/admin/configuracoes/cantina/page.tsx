@@ -15,10 +15,10 @@ export default async function CantinaConfigPage() {
   if (!escolaId) {
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 16 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 16 }}>
           Cantina
         </h1>
-        <p style={{ color: '#94a3b8' }}>Sua conta não está vinculada a uma escola.</p>
+        <p style={{ color: 'var(--text-3)' }}>Sua conta não está vinculada a uma escola.</p>
       </div>
     )
   }
@@ -32,7 +32,7 @@ export default async function CantinaConfigPage() {
   if (!config) {
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 16 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 16 }}>
           Cantina
         </h1>
         <p style={{ color: '#ef4444' }}>Configurações da escola não encontradas.</p>
@@ -42,7 +42,7 @@ export default async function CantinaConfigPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 24 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 24 }}>
         Cantina
       </h1>
 
@@ -58,12 +58,12 @@ export default async function CantinaConfigPage() {
 function Card({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section style={{
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      background: 'var(--surface-2)',
+      border: '1px solid var(--border)',
       borderRadius: 16,
       padding: 24,
     }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc', marginBottom: 16 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-1)', marginBottom: 16 }}>
         {titulo}
       </h2>
       {children}

@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+export type { AdminShellTheme, AdminShellThemeName } from '@/lib/admin-shell-theme'
+export { getAdminShellTheme, resolveAdminShellThemeName } from '@/lib/admin-shell-theme'
 import type { Escola } from '@/types/database'
 
 // Fallback para quando a escola não está configurada no banco

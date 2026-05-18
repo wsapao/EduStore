@@ -113,12 +113,12 @@ export function IntegracoesForm({
       {/* Asaas Webhook */}
       <Card title="Asaas Webhook">
         {!asaasStatus.ok && (
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0 }}>
             {asaasStatus.message}
           </p>
         )}
         {asaasStatus.ok && webhooks.length === 0 && (
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0 }}>
             Sem webhooks cadastrados na conta Asaas.
           </p>
         )}
@@ -133,14 +133,14 @@ export function IntegracoesForm({
                   justifyContent: 'space-between',
                   gap: 12,
                   padding: '10px 12px',
-                  background: 'rgba(0,0,0,0.2)',
+                  background: 'var(--surface-2)',
                   borderRadius: 10,
                   border: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{w.name || '(sem nome)'}</span>
-                  <span style={{ fontSize: 11, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{w.name || '(sem nome)'}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {w.url}
                   </span>
                 </div>
@@ -220,13 +220,13 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   return (
     <section
       style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
         borderRadius: 16,
         padding: 24,
       }}
     >
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc', marginTop: 0, marginBottom: 14 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-1)', marginTop: 0, marginBottom: 14 }}>
         {title}
       </h2>
       {children}
@@ -237,7 +237,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)' }}>{label}</span>
       {children}
     </label>
   )
@@ -247,17 +247,17 @@ function Toggle({ name, defaultChecked, label }: { name: string; defaultChecked?
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
       <input type="checkbox" name={name} defaultChecked={defaultChecked} style={checkboxStyle} />
-      <span style={{ fontSize: 13, color: '#cbd5e1' }}>{label}</span>
+      <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{label}</span>
     </label>
   )
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.25)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   padding: '10px 12px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 14,
   outline: 'none',
 }
@@ -285,7 +285,7 @@ const btnSecondary: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.12)',
   borderRadius: 10,
   padding: '8px 14px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 12,
   fontWeight: 700,
   cursor: 'pointer',

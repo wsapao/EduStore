@@ -57,7 +57,7 @@ function Uploader({
           width: 120,
           height: 80,
           borderRadius: 10,
-          background: 'rgba(0,0,0,0.25)',
+          background: 'var(--surface-2)',
           border: '1px dashed rgba(255,255,255,0.1)',
           display: 'flex',
           alignItems: 'center',
@@ -69,13 +69,13 @@ function Uploader({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt={label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
         ) : (
-          <span style={{ fontSize: 11, color: '#64748b' }}>(vazio)</span>
+          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>(vazio)</span>
         )}
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{label}</span>
-        <span style={{ fontSize: 12, color: '#94a3b8' }}>{descricao}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{label}</span>
+        <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{descricao}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
           <input ref={inputRef} type="file" accept="image/*" onChange={onPick} style={{ display: 'none' }} />
           <button onClick={escolher} disabled={pending} style={btnSecondary} type="button">
@@ -94,10 +94,10 @@ function Uploader({
 
 const btnSecondary: React.CSSProperties = {
   background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   padding: '8px 14px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 12,
   fontWeight: 700,
   cursor: 'pointer',

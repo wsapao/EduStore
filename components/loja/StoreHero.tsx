@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useCart } from './CartProvider'
 import type { Escola, Responsavel, Aluno } from '@/types/database'
 import { ChildSelector } from './ChildSelector'
+import { XkolaStoreBrand } from './XkolaStoreBrand'
 
 interface StoreHeroProps {
   responsavel: Responsavel
@@ -49,25 +50,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 16px 0', height: 52, position: 'relative', zIndex: 2
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,.1)',
-            border: '1px solid rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.9)', letterSpacing: '-.01em', lineHeight: 1.2 }}>
-              {escola.nome}
-            </div>
-            <div style={{ fontSize: 9, fontWeight: 500, color: 'rgba(255,255,255,.4)' }}>
-              Loja da Escola
-            </div>
-          </div>
-        </div>
+        <XkolaStoreBrand escolaNome={escola.nome} theme="dark" compact />
         
         <button 
           onClick={open}

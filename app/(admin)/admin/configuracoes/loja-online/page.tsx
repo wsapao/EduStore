@@ -21,10 +21,10 @@ export default async function LojaOnlineConfigPage() {
   if (!escolaId) {
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 16 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 16 }}>
           Loja Online
         </h1>
-        <p style={{ color: '#94a3b8' }}>Sua conta não está vinculada a uma escola.</p>
+        <p style={{ color: 'var(--text-3)' }}>Sua conta não está vinculada a uma escola.</p>
       </div>
     )
   }
@@ -52,7 +52,7 @@ export default async function LojaOnlineConfigPage() {
   if (!config) {
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 16 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 16 }}>
           Loja Online
         </h1>
         <p style={{ color: '#ef4444' }}>Configurações da escola não encontradas.</p>
@@ -67,7 +67,7 @@ export default async function LojaOnlineConfigPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 24 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 24 }}>
         Loja Online
       </h1>
 
@@ -86,8 +86,8 @@ export default async function LojaOnlineConfigPage() {
 }
 
 const cardStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 16,
   padding: 24,
 }
@@ -95,6 +95,6 @@ const cardStyle: React.CSSProperties = {
 const titleStyle: React.CSSProperties = {
   fontSize: 16,
   fontWeight: 800,
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   marginBottom: 16,
 }

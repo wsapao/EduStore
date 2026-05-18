@@ -26,7 +26,7 @@ export default async function PapeisListPage() {
     return (
       <div>
         <Header />
-        <p style={{ color: '#94a3b8' }}>Sua conta não está vinculada a uma escola.</p>
+        <p style={{ color: 'var(--text-3)' }}>Sua conta não está vinculada a uma escola.</p>
       </div>
     )
   }
@@ -90,10 +90,10 @@ export default async function PapeisListPage() {
 function Header() {
   return (
     <div style={{ marginBottom: 16 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 6 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 6 }}>
         Papéis & Permissões
       </h1>
-      <p style={{ color: '#94a3b8', fontSize: 13 }}>
+      <p style={{ color: 'var(--text-3)', fontSize: 13 }}>
         Defina quem acessa o quê. 6 presets de fábrica + papéis customizados.
       </p>
     </div>

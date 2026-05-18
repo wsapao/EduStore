@@ -16,10 +16,10 @@ export default async function ConfiguracoesIndexPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, fontWeight: 900, color: '#f8fafc', marginBottom: 8 }}>
+      <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-1)', marginBottom: 8 }}>
         Configurações
       </h1>
-      <p style={{ color: '#94a3b8', marginBottom: 32 }}>
+      <p style={{ color: 'var(--text-3)', marginBottom: 32 }}>
         Personalize sua loja, gerencie acessos e ajuste a operação.
       </p>
 
@@ -30,16 +30,16 @@ export default async function ConfiguracoesIndexPage() {
       }}>
         {visiveis.map(c => (
           <Link key={c.href} href={c.href} style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
             borderRadius: 16,
             padding: 20,
             textDecoration: 'none',
-            color: '#f8fafc',
+            color: 'var(--text-1)',
             transition: 'all .2s',
           }}>
             <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 6 }}>{c.titulo}</div>
-            <div style={{ fontSize: 13, color: '#94a3b8' }}>{c.descricao}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{c.descricao}</div>
           </Link>
         ))}
       </div>

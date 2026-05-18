@@ -17,18 +17,18 @@ const MODULOS = [
 ] as const
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,.25)',
-  border: '1px solid rgba(255,255,255,.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 8,
   padding: '8px 10px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 13,
 }
 
 const labelStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 700,
-  color: '#cbd5e1',
+  color: 'var(--text-2)',
   textTransform: 'uppercase',
   letterSpacing: '.05em',
   marginBottom: 4,
@@ -65,7 +65,7 @@ export function AuditoriaFilters({
   return (
     <div
       style={{
-        background: 'rgba(0,0,0,.25)',
+        background: 'var(--surface-2)',
         border: '1px solid rgba(255,255,255,.06)',
         borderRadius: 12,
         padding: 16,
@@ -148,7 +148,7 @@ export function AuditoriaFilters({
           disabled={exporting}
           style={{
             background: 'transparent',
-            color: '#cbd5e1',
+            color: 'var(--text-2)',
             border: '1px solid rgba(255,255,255,.15)',
             borderRadius: 8,
             padding: '8px 14px',

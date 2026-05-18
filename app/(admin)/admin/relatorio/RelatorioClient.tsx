@@ -7,7 +7,7 @@ import type { RelatorioRow } from './page'
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
   emitido:   { label: 'Ausente',   color: '#60a5fa', bg: 'rgba(59,130,246,.1)',  dot: '#60a5fa' },
   usado:     { label: 'Presente',  color: '#4ade80', bg: 'rgba(16,185,129,.1)',  dot: '#4ade80' },
-  cancelado: { label: 'Cancelado', color: '#94a3b8', bg: 'rgba(255,255,255,.05)', dot: '#64748b' },
+  cancelado: { label: 'Cancelado', color: 'var(--text-3)', bg: 'rgba(255,255,255,.05)', dot: 'var(--text-3)' },
   expirado:  { label: 'Expirado',  color: '#fbbf24', bg: 'rgba(245,158,11,.1)',  dot: '#fbbf24' },
 }
 
@@ -63,10 +63,10 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
       {/* Header */}
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', margin: '0 0 6px', letterSpacing: '-.03em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-1)', margin: '0 0 6px', letterSpacing: '-.03em' }}>
             📋 Relatório de Presença
           </h1>
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: 0, fontWeight: 500 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0, fontWeight: 500 }}>
             Histórico de check-in por evento.
           </p>
         </div>
@@ -76,8 +76,8 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '10px 18px', borderRadius: 10,
-              background: 'rgba(255,255,255,.1)', color: '#f8fafc',
-              border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer',
+              background: 'var(--surface-2)', color: 'var(--text-1)',
+              border: '1px solid var(--border)', cursor: 'pointer',
               fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
             }}
           >
@@ -97,7 +97,7 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
       ) : (
         <>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,.35)', marginBottom: 8, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '.08em', textTransform: 'uppercase' }}>
               Evento
             </label>
             <select
@@ -105,9 +105,9 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
               onChange={e => router.push(`/admin/relatorio?produto=${e.target.value}`)}
               style={{
                 width: '100%', maxWidth: 480, padding: '10px 14px',
-                borderRadius: 10, border: '1px solid rgba(255,255,255,.1)',
-                fontSize: 14, fontWeight: 600, color: '#f8fafc',
-                background: 'rgba(0,0,0,.2)', appearance: 'none', cursor: 'pointer',
+                borderRadius: 10, border: '1px solid var(--border)',
+                fontSize: 14, fontWeight: 600, color: 'var(--text-1)',
+                background: 'var(--surface-2)', appearance: 'none', cursor: 'pointer',
                 fontFamily: 'inherit',
               }}
             >
@@ -125,32 +125,32 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
               <ResumoCard valor={presentes} label="Presentes" color="#4ade80" bg="rgba(16,185,129,.1)"   border="rgba(16,185,129,.2)"  emoji="✅" />
               <ResumoCard valor={ausentes}  label="Ausentes"  color="#60a5fa" bg="rgba(59,130,246,.1)"   border="rgba(59,130,246,.2)"  emoji="⏳" />
-              <ResumoCard valor={total}     label="Total"     color="#f8fafc" bg="rgba(255,255,255,.04)" border="rgba(255,255,255,.1)" emoji="🎟️" />
+              <ResumoCard valor={total}     label="Total"     color="var(--text-1)" bg="var(--surface-2)" border="var(--border)" emoji="🎟️" />
             </div>
           )}
 
           {/* Tabela / Empty */}
           {relatorio.length === 0 ? (
             <div style={{
-              background: 'rgba(255,255,255,.02)', border: '1.5px dashed rgba(255,255,255,.1)',
+              background: 'var(--surface)', border: '1.5px dashed var(--border)',
               borderRadius: 16, padding: '60px 20px', textAlign: 'center',
-              fontSize: 14, color: '#94a3b8',
+              fontSize: 14, color: 'var(--text-3)',
             }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
               Nenhum ingresso emitido para este evento ainda.
             </div>
           ) : (
             <div style={{
-              background: 'rgba(255,255,255,.02)', border: '1.5px solid rgba(255,255,255,.06)',
+              background: 'var(--surface)', border: '1.5px solid var(--border)',
               borderRadius: 16, overflow: 'hidden', backdropFilter: 'blur(16px)',
             }}>
               {/* Cabeçalho */}
               <div style={{
                 display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1.5fr',
                 padding: '10px 16px',
-                background: 'rgba(0,0,0,.2)',
-                borderBottom: '1px solid rgba(255,255,255,.06)',
-                fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,.35)',
+                background: 'var(--surface-2)',
+                borderBottom: '1px solid var(--border)',
+                fontSize: 10, fontWeight: 800, color: 'var(--text-3)',
                 letterSpacing: '.08em', textTransform: 'uppercase', gap: 8,
               }}>
                 <span>Aluno</span>
@@ -169,15 +169,15 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
                     style={{
                       display: 'grid', gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1.5fr',
                       padding: '12px 16px',
-                      borderBottom: idx < relatorio.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                      borderBottom: idx < relatorio.length - 1 ? '1px solid var(--border)' : 'none',
                       alignItems: 'center', gap: 8,
                       background: row.status === 'usado' ? 'rgba(16,185,129,.04)' : 'transparent',
                     }}
                   >
                     {/* Aluno */}
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{row.aluno_nome}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{row.aluno_nome}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
                         {row.aluno_serie}{row.aluno_turma ? ` · T.${row.aluno_turma}` : ''}
                       </div>
                     </div>
@@ -195,21 +195,21 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
 
                     {/* Responsável */}
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>{row.responsavel_nome}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{row.responsavel_email}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>{row.responsavel_nome}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{row.responsavel_email}</div>
                     </div>
 
                     {/* Validado em */}
-                    <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
                       {row.usado_em ? fmtDataHora(row.usado_em) : '—'}
                       {row.validado_por && (
-                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', marginTop: 1 }}>{row.validado_por}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 1 }}>{row.validado_por}</div>
                       )}
                     </div>
 
                     {/* Token */}
                     <span style={{
-                      fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,.3)',
+                      fontFamily: 'monospace', fontSize: 10, color: 'var(--text-3)',
                       letterSpacing: '.04em',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>

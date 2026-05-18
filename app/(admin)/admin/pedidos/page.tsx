@@ -6,6 +6,7 @@ import { confirmarPagamentoAction, cancelarPedidoAction } from '@/app/actions/ad
 import type { StatusPedido, MetodoPagamento } from '@/types/database'
 import { EstornoAdminCard } from './EstornoAdminCard'
 import { EstornoHistoricoAdmin } from './EstornoHistoricoAdmin'
+import { getAdminButtonStyle, getAdminPillStyle, getAdminTone } from '@/lib/admin-ui-tones'
 
 function fmtBRL(v: number) {
   return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -17,11 +18,11 @@ function fmtData(iso: string) {
   })
 }
 
-const STATUS_CONFIG: Record<StatusPedido, { label: string; color: string; bg: string; dot: string }> = {
-  pendente:    { label: 'Aguardando',  color: '#fcd34d', bg: 'rgba(245, 158, 11, 0.15)', dot: '#f59e0b' },
-  pago:        { label: 'Pago',        color: '#6ee7b7', bg: 'rgba(16, 185, 129, 0.15)', dot: '#10b981' },
-  cancelado:   { label: 'Cancelado',   color: '#fca5a5', bg: 'rgba(239, 68, 68, 0.15)', dot: '#ef4444' },
-  reembolsado: { label: 'Reembolsado', color: '#cbd5e1', bg: 'rgba(148, 163, 184, 0.15)', dot: '#9ca3af' },
+const STATUS_CONFIG: Record<StatusPedido, { label: string; tone: 'warning' | 'success' | 'danger' | 'neutral' }> = {
+  pendente:    { label: 'Aguardando',  tone: 'warning' },
+  pago:        { label: 'Pago',        tone: 'success' },
+  cancelado:   { label: 'Cancelado',   tone: 'danger' },
+  reembolsado: { label: 'Reembolsado', tone: 'neutral' },
 }
 
 const METODO_CONFIG: Record<MetodoPagamento, { label: string; icon: string }> = {
@@ -249,10 +250,10 @@ export default async function AdminPedidos({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-.02em' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', margin: 0, letterSpacing: '-.02em' }}>
             Pedidos
           </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '4px 0 0' }}>
             {totalFiltrado ?? 0} {totalFiltrado === 1 ? 'pedido encontrado' : 'pedidos encontrados'}
             {filtroAtual !== 'todos' ? ` · filtro ${filtroAtual}` : ''}
             {busca ? ` · busca "${busca}"` : ''}
@@ -262,7 +263,7 @@ export default async function AdminPedidos({
       </div>
 
       <form style={{
-        background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12, padding: 14,
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 14,
         display: 'flex', alignItems: 'end', gap: 10, flexWrap: 'wrap',
       }}>
         <input type="hidden" name="status" value={filtroAtual} />
@@ -283,11 +284,11 @@ export default async function AdminPedidos({
           <label style={labelStyle}>ATÉ</label>
           <input name="to" type="date" defaultValue={toDate ?? ''} style={inputStyle} />
         </div>
-        <button type="submit" style={actionButton('#f59e0b', '#78350f', 'none')}>
+        <button type="submit" style={getAdminButtonStyle('accent', 'solid', { height: 36, padding: '0 14px', fontSize: 12, borderRadius: 999 })}>
           Buscar
         </button>
         {(busca || fromDate || toDate) && (
-          <Link href={filtroAtual === 'todos' ? '/admin/pedidos' : `/admin/pedidos?status=${filtroAtual}`} style={actionButton('rgba(255,255,255,.05)', '#fff', '1px solid rgba(255,255,255,.1)')}>
+          <Link href={filtroAtual === 'todos' ? '/admin/pedidos' : `/admin/pedidos?status=${filtroAtual}`} style={getAdminButtonStyle('neutral', 'soft', { height: 36, padding: '0 14px', fontSize: 12, borderRadius: 999 })}>
             Limpar
           </Link>
         )}
@@ -304,9 +305,9 @@ export default async function AdminPedidos({
             padding: '7px 14px', borderRadius: 999,
             fontSize: 12, fontWeight: 700,
             textDecoration: 'none',
-            background: filtroAtual === value ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.05)',
-            color: filtroAtual === value ? '#fcd34d' : 'rgba(255,255,255,.7)',
-            border: filtroAtual === value ? '1px solid rgba(245,158,11,.3)' : '1px solid rgba(255,255,255,.1)',
+            background: filtroAtual === value ? '#ffedd5' : 'var(--surface)',
+            color: filtroAtual === value ? '#9a3412' : 'var(--text-2)',
+            border: filtroAtual === value ? '1px solid #fdba74' : '1px solid var(--border)',
             transition: 'all .2s'
           }}>
             {label}
@@ -317,9 +318,9 @@ export default async function AdminPedidos({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {pedidos.length === 0 && (
           <div style={{
-            background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12,
+            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12,
             padding: '60px 20px', textAlign: 'center',
-            fontSize: 14, color: 'rgba(255,255,255,.5)',
+            fontSize: 14, color: 'var(--text-3)',
           }}>
             Nenhum pedido encontrado.
           </div>
@@ -327,6 +328,7 @@ export default async function AdminPedidos({
 
         {pedidos.map((p) => {
           const statusCfg = STATUS_CONFIG[p.status]
+          const statusTone = getAdminTone(statusCfg.tone)
           const metodoCfg = p.metodo_pagamento ? METODO_CONFIG[p.metodo_pagamento] : null
           const responsavelNome = p.responsavel?.nome ?? '—'
           const responsavelEmail = p.responsavel?.email ?? ''
@@ -335,13 +337,13 @@ export default async function AdminPedidos({
 
           return (
             <div key={p.id} style={{
-              background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)',
+              background: 'var(--surface)', border: '1px solid var(--border)',
               borderRadius: 12, overflow: 'hidden',
             }}>
               <div style={{
                 padding: '14px 16px',
-                background: 'rgba(255,255,255,.02)',
-                borderBottom: '1px solid rgba(255,255,255,.05)',
+                background: 'var(--surface)',
+                borderBottom: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
               }}>
                 <Link href={`/pedido/${p.id}`} style={{
@@ -352,30 +354,25 @@ export default async function AdminPedidos({
                 </Link>
 
                 <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                  background: statusCfg.bg, color: statusCfg.color,
+                  ...getAdminPillStyle(statusCfg.tone),
                 }}>
                   <span style={{
                     width: 5, height: 5, borderRadius: '50%',
-                    background: statusCfg.dot, display: 'inline-block',
+                    background: statusTone.dot, display: 'inline-block',
                   }} />
                   {statusCfg.label}
                 </span>
 
                 {estornoByPedidoId[p.id] && (
                   <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                    background: 'rgba(245,158,11,0.15)', color: '#fcd34d',
-                    border: '1px solid rgba(245,158,11,0.3)',
+                    ...getAdminPillStyle('warning', { gap: 4 }),
                   }}>
                     ⚠️ Estorno pendente
                   </span>
                 )}
 
                 {metodoCfg && (
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>
                     {metodoCfg.icon} {metodoCfg.label}
                   </span>
                 )}
@@ -384,9 +381,7 @@ export default async function AdminPedidos({
 
                 {p.termo_aceito && (
                   <span style={{
-                    fontSize: 11, fontWeight: 700, padding: '3px 8px',
-                    borderRadius: 6, background: 'rgba(245,158,11,.15)', color: '#fcd34d',
-                    border: '1px solid rgba(245,158,11,.3)', display: 'flex', alignItems: 'center', gap: 4
+                    ...getAdminPillStyle('warning', { gap: 4, padding: '3px 8px', borderRadius: 6 }),
                   }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>
@@ -395,7 +390,7 @@ export default async function AdminPedidos({
                   </span>
                 )}
 
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,.5)' }}>
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
                   {fmtData(p.data_criacao)}
                 </span>
               </div>
@@ -411,8 +406,8 @@ export default async function AdminPedidos({
                     {responsavelNome.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{responsavelNome}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{responsavelEmail}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}>{responsavelNome}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{responsavelEmail}</div>
                   </div>
                 </div>
 
@@ -420,23 +415,23 @@ export default async function AdminPedidos({
                   {itens.map((item) => (
                     <div key={item.id} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '8px 12px', background: 'rgba(0,0,0,.2)', borderRadius: 8,
+                      padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 8,
                       fontSize: 13, border: '1px solid rgba(255,255,255,.03)'
                     }}>
                       <div>
-                        <span style={{ fontWeight: 600, color: '#f8fafc' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--text-1)' }}>
                           {item.produto?.nome ?? '—'}
                         </span>
-                        <span style={{ color: 'rgba(255,255,255,.5)', marginLeft: 8 }}>
+                        <span style={{ color: 'var(--text-3)', marginLeft: 8 }}>
                           {item.aluno?.nome} · {item.aluno?.serie}
                         </span>
                         {item.variante && (
-                          <span style={{ color: '#fbbf24', marginLeft: 8, fontWeight: 700 }}>
+                          <span style={{ color: '#c2410c', marginLeft: 8, fontWeight: 700 }}>
                             {item.variante}
                           </span>
                         )}
                       </div>
-                      <span style={{ fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                      <span style={{ fontWeight: 700, color: 'var(--text-1)', flexShrink: 0 }}>
                         {fmtBRL(Number(item.preco_unitario))}
                       </span>
                     </div>
@@ -444,7 +439,7 @@ export default async function AdminPedidos({
                 </div>
 
                 {pagamento?.pix_tx_id && (
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'monospace' }}>
                     PIX TX: {pagamento.pix_tx_id}
                   </div>
                 )}
@@ -452,13 +447,13 @@ export default async function AdminPedidos({
 
               <div style={{
                 padding: '12px 16px',
-                borderTop: '1px solid rgba(255,255,255,.05)',
+                borderTop: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
                 flexWrap: 'wrap',
               }}>
                 <div>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>TOTAL </span>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>TOTAL </span>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)' }}>
                     {fmtBRL(Number(p.total))}
                   </span>
                 </div>
@@ -469,10 +464,7 @@ export default async function AdminPedidos({
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       <form action={confirmarPagamentoAction.bind(null, p.id) as any}>
                         <button type="submit" style={{
-                          padding: '7px 14px', borderRadius: 8,
-                          background: 'rgba(16,185,129,.15)', color: '#34d399',
-                          border: '1px solid rgba(16,185,129,.3)', cursor: 'pointer',
-                          fontSize: 12, fontWeight: 700, transition: 'all .2s'
+                          ...getAdminButtonStyle('success', 'soft', { height: 34, padding: '0 14px', fontSize: 12, fontWeight: 700, borderRadius: 8 }),
                         }}>
                           ✓ Confirmar pagamento
                         </button>
@@ -480,10 +472,7 @@ export default async function AdminPedidos({
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       <form action={cancelarPedidoAction.bind(null, p.id) as any}>
                         <button type="submit" style={{
-                          padding: '7px 14px', borderRadius: 8,
-                          background: 'rgba(239,68,68,.1)', color: '#f87171',
-                          border: '1px solid rgba(239,68,68,.2)', cursor: 'pointer',
-                          fontSize: 12, fontWeight: 700, transition: 'all .2s'
+                          ...getAdminButtonStyle('danger', 'soft', { height: 34, padding: '0 14px', fontSize: 12, fontWeight: 700, borderRadius: 8 }),
                         }}>
                           ✕ Cancelar
                         </button>
@@ -491,12 +480,12 @@ export default async function AdminPedidos({
                     </>
                   )}
                   {p.status === 'pago' && (
-                    <span style={{ fontSize: 12, color: '#34d399', fontWeight: 700 }}>
+                    <span style={{ fontSize: 12, color: '#166534', fontWeight: 700 }}>
                       ✓ Pago em {p.data_pagamento ? fmtData(p.data_pagamento) : '—'}
                     </span>
                   )}
                   {p.status === 'cancelado' && (
-                    <span style={{ fontSize: 12, color: '#f87171', fontWeight: 700 }}>
+                    <span style={{ fontSize: 12, color: '#b91c1c', fontWeight: 700 }}>
                       Pedido cancelado
                     </span>
                   )}
@@ -521,7 +510,7 @@ export default async function AdminPedidos({
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
             paddingTop: 4, flexWrap: 'wrap',
           }}>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>
               Página {currentPage} de {totalPages}
             </span>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -566,24 +555,6 @@ function buildPageHref(pathname: string, params: Record<string, string | undefin
   return query ? `${pathname}?${query}` : pathname
 }
 
-function actionButton(background: string, color: string, border: string) {
-  return {
-    height: 36,
-    padding: '0 12px',
-    borderRadius: 999,
-    background,
-    color,
-    border,
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: 'pointer',
-    textDecoration: 'none',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  } as const
-}
-
 function pagerButton(enabled: boolean) {
   return {
     display: 'inline-flex',
@@ -595,10 +566,10 @@ function pagerButton(enabled: boolean) {
     textDecoration: 'none',
     fontSize: 12,
     fontWeight: 700,
-    background: enabled ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.02)',
-    color: enabled ? '#fff' : 'rgba(255,255,255,.3)',
+    background: enabled ? '#f8fafc' : '#f8fafc',
+    color: enabled ? '#475569' : '#94a3b8',
     pointerEvents: enabled ? 'auto' : 'none',
-    border: enabled ? '1px solid rgba(255,255,255,.1)' : '1px solid transparent',
+    border: enabled ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
   } as const
 }
 
@@ -613,7 +584,7 @@ const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 11,
   fontWeight: 700,
-  color: 'rgba(255,255,255,.5)',
+  color: 'var(--text-3)',
   marginBottom: 6,
   letterSpacing: '.05em',
 }
@@ -621,11 +592,11 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   height: 42,
   borderRadius: 10,
-  border: '1px solid rgba(255,255,255,.1)',
-  background: 'rgba(0,0,0,.2)',
+  border: '1px solid var(--border)',
+  background: 'var(--surface-2)',
   padding: '0 12px',
   fontSize: 13,
-  color: '#fff',
+  color: 'var(--text-1)',
   fontFamily: 'inherit',
 }
 

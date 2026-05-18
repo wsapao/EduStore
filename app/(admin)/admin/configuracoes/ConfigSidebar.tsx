@@ -53,11 +53,13 @@ export function ConfigSidebar({ permissoes }: { permissoes: string[] }) {
   return (
     <aside style={{
       width: 260, padding: '24px 12px',
-      background: 'rgba(0,0,0,0.15)',
-      borderRight: '1px solid rgba(255,255,255,0.06)',
+      background: 'rgba(255,255,255,0.72)',
+      borderRight: '1px solid var(--border)',
+      boxShadow: 'var(--shadow-sm)',
       minHeight: 'calc(100dvh - 48px)',
+      backdropFilter: 'blur(18px)',
     }}>
-      <h2 style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc', padding: '0 12px 16px' }}>
+      <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)', padding: '0 12px 16px' }}>
         Configurações
       </h2>
       {GROUPS.map(group => {
@@ -65,7 +67,7 @@ export function ConfigSidebar({ permissoes }: { permissoes: string[] }) {
         if (visible.length === 0) return null
         return (
           <div key={group.titulo} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.3)', marginBottom: 6, paddingLeft: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 6, paddingLeft: 12 }}>
               {group.titulo}
             </div>
             {visible.map(l => {
@@ -75,13 +77,15 @@ export function ConfigSidebar({ permissoes }: { permissoes: string[] }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '8px 12px', borderRadius: 10,
                   fontSize: 13, fontWeight: active ? 800 : 600,
-                  color: active ? '#fff' : '#cbd5e1',
-                  background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  color: active ? 'var(--brand)' : 'var(--text-2)',
+                  background: active ? 'var(--surface)' : 'transparent',
+                  border: active ? '1px solid rgba(249,115,22,.14)' : '1px solid transparent',
+                  boxShadow: active ? 'var(--shadow-xs)' : 'none',
                   textDecoration: 'none',
                 }}>
                   <span>{l.label}</span>
                   {l.fase > 1 && (
-                    <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 6, background: 'rgba(245,158,11,.15)', color: '#f59e0b', fontWeight: 700 }}>
+                    <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 6, background: 'var(--accent-soft)', color: 'var(--brand)', fontWeight: 700 }}>
                       F{l.fase}
                     </span>
                   )}

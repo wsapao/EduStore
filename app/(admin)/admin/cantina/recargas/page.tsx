@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAdminTone } from '@/lib/admin-ui-tones'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -70,20 +71,42 @@ export default async function RecargasAdminPage() {
     aluno_serie: s.recarga?.carteira?.aluno?.serie ?? '',
   }))
 
+  const accentTone = getAdminTone('accent')
+  const warningTone = getAdminTone('warning')
+  const neutralTone = getAdminTone('neutral')
+
   return (
     <div style={{ paddingBottom: 80 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
         <Link href="/admin/cantina" style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+          width: 40, height: 40, borderRadius: 12,
+          background: '#ffffff', border: `1px solid ${neutralTone.border}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 18, textDecoration: 'none', color: '#f1f5f9',
+          fontSize: 18, textDecoration: 'none', color: 'var(--text-1)',
+          boxShadow: '0 10px 20px rgba(249,115,22,.08)',
         }}>←</Link>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', margin: 0 }}>
-            💰 Recargas
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '4px 10px',
+            borderRadius: 999,
+            background: accentTone.bg,
+            border: `1px solid ${accentTone.border}`,
+            color: accentTone.text,
+            fontSize: 10,
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '.08em',
+            marginBottom: 8,
+          }}>
+            Financeiro da cantina
+          </div>
+          <h1 style={{ fontSize: 30, fontWeight: 900, color: 'var(--text-1)', margin: 0, letterSpacing: '-.04em' }}>
+            Recargas
           </h1>
-          <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '6px 0 0', fontWeight: 500 }}>
             Gerencie, estorne ou cancele recargas
           </p>
         </div>
@@ -94,15 +117,16 @@ export default async function RecargasAdminPage() {
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12,
             padding: '12px 16px',
-            background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)',
-            borderRadius: 10,
+            background: '#fff7ed', border: `1px solid ${warningTone.border}`,
+            borderRadius: 16,
+            boxShadow: '0 10px 24px rgba(245,158,11,.08)',
           }}>
             <span style={{ fontSize: 18 }}>⚠️</span>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#f59e0b' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: warningTone.text }}>
                 {listaSolicitacoes.length} solicitação{listaSolicitacoes.length > 1 ? 'ões' : ''} de estorno pendente{listaSolicitacoes.length > 1 ? 's' : ''}
               </div>
-              <div style={{ fontSize: 12, color: '#92400e' }}>
+              <div style={{ fontSize: 12, color: '#9a3412' }}>
                 Aguardando sua aprovação ou negação
               </div>
             </div>

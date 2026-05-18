@@ -46,8 +46,8 @@ export function PapelCard({ papel }: { papel: Papel }) {
 
   return (
     <article style={{
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      background: 'var(--surface-2)',
+      border: '1px solid var(--border)',
       borderRadius: 14,
       padding: 16,
       display: 'flex',
@@ -56,10 +56,10 @@ export function PapelCard({ papel }: { papel: Papel }) {
     }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
         <div style={{ minWidth: 0 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: '#f8fafc', marginBottom: 2 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-1)', marginBottom: 2 }}>
             {papel.nome}
           </h3>
-          <span style={{ fontSize: 11, color: '#94a3b8' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
             {papel.qtd_permissoes} permissão(ões) · {papel.qtd_usuarios} usuário(s)
           </span>
         </div>
@@ -79,7 +79,7 @@ export function PapelCard({ papel }: { papel: Papel }) {
       </header>
 
       {papel.descricao && (
-        <p style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.4 }}>{papel.descricao}</p>
+        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.4 }}>{papel.descricao}</p>
       )}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
@@ -95,10 +95,10 @@ export function PapelCard({ papel }: { papel: Papel }) {
 
 const btnSecondary: React.CSSProperties = {
   background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid var(--border)',
   borderRadius: 8,
   padding: '6px 12px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 12,
   fontWeight: 700,
   cursor: 'pointer',

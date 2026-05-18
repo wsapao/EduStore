@@ -2,7 +2,16 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Aluno } from '@/types/database'
-import { desvincularAlunoResponsavelAction, resetSenhaResponsavelAction, vincularAlunoResponsavelAction } from '@/app/actions/admin'
+import {
+  desvincularAlunoResponsavelAction,
+  resetSenhaResponsavelAction,
+  vincularAlunoResponsavelAction,
+} from '@/app/actions/admin'
+import {
+  getAdminButtonStyle,
+  getAdminPillStyle,
+  getAdminTone,
+} from '@/lib/admin-ui-tones'
 
 interface ResponsavelRow {
   id: string
@@ -35,7 +44,13 @@ function firstOf<T>(value: T | T[] | null | undefined): T | null {
 }
 
 function initials(name: string) {
-  return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
 }
 
 const PAGE_SIZE = 20
@@ -49,31 +64,32 @@ export default async function AdminResponsaveisPage({
   const term = q?.trim().toLocaleLowerCase('pt-BR') ?? ''
   const currentPage = Math.max(1, parseInt(page ?? '1', 10) || 1)
   const from = (currentPage - 1) * PAGE_SIZE
-  const to   = from + PAGE_SIZE - 1
+  const to = from + PAGE_SIZE - 1
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
 
   let query = supabase
     .from('responsaveis')
-    .select(`
+    .select(
+      `
       id, nome, email, cpf, telefone, created_at,
       vinculos:responsavel_aluno(
         aluno:alunos(id, nome, serie, turma, ativo, escola_id, created_at)
       )
-    `, { count: 'exact' })
+    `,
+      { count: 'exact' },
+    )
     .order('created_at', { ascending: false })
 
   if (term) {
     query = query.or(`nome.ilike.%${term}%,email.ilike.%${term}%,cpf.ilike.%${term}%`)
   }
 
-  // Paraleliza queries independentes (antes rodavam em série).
-  const [
-    { data: rows, count: totalCount },
-    { data: alunosRows },
-  ] = await Promise.all([
+  const [{ data: rows, count: totalCount }, { data: alunosRows }] = await Promise.all([
     query.range(from, to),
     supabase
       .from('alunos')
@@ -81,13 +97,12 @@ export default async function AdminResponsaveisPage({
       .order('nome', { ascending: true }),
   ])
 
-  const responsaveis = ((rows ?? []) as unknown as ResponsavelRow[])
-    .map((row) => ({
-      ...row,
-      alunos: (row.vinculos ?? [])
-        .map((vinculo) => firstOf(vinculo.aluno))
-        .filter((aluno): aluno is Aluno => !!aluno),
-    }))
+  const responsaveis = ((rows ?? []) as unknown as ResponsavelRow[]).map((row) => ({
+    ...row,
+    alunos: (row.vinculos ?? [])
+      .map((vinculo) => firstOf(vinculo.aluno))
+      .filter((aluno): aluno is Aluno => !!aluno),
+  }))
 
   const totalPages = Math.max(1, Math.ceil((totalCount ?? 0) / PAGE_SIZE))
   const totalAlunosVinculados = responsaveis.reduce((sum, row) => sum + row.alunos.length, 0)
@@ -97,77 +112,154 @@ export default async function AdminResponsaveisPage({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 80 }}>
-      {/* HEADER */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 14,
+          flexWrap: 'wrap',
+        }}
+      >
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', margin: 0, letterSpacing: '-.03em' }}>
+          <span
+            style={{
+              ...getAdminPillStyle('accent', {
+                padding: '6px 12px',
+                fontSize: 11,
+                fontWeight: 800,
+              }),
+              textTransform: 'uppercase',
+              letterSpacing: '.08em',
+              marginBottom: 12,
+            }}
+          >
+            Relacionamento
+          </span>
+          <h1
+            style={{
+              fontSize: 26,
+              fontWeight: 900,
+              color: 'var(--text-1)',
+              margin: 0,
+              letterSpacing: '-.03em',
+            }}
+          >
             Responsáveis
           </h1>
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: '6px 0 0', fontWeight: 500 }}>
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--text-3)',
+              margin: '6px 0 0',
+              fontWeight: 500,
+            }}
+          >
             Base de contatos das famílias e alunos vinculados
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(120px, 1fr))', gap: 12, width: '100%', maxWidth: 460 }}>
-          <MiniStat label="Famílias" value={totalCount ?? 0} tone="indigo" />
-          <MiniStat label="Alunos ligados" value={totalAlunosVinculados} tone="cyan" />
-          <MiniStat label="Sem telefone" value={semTelefone} tone={semTelefone > 0 ? 'amber' : 'slate'} />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(120px, 1fr))',
+            gap: 12,
+            width: '100%',
+            maxWidth: 460,
+          }}
+        >
+          <MiniStat label="Famílias" value={totalCount ?? 0} tone="info" />
+          <MiniStat label="Alunos ligados" value={totalAlunosVinculados} tone="success" />
+          <MiniStat label="Sem telefone" value={semTelefone} tone={semTelefone > 0 ? 'warning' : 'neutral'} />
         </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Link href={q ? `/admin/responsaveis/export?q=${encodeURIComponent(q)}` : '/admin/responsaveis/export'} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8, height: 42, padding: '0 20px', borderRadius: 14,
-          background: 'rgba(255,255,255,0.05)', color: '#f8fafc', fontSize: 13, fontWeight: 800, textDecoration: 'none',
-          border: '1px solid rgba(255,255,255,0.1)', transition: 'all .2s'
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Exportar CSV
+        <Link
+          href={q ? `/admin/responsaveis/export?q=${encodeURIComponent(q)}` : '/admin/responsaveis/export'}
+          style={getAdminButtonStyle('neutral', 'soft', {
+            height: 42,
+            padding: '0 20px',
+            borderRadius: 14,
+            fontSize: 13,
+          })}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Exportar CSV
+          </span>
         </Link>
       </div>
 
-      {/* SEARCH BAR */}
-      <form style={{
-        background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)', borderRadius: 16, padding: '16px',
-        display: 'flex', flexDirection: 'column', gap: 14, backdropFilter: 'blur(10px)'
-      }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap'
-        }}>
+      <form
+        style={{
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,247,237,0.94) 100%)',
+          border: '1px solid rgba(249,115,22,.14)',
+          borderRadius: 16,
+          padding: '18px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
-            <svg style={{ position: 'absolute', left: 14, top: 12, color: '#64748b' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            <svg
+              style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-3)' }}
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
             </svg>
             <input
               name="q"
               defaultValue={q ?? ''}
               placeholder="Buscar por nome, email, CPF, telefone ou aluno..."
-              style={{
-                width: '100%', height: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,.1)',
-                background: 'rgba(0,0,0,.2)', padding: '0 14px 0 40px', fontSize: 14, color: '#f8fafc', fontFamily: 'inherit',
-                outline: 'none', boxSizing: 'border-box'
-              }}
+              style={searchInputStyle}
             />
           </div>
-          <button type="submit" style={actionButton('rgba(255,255,255,.1)', '#f8fafc', '1px solid rgba(255,255,255,.05)')}>
+          <button
+            type="submit"
+            style={getAdminButtonStyle('accent', 'solid', {
+              height: 44,
+              borderRadius: 12,
+              fontSize: 13,
+            })}
+          >
             Buscar
           </button>
           {q && (
-            <Link href="/admin/responsaveis" style={actionButton('rgba(239,68,68,.1)', '#fca5a5', '1px solid rgba(239,68,68,.2)')}>
+            <Link
+              href="/admin/responsaveis"
+              style={getAdminButtonStyle('neutral', 'soft', {
+                height: 44,
+                borderRadius: 12,
+                fontSize: 13,
+              })}
+            >
               Limpar
             </Link>
           )}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <FilterBadge>{responsaveis.length} responsáveis</FilterBadge>
-          <FilterBadge>{totalAlunosVinculados} vínculos ativos</FilterBadge>
+          <FilterBadge tone="info">{totalAlunosVinculados} vínculos ativos</FilterBadge>
           <FilterBadge tone={semAlunos > 0 ? 'danger' : 'neutral'}>{semAlunos} sem alunos</FilterBadge>
         </div>
       </form>
 
-      {/* LISTA */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {responsaveis.length === 0 && (
           <EmptyState
@@ -177,23 +269,65 @@ export default async function AdminResponsaveisPage({
         )}
 
         {responsaveis.map((responsavel) => (
-          <div key={responsavel.id} style={{
-            background: 'rgba(255,255,255,.02)', border: '1.5px solid rgba(255,255,255,.06)', borderRadius: 20, padding: 20,
-            display: 'flex', flexDirection: 'column', gap: 16, backdropFilter: 'blur(16px)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div
+            key={responsavel.id}
+            style={{
+              background: 'linear-gradient(180deg, #ffffff 0%, #fffdfa 100%)',
+              border: '1px solid rgba(249,115,22,.12)',
+              borderRadius: 20,
+              padding: 20,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                flexWrap: 'wrap',
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 14,
-                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: 16, fontWeight: 900, border: '1px solid rgba(255,255,255,0.1)'
-                }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg, #f97316, #ec4899)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: 16,
+                    fontWeight: 900,
+                    boxShadow: '0 10px 22px rgba(249,115,22,.18)',
+                  }}
+                >
                   {initials(responsavel.nome)}
                 </div>
                 <div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: '#f8fafc', letterSpacing: '-.02em' }}>{responsavel.nome}</div>
-                  <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 2, fontWeight: 500 }}>
+                  <div
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 900,
+                      color: 'var(--text-1)',
+                      letterSpacing: '-.02em',
+                    }}
+                  >
+                    {responsavel.nome}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--text-3)',
+                      marginTop: 2,
+                      fontWeight: 500,
+                    }}
+                  >
                     {responsavel.email}
                   </div>
                 </div>
@@ -204,28 +338,58 @@ export default async function AdminResponsaveisPage({
                 {!responsavel.telefone && <FilterBadge tone="warning">Sem telefone</FilterBadge>}
                 <form action={resetSenhaResponsavelAction}>
                   <input type="hidden" name="responsavel_id" value={responsavel.id} />
-                  <button type="submit" style={actionButton('rgba(59,130,246,.15)', '#60a5fa', '1px solid rgba(59,130,246,.3)')}>
+                  <button
+                    type="submit"
+                    style={getAdminButtonStyle('info', 'soft', {
+                      height: 40,
+                      padding: '0 16px',
+                      borderRadius: 12,
+                      fontSize: 12,
+                    })}
+                  >
                     Enviar reset de senha
                   </button>
                 </form>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-              <InfoCard label="CPF" value={maskCPF(responsavel.cpf)} />
-              <InfoCard label="Telefone" value={maskPhone(responsavel.telefone)} />
-              <InfoCard label="Cadastro" value={new Date(responsavel.created_at).toLocaleDateString('pt-BR')} />
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: 12,
+              }}
+            >
+              <InfoCard label="CPF" value={maskCPF(responsavel.cpf)} tone="accent" />
+              <InfoCard label="Telefone" value={maskPhone(responsavel.telefone)} tone={responsavel.telefone ? 'neutral' : 'warning'} />
+              <InfoCard label="Cadastro" value={new Date(responsavel.created_at).toLocaleDateString('pt-BR')} tone="neutral" />
             </div>
 
-            <div style={{ marginTop: 4, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 12 }}>
-                ALUNOS VINCULADOS
+            <div style={{ marginTop: 4, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: 'var(--text-3)',
+                  letterSpacing: '.06em',
+                  textTransform: 'uppercase',
+                  marginBottom: 12,
+                }}
+              >
+                Alunos vinculados
               </div>
               {responsavel.alunos.length === 0 ? (
-                <div style={{
-                  padding: '14px 16px', borderRadius: 12, background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.2)',
-                  fontSize: 13, color: '#fcd34d', fontWeight: 600,
-                }}>
+                <div
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: 12,
+                    background: '#fff7ed',
+                    border: '1px solid #fdba74',
+                    fontSize: 13,
+                    color: '#9a3412',
+                    fontWeight: 600,
+                  }}
+                >
                   Este responsável ainda não tem aluno vinculado.
                 </div>
               ) : (
@@ -234,18 +398,32 @@ export default async function AdminResponsaveisPage({
                     <form key={aluno.id} action={desvincularAlunoResponsavelAction} style={{ margin: 0 }}>
                       <input type="hidden" name="responsavel_id" value={responsavel.id} />
                       <input type="hidden" name="aluno_id" value={aluno.id} />
-                      <button type="submit" style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 8,
-                        padding: '8px 12px', borderRadius: 999, background: aluno.ativo ? 'rgba(59,130,246,.1)' : 'rgba(255,255,255,.05)',
-                        color: aluno.ativo ? '#93c5fd' : '#94a3b8',
-                        border: `1px solid ${aluno.ativo ? 'rgba(59,130,246,.2)' : 'rgba(255,255,255,.1)'}`,
-                        fontSize: 12, fontWeight: 800, cursor: 'pointer', transition: 'all .2s'
-                      }}>
+                      <button
+                        type="submit"
+                        style={{
+                          ...(aluno.ativo
+                            ? getAdminPillStyle('info', {
+                                padding: '8px 12px',
+                                fontSize: 12,
+                                fontWeight: 800,
+                                gap: 8,
+                              })
+                            : getAdminPillStyle('neutral', {
+                                padding: '8px 12px',
+                                fontSize: 12,
+                                fontWeight: 800,
+                                gap: 8,
+                              })),
+                          cursor: 'pointer',
+                          textTransform: 'none',
+                        }}
+                      >
                         <span>{aluno.nome}</span>
-                        <span style={{ opacity: 0.7 }}>
-                          {aluno.serie}{aluno.turma ? ` · ${aluno.turma}` : ''}
+                        <span style={{ opacity: 0.75 }}>
+                          {aluno.serie}
+                          {aluno.turma ? ` · ${aluno.turma}` : ''}
                         </span>
-                        <span style={{ color: '#fca5a5', fontWeight: 900, marginLeft: 4 }}>×</span>
+                        <span style={{ color: '#dc2626', fontWeight: 900, marginLeft: 4 }}>×</span>
                       </button>
                     </form>
                   ))}
@@ -253,30 +431,42 @@ export default async function AdminResponsaveisPage({
               )}
             </div>
 
-            <form action={vincularAlunoResponsavelAction} style={{
-              display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center',
-              paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)'
-            }}>
+            <form
+              action={vincularAlunoResponsavelAction}
+              style={{
+                display: 'flex',
+                gap: 10,
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                padding: 16,
+                borderTop: '1px solid var(--border)',
+                borderRadius: 16,
+                background: 'var(--surface-2)',
+              }}
+            >
               <input type="hidden" name="responsavel_id" value={responsavel.id} />
-              <select
-                name="aluno_id"
-                defaultValue=""
-                style={{
-                  minWidth: 260, height: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,.1)',
-                  background: 'rgba(0,0,0,.2)', padding: '0 14px', fontSize: 13, color: '#f8fafc', fontFamily: 'inherit',
-                  outline: 'none'
-                }}
-              >
-                <option value="" style={{ color: '#000' }}>Vincular um aluno...</option>
+              <select name="aluno_id" defaultValue="" style={selectStyle}>
+                <option value="" style={{ color: '#111827' }}>
+                  Vincular um aluno...
+                </option>
                 {alunosDisponiveis
                   .filter((aluno) => !responsavel.alunos.some((linked) => linked.id === aluno.id))
                   .map((aluno) => (
-                    <option key={aluno.id} value={aluno.id} style={{ color: '#000' }}>
-                      {aluno.nome} · {aluno.serie}{aluno.turma ? ` · ${aluno.turma}` : ''}
+                    <option key={aluno.id} value={aluno.id} style={{ color: '#111827' }}>
+                      {aluno.nome} · {aluno.serie}
+                      {aluno.turma ? ` · ${aluno.turma}` : ''}
                     </option>
                   ))}
               </select>
-              <button type="submit" style={actionButton('rgba(255,255,255,.1)', '#f8fafc', '1px solid rgba(255,255,255,.05)')}>
+              <button
+                type="submit"
+                style={getAdminButtonStyle('accent', 'solid', {
+                  height: 44,
+                  padding: '0 18px',
+                  borderRadius: 12,
+                  fontSize: 13,
+                })}
+              >
                 Vincular aluno
               </button>
             </form>
@@ -284,13 +474,18 @@ export default async function AdminResponsaveisPage({
         ))}
       </div>
 
-      {/* Paginação */}
       {totalPages > 1 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 12, flexWrap: 'wrap', padding: '10px 0'
-        }}>
-          <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+            padding: '10px 0',
+          }}
+        >
+          <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 700 }}>
             Página {currentPage} de {totalPages} · {totalCount} responsáveis
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -315,54 +510,134 @@ export default async function AdminResponsaveisPage({
 
 function pagerBtn(active: boolean) {
   return {
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    height: 40, padding: '0 16px', borderRadius: 10, fontSize: 13, fontWeight: 800,
-    textDecoration: 'none', transition: 'all .2s',
-    background: active ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.02)',
-    color: active ? '#f8fafc' : '#475569',
-    border: active ? '1px solid rgba(255,255,255,.15)' : '1px solid rgba(255,255,255,.05)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 40,
+    padding: '0 16px',
+    borderRadius: 10,
+    fontSize: 13,
+    fontWeight: 800,
+    textDecoration: 'none',
+    transition: 'all .2s',
+    background: '#f8fafc',
+    color: active ? 'var(--text-2)' : '#94a3b8',
+    border: active ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
     pointerEvents: active ? 'auto' : 'none',
   } as const
 }
 
-function MiniStat({ label, value, tone }: { label: string; value: number; tone: 'indigo' | 'cyan' | 'amber' | 'slate' }) {
-  const tones = {
-    indigo: { bg: 'rgba(59,130,246,.1)', border: 'rgba(59,130,246,.2)', value: '#60a5fa' },
-    cyan: { bg: 'rgba(6,182,212,.1)', border: 'rgba(6,182,212,.2)', value: '#22d3ee' },
-    amber: { bg: 'rgba(245,158,11,.1)', border: 'rgba(245,158,11,.2)', value: '#fbbf24' },
-    slate: { bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.1)', value: '#f8fafc' },
-  } as const
+function MiniStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: number
+  tone: 'info' | 'success' | 'warning' | 'neutral'
+}) {
+  const cfg = getAdminTone(tone)
 
   return (
-    <div style={{ padding: '16px', borderRadius: 16, border: `1px solid ${tones[tone].border}`, background: tones[tone].bg, backdropFilter: 'blur(10px)' }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: '.05em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 900, color: tones[tone].value, marginTop: 4, letterSpacing: '-.02em' }}>{value}</div>
+    <div
+      style={{
+        padding: '16px',
+        borderRadius: 16,
+        border: `1px solid ${cfg.border}`,
+        background: `linear-gradient(180deg, ${cfg.bg} 0%, rgba(255,255,255,0.92) 100%)`,
+        boxShadow: 'var(--shadow-xs)',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 800,
+          color: 'var(--text-3)',
+          letterSpacing: '.05em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 28,
+          fontWeight: 900,
+          color: cfg.text,
+          marginTop: 4,
+          letterSpacing: '-.02em',
+        }}
+      >
+        {value}
+      </div>
     </div>
   )
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function InfoCard({
+  label,
+  value,
+  tone = 'neutral',
+}: {
+  label: string
+  value: string
+  tone?: 'accent' | 'neutral' | 'warning'
+}) {
+  const cfg = getAdminTone(tone)
+
   return (
-    <div style={{ padding: '14px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,.05)', background: 'rgba(0,0,0,.15)' }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: '.05em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 800, color: '#f8fafc', marginTop: 6 }}>{value}</div>
+    <div
+      style={{
+        padding: '14px 16px',
+        borderRadius: 12,
+        border: `1px solid ${cfg.border}`,
+        background: tone === 'neutral' ? 'var(--surface-2)' : cfg.bg,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 800,
+          color: tone === 'neutral' ? 'var(--text-3)' : cfg.text,
+          letterSpacing: '.05em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 800,
+          color: tone === 'neutral' ? 'var(--text-1)' : cfg.text,
+          marginTop: 6,
+        }}
+      >
+        {value}
+      </div>
     </div>
   )
 }
 
-function FilterBadge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'warning' | 'danger' }) {
-  const styles = {
-    neutral: { color: '#94a3b8', bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.1)' },
-    warning: { color: '#fbbf24', bg: 'rgba(245,158,11,.1)', border: 'rgba(245,158,11,.2)' },
-    danger: { color: '#fca5a5', bg: 'rgba(239,68,68,.1)', border: 'rgba(239,68,68,.2)' },
-  } as const
-
+function FilterBadge({
+  children,
+  tone = 'neutral',
+}: {
+  children: React.ReactNode
+  tone?: 'neutral' | 'warning' | 'danger' | 'info'
+}) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', padding: '6px 12px', borderRadius: 999,
-      fontSize: 11, fontWeight: 800, color: styles[tone].color, background: styles[tone].bg,
-      border: `1px solid ${styles[tone].border}`, textTransform: 'uppercase', letterSpacing: '.05em'
-    }}>
+    <span
+      style={{
+        ...getAdminPillStyle(tone, {
+          padding: '6px 12px',
+          fontSize: 11,
+          fontWeight: 800,
+        }),
+        textTransform: 'uppercase',
+        letterSpacing: '.05em',
+      }}
+    >
       {children}
     </span>
   )
@@ -370,33 +645,61 @@ function FilterBadge({ children, tone = 'neutral' }: { children: React.ReactNode
 
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div style={{
-      background: 'rgba(255,255,255,.02)', border: '1.5px dashed rgba(255,255,255,.1)', borderRadius: 20, padding: '70px 20px', textAlign: 'center',
-      display: 'flex', flexDirection: 'column', alignItems: 'center'
-    }}>
-      <div style={{ fontSize: 44, marginBottom: 16, opacity: 0.5 }}>👥</div>
-      <div style={{ fontSize: 18, fontWeight: 900, color: '#f8fafc', letterSpacing: '-.02em' }}>{title}</div>
-      <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.6, marginTop: 8, maxWidth: 300 }}>{description}</p>
+    <div
+      style={{
+        background: 'var(--surface)',
+        border: '1.5px dashed var(--border)',
+        borderRadius: 20,
+        padding: '70px 20px',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        boxShadow: 'var(--shadow-sm)',
+      }}
+    >
+      <div style={{ fontSize: 44, marginBottom: 16, opacity: 0.6 }}>👥</div>
+      <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-1)', letterSpacing: '-.02em' }}>
+        {title}
+      </div>
+      <p
+        style={{
+          fontSize: 14,
+          color: 'var(--text-3)',
+          lineHeight: 1.6,
+          marginTop: 8,
+          maxWidth: 300,
+        }}
+      >
+        {description}
+      </p>
     </div>
   )
 }
 
-function actionButton(background: string, color: string, border: string) {
-  return {
-    height: 44,
-    padding: '0 20px',
-    borderRadius: 12,
-    background,
-    color,
-    border,
-    fontSize: 13,
-    fontWeight: 800,
-    cursor: 'pointer',
-    textDecoration: 'none',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    transition: 'all .2s'
-  } as const
-}
+const searchInputStyle = {
+  width: '100%',
+  height: 44,
+  borderRadius: 12,
+  border: '1px solid var(--border)',
+  background: 'var(--surface-2)',
+  padding: '0 14px 0 40px',
+  fontSize: 14,
+  color: 'var(--text-1)',
+  fontFamily: 'inherit',
+  outline: 'none',
+  boxSizing: 'border-box',
+} as const
+
+const selectStyle = {
+  minWidth: 260,
+  height: 44,
+  borderRadius: 12,
+  border: '1px solid var(--border)',
+  background: 'var(--surface)',
+  padding: '0 14px',
+  fontSize: 13,
+  color: 'var(--text-1)',
+  fontFamily: 'inherit',
+  outline: 'none',
+} as const

@@ -103,15 +103,15 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
   return (
     <section
       style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
         borderRadius: 16,
         padding: 24,
       }}
     >
       <header style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc', margin: 0 }}>{meta.label}</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)', margin: 0 }}>{meta.label}</h2>
           {entry.customizado ? (
             <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: 'rgba(34,197,94,0.18)', color: '#86efac', fontWeight: 700 }}>
               CUSTOMIZADO
@@ -119,17 +119,17 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
               {entry.updated_at && ` · ${fmtDate(entry.updated_at)}`}
             </span>
           ) : (
-            <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: 'rgba(148,163,184,0.18)', color: '#cbd5e1', fontWeight: 700 }}>
+            <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: 'rgba(148,163,184,0.18)', color: 'var(--text-2)', fontWeight: 700 }}>
               PADRÃO
             </span>
           )}
         </div>
-        <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>{meta.descricao}</p>
+        <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0 }}>{meta.descricao}</p>
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 16 }}>
         <div style={{ minWidth: 0 }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6 }}>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6 }}>
             Assunto
           </label>
           <input
@@ -142,14 +142,14 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
               padding: '10px 12px',
               fontSize: 13,
               borderRadius: 8,
-              background: 'rgba(0,0,0,0.3)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#f8fafc',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-1)',
               marginBottom: 14,
             }}
           />
 
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6 }}>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6 }}>
             Corpo (texto)
           </label>
           <textarea
@@ -165,19 +165,19 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
               lineHeight: 1.6,
               borderRadius: 8,
-              background: 'rgba(0,0,0,0.3)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#f8fafc',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-1)',
               resize: 'vertical',
             }}
           />
-          <div style={{ fontSize: 11, color: '#64748b', marginTop: 6, textAlign: 'right' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, textAlign: 'right' }}>
             {corpo.length} / {CORPO_MAX} caracteres
           </div>
         </div>
 
         <aside>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 8 }}>
             Variáveis
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -203,13 +203,13 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
               </button>
             ))}
           </div>
-          <p style={{ fontSize: 11, color: '#64748b', marginTop: 10, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 10, lineHeight: 1.5 }}>
             Clique numa variável para inseri-la na posição do cursor.
           </p>
         </aside>
       </div>
 
-      <div style={{ marginTop: 18, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 16 }}>
+      <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
         <button
           type="button"
           onClick={() => (previewAberto ? setPreviewAberto(false) : atualizarPreview())}
@@ -218,9 +218,9 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
             fontSize: 12,
             fontWeight: 700,
             background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.15)',
+            border: '1px solid var(--border)',
             borderRadius: 8,
-            color: '#cbd5e1',
+            color: 'var(--text-2)',
             cursor: 'pointer',
             marginBottom: previewAberto ? 12 : 0,
           }}
@@ -228,7 +228,7 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
           {previewAberto ? 'Fechar preview' : 'Visualizar preview'}
         </button>
         {previewAberto && preview && (
-          <div style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 16 }}>
+          <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 10, padding: 16 }}>
             <button
               type="button"
               onClick={atualizarPreview}
@@ -245,20 +245,20 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
             >
               Atualizar preview
             </button>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4 }}>
               Assunto
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginBottom: 12 }}>{preview.assunto}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', marginBottom: 12 }}>{preview.assunto}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4 }}>
               Corpo
             </div>
             <pre
               style={{
                 margin: 0,
                 padding: 12,
-                background: 'rgba(255,255,255,0.04)',
+                background: 'var(--surface-2)',
                 borderRadius: 8,
-                color: '#e2e8f0',
+                color: 'var(--text-2)',
                 fontSize: 13,
                 lineHeight: 1.6,
                 fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
@@ -298,7 +298,7 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
               padding: '10px 18px',
               fontSize: 13,
               fontWeight: 800,
-              background: pending ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg,#4f46e5,#7c3aed)',
+              background: pending ? 'rgba(249,115,22,.35)' : 'linear-gradient(135deg, #f97316, #ec4899)',
               border: 'none',
               borderRadius: 10,
               color: '#fff',
@@ -315,10 +315,10 @@ export function TemplateEditor({ entry }: { entry: TemplateEntry }) {
               padding: '10px 18px',
               fontSize: 13,
               fontWeight: 700,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
               borderRadius: 10,
-              color: '#f8fafc',
+              color: 'var(--text-1)',
               cursor: pending ? 'not-allowed' : 'pointer',
             }}
           >

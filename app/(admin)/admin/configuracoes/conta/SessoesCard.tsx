@@ -22,7 +22,7 @@ export function SessoesCard() {
 
   return (
     <div>
-      <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>
+      <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 12 }}>
         Encerra todas as outras sessões deste usuário em outros navegadores ou dispositivos.
         Esta sessão atual continua ativa.
       </p>

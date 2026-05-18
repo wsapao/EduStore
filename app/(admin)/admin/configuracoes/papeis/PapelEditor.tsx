@@ -74,10 +74,10 @@ export function PapelEditor({ initial }: { initial: PapelEditorInitial }) {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <Link href="/admin/configuracoes/papeis" style={{ fontSize: 12, color: '#94a3b8', textDecoration: 'none' }}>
+        <Link href="/admin/configuracoes/papeis" style={{ fontSize: 12, color: 'var(--text-3)', textDecoration: 'none' }}>
           ← Voltar para papéis
         </Link>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginTop: 6 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginTop: 6 }}>
           {isEditing ? 'Editar papel' : 'Novo papel customizado'}
         </h1>
         {isPreset && (
@@ -111,7 +111,7 @@ export function PapelEditor({ initial }: { initial: PapelEditorInitial }) {
 
         <section>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 12, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc' }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-1)' }}>
               Permissões ({chaves.size})
             </span>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -126,8 +126,8 @@ export function PapelEditor({ initial }: { initial: PapelEditorInitial }) {
               const todasMarcadas = todas.every(k => chaves.has(k))
               return (
                 <div key={group.modulo} style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
                   borderRadius: 12,
                   padding: 14,
                   display: 'flex',
@@ -135,7 +135,7 @@ export function PapelEditor({ initial }: { initial: PapelEditorInitial }) {
                   gap: 8,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc' }}>{group.rotulo}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-1)' }}>{group.rotulo}</span>
                     <button
                       type="button"
                       onClick={() => marcarTodasDoModulo(group.modulo)}
@@ -152,7 +152,7 @@ export function PapelEditor({ initial }: { initial: PapelEditorInitial }) {
                         onChange={() => toggleChave(perm.chave)}
                         style={{ width: 14, height: 14, accentColor: '#f59e0b', cursor: 'pointer' }}
                       />
-                      <span style={{ fontSize: 12, color: '#cbd5e1' }}>{perm.rotulo}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{perm.rotulo}</span>
                     </label>
                   ))}
                 </div>
@@ -182,18 +182,18 @@ export function PapelEditor({ initial }: { initial: PapelEditorInitial }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)' }}>{label}</span>
       {children}
     </label>
   )
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.25)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   padding: '10px 12px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 14,
   outline: 'none',
 }
@@ -211,10 +211,10 @@ const btnPrimary: React.CSSProperties = {
 
 const btnGhost: React.CSSProperties = {
   background: 'transparent',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid var(--border)',
   borderRadius: 8,
   padding: '6px 12px',
-  color: '#cbd5e1',
+  color: 'var(--text-2)',
   fontSize: 11,
   fontWeight: 700,
   cursor: 'pointer',

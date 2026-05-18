@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useCart } from './CartProvider'
 import { logoutAction } from '@/app/actions/auth'
 import type { Responsavel, Escola } from '@/types/database'
+import { XkolaStoreBrand } from './XkolaStoreBrand'
 
 interface Props {
   responsavel: Responsavel
@@ -27,23 +28,8 @@ export function LojaHeader({ responsavel, escola }: Props) {
         display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
       }}>
         {/* Brand */}
-        <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-          <div style={{
-            width:36, height:36, borderRadius:10, background:'var(--brand)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            flexShrink:0,
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-          </div>
-          <div style={{ lineHeight:1.2 }}>
-            <div style={{ fontSize:14, fontWeight:800, color:'var(--text-1)' }}>
-              {escola.nome}
-            </div>
-            <div style={{ fontSize:11, color:'var(--text-3)', fontWeight:600 }}>Loja da Escola</div>
-          </div>
+        <div style={{ flexShrink:0 }}>
+          <XkolaStoreBrand escolaNome={escola.nome} theme="light" compact />
         </div>
 
         {/* Actions */}

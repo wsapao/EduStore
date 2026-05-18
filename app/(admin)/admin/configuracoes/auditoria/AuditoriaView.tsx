@@ -103,7 +103,7 @@ export function AuditoriaView({
 
       <AuditoriaTable entries={filtradas} loading={pending} />
 
-      <div style={{ fontSize: 12, color: '#94a3b8' }}>
+      <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
         Exibindo {filtradas.length} de {entries.length} registros{' '}
         (limite de 100 por consulta — refine os filtros para ver eventos mais antigos).
       </div>

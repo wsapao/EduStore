@@ -16,8 +16,8 @@ export default async function IntegracoesConfigPage() {
   if (!escolaId) {
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 16 }}>Integrações</h1>
-        <p style={{ color: '#94a3b8' }}>Sua conta não está vinculada a uma escola.</p>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 16 }}>Integrações</h1>
+        <p style={{ color: 'var(--text-3)' }}>Sua conta não está vinculada a uma escola.</p>
       </div>
     )
   }
@@ -38,7 +38,7 @@ export default async function IntegracoesConfigPage() {
   if (!config) {
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 16 }}>Integrações</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 16 }}>Integrações</h1>
         <p style={{ color: '#ef4444' }}>Configurações da escola não encontradas.</p>
       </div>
     )
@@ -46,7 +46,7 @@ export default async function IntegracoesConfigPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 24 }}>Integrações</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 24 }}>Integrações</h1>
       <div style={{ maxWidth: 820 }}>
         <IntegracoesForm config={config} asaasStatus={asaasStatus} />
       </div>

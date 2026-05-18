@@ -12,7 +12,7 @@ export default async function EmailsConfigPage() {
   if ('error' in r) {
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 8 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 8 }}>
           E-mails
         </h1>
         <p style={{ color: '#fca5a5' }}>{r.error}</p>
@@ -22,10 +22,10 @@ export default async function EmailsConfigPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 8 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 8 }}>
         E-mails
       </h1>
-      <p style={{ color: '#94a3b8', fontSize: 13, marginBottom: 24, maxWidth: 720 }}>
+      <p style={{ color: 'var(--text-3)', fontSize: 13, marginBottom: 24, maxWidth: 720 }}>
         Edite os textos dos e-mails automáticos enviados aos responsáveis. Use {'{{variavel}}'} para
         inserir dados do pedido. Templates não customizados usam os textos padrão da plataforma.
       </p>

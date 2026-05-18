@@ -281,8 +281,8 @@ export function LojaOnlineForm({
                     />
                     <span style={{ fontSize: 16 }}>{categoria.icone || '📦'}</span>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ color: '#f8fafc', fontSize: 13, fontWeight: 700 }}>{categoria.nome}</span>
-                      <span style={{ color: '#94a3b8', fontSize: 11 }}>
+                      <span style={{ color: 'var(--text-1)', fontSize: 13, fontWeight: 700 }}>{categoria.nome}</span>
+                      <span style={{ color: 'var(--text-3)', fontSize: 11 }}>
                         {isSelected ? `Posicao ${index + 1} na home` : 'Oculta na home'}
                       </span>
                     </div>
@@ -329,8 +329,8 @@ export function LojaOnlineForm({
               produtosSelecionados.map((produto, index) => (
                 <div key={produto.id} style={listRowStyle}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-                    <span style={{ color: '#f8fafc', fontSize: 13, fontWeight: 700 }}>{produto.nome}</span>
-                    <span style={{ color: '#94a3b8', fontSize: 11 }}>
+                    <span style={{ color: 'var(--text-1)', fontSize: 13, fontWeight: 700 }}>{produto.nome}</span>
+                    <span style={{ color: 'var(--text-3)', fontSize: 11 }}>
                       {produto.categoria} · posicao {index + 1}
                     </span>
                   </div>
@@ -371,8 +371,8 @@ export function LojaOnlineForm({
               return (
                 <div key={produto.id} style={listRowStyle}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-                    <span style={{ color: '#f8fafc', fontSize: 13, fontWeight: 700 }}>{produto.nome}</span>
-                    <span style={{ color: '#94a3b8', fontSize: 11 }}>{produto.categoria}</span>
+                    <span style={{ color: 'var(--text-1)', fontSize: 13, fontWeight: 700 }}>{produto.nome}</span>
+                    <span style={{ color: 'var(--text-3)', fontSize: 11 }}>{produto.categoria}</span>
                   </div>
 
                   <button
@@ -416,8 +416,8 @@ function Section({
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 800, color: '#f8fafc', margin: 0 }}>{title}</h3>
-        <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>{description}</p>
+        <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-1)', margin: 0 }}>{title}</h3>
+        <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>{description}</p>
       </div>
       {children}
     </section>
@@ -427,7 +427,7 @@ function Section({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)' }}>{label}</span>
       {children}
     </label>
   )
@@ -447,7 +447,7 @@ function ToggleRow({
   return (
     <label style={toggleRowStyle}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ color: '#f8fafc', fontSize: 13, fontWeight: 700 }}>{label}</span>
+        <span style={{ color: 'var(--text-1)', fontSize: 13, fontWeight: 700 }}>{label}</span>
       </div>
       <input
         type="checkbox"
@@ -478,8 +478,8 @@ function RadioCard({
   return (
     <label style={{
       ...radioCardStyle,
-      borderColor: checked ? 'rgba(245,158,11,0.9)' : 'rgba(255,255,255,0.1)',
-      background: checked ? 'rgba(245,158,11,0.12)' : 'rgba(0,0,0,0.18)',
+      borderColor: checked ? 'rgba(249,115,22,.32)' : 'var(--border)',
+      background: checked ? 'var(--accent-soft)' : 'var(--surface)',
     }}>
       <input
         type="radio"
@@ -490,8 +490,8 @@ function RadioCard({
         style={checkboxStyle}
       />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ color: '#f8fafc', fontSize: 13, fontWeight: 700 }}>{label}</span>
-        <span style={{ color: '#94a3b8', fontSize: 11 }}>{description}</span>
+        <span style={{ color: 'var(--text-1)', fontSize: 13, fontWeight: 700 }}>{label}</span>
+        <span style={{ color: 'var(--text-3)', fontSize: 11 }}>{description}</span>
       </div>
     </label>
   )
@@ -511,11 +511,11 @@ function moveItem(items: string[], id: string, direction: -1 | 1) {
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.25)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   padding: '10px 12px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 14,
   outline: 'none',
 }
@@ -532,22 +532,22 @@ const textareaStyle: React.CSSProperties = {
 }
 
 const btnPrimary: React.CSSProperties = {
-  background: '#f59e0b',
+  background: 'linear-gradient(135deg, #f97316, #ec4899)',
   border: 'none',
   borderRadius: 10,
   padding: '10px 18px',
-  color: '#0a1628',
+  color: '#fff',
   fontSize: 13,
   fontWeight: 800,
   cursor: 'pointer',
 }
 
 const btnSecondary: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   padding: '8px 14px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 12,
   fontWeight: 700,
   cursor: 'pointer',
@@ -555,22 +555,22 @@ const btnSecondary: React.CSSProperties = {
 
 const btnGhost: React.CSSProperties = {
   background: 'transparent',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   padding: '8px 12px',
-  color: '#cbd5e1',
+  color: 'var(--text-2)',
   fontSize: 12,
   fontWeight: 700,
   cursor: 'pointer',
 }
 
 const btnMini: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   width: 36,
   height: 36,
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 14,
   fontWeight: 800,
   cursor: 'pointer',
@@ -580,7 +580,7 @@ const checkboxStyle: React.CSSProperties = {
   width: 16,
   height: 16,
   cursor: 'pointer',
-  accentColor: '#f59e0b',
+  accentColor: '#f97316',
 }
 
 const toggleRowStyle: React.CSSProperties = {
@@ -588,17 +588,17 @@ const toggleRowStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 16,
-  background: 'rgba(0,0,0,0.18)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 12,
   padding: '12px 14px',
 }
 
 const hintBoxStyle: React.CSSProperties = {
   borderRadius: 12,
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: 'rgba(0,0,0,0.18)',
-  color: '#94a3b8',
+  border: '1px solid var(--border)',
+  background: 'var(--surface-2)',
+  color: 'var(--text-3)',
   fontSize: 12,
   padding: '12px 14px',
 }
@@ -614,8 +614,8 @@ const listRowStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 12,
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: 'rgba(0,0,0,0.18)',
+  border: '1px solid var(--border)',
+  background: 'var(--surface-2)',
   borderRadius: 12,
   padding: '12px 14px',
 }
@@ -624,7 +624,7 @@ const radioCardStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'flex-start',
   gap: 10,
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid var(--border)',
   borderRadius: 12,
   padding: '12px 14px',
   flex: '1 1 240px',

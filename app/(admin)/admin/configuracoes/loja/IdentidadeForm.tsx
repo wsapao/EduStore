@@ -55,7 +55,7 @@ export function IdentidadeForm({ escola }: { escola: Escola }) {
             onChange={e => setCor(e.target.value)}
             style={{ width: 56, height: 40, border: 'none', borderRadius: 8, background: 'none', cursor: 'pointer' }}
           />
-          <code style={{ fontSize: 13, color: '#94a3b8' }}>{cor}</code>
+          <code style={{ fontSize: 13, color: 'var(--text-3)' }}>{cor}</code>
         </div>
       </Field>
 
@@ -76,18 +76,18 @@ export function IdentidadeForm({ escola }: { escola: Escola }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)' }}>{label}</span>
       {children}
     </label>
   )
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.25)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 10,
   padding: '10px 12px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 14,
   outline: 'none',
 }

@@ -211,10 +211,25 @@ body {
   .md-show-flex {
     display: flex !important;
   }
+  .admin-mobile-nav-shell {
+    display: none !important;
+  }
+  .admin-sidebar-shell {
+    display: flex !important;
+  }
+  .admin-shell-content {
+    padding: 40px 40px 40px !important;
+  }
 }
 
 @media (max-width: 767px) {
   .mobile-hide {
     display: none !important;
+  }
+  .admin-sidebar-shell {
+    display: none !important;
+  }
+  .admin-shell-content {
+    padding-bottom: 112px !important;
   }
 }

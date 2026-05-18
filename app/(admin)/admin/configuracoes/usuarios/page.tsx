@@ -41,7 +41,7 @@ export default async function UsuariosListPage() {
     return (
       <div>
         <Header />
-        <p style={{ color: '#94a3b8' }}>Sua conta não está vinculada a uma escola.</p>
+        <p style={{ color: 'var(--text-3)' }}>Sua conta não está vinculada a uma escola.</p>
       </div>
     )
   }
@@ -96,30 +96,30 @@ export default async function UsuariosListPage() {
       <Header />
 
       <section style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
         borderRadius: 14,
         padding: 16,
         marginBottom: 20,
       }}>
-        <h2 style={{ fontSize: 14, fontWeight: 800, color: '#f8fafc', marginBottom: 12 }}>
+        <h2 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-1)', marginBottom: 12 }}>
           Convidar novo usuário
         </h2>
         <ConvidarForm papeis={papeis} />
       </section>
 
       <section>
-        <h2 style={{ fontSize: 14, fontWeight: 800, color: '#f8fafc', marginBottom: 12 }}>
+        <h2 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-1)', marginBottom: 12 }}>
           Usuários ({usuarios.length})
         </h2>
         <div style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
           borderRadius: 14,
           overflow: 'hidden',
         }}>
           {usuarios.length === 0 ? (
-            <p style={{ padding: 20, color: '#94a3b8', fontSize: 13 }}>Nenhum usuário ainda. Use o formulário acima para convidar.</p>
+            <p style={{ padding: 20, color: 'var(--text-3)', fontSize: 13 }}>Nenhum usuário ainda. Use o formulário acima para convidar.</p>
           ) : usuarios.map(u => (
             <UsuarioRow
               key={u.user_id}
@@ -137,10 +137,10 @@ export default async function UsuariosListPage() {
 function Header() {
   return (
     <div style={{ marginBottom: 16 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 6 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 6 }}>
         Usuários
       </h1>
-      <p style={{ color: '#94a3b8', fontSize: 13 }}>
+      <p style={{ color: 'var(--text-3)', fontSize: 13 }}>
         Convide membros da equipe, atribua papéis e suspenda acessos.
       </p>
     </div>

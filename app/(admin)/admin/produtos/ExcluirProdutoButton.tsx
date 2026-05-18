@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react'
 import { excluirProdutoAction } from '@/app/actions/admin'
+import { getAdminButtonStyle } from '@/lib/admin-ui-tones'
 
 export function ExcluirProdutoButton({ produtoId, nome }: { produtoId: string; nome: string }) {
   const [pending, startTransition] = useTransition()
@@ -19,15 +20,9 @@ export function ExcluirProdutoButton({ produtoId, nome }: { produtoId: string; n
       onClick={onClick}
       disabled={pending}
       style={{
-        width: '100%',
-        padding: '10px',
-        borderRadius: 10,
-        fontSize: 13,
-        fontWeight: 800,
+        ...getAdminButtonStyle('neutral', 'soft', { width: '100%', height: 42, borderRadius: 10 }),
         cursor: pending ? 'wait' : 'pointer',
-        background: 'transparent',
-        color: '#64748b',
-        border: '1.5px dashed rgba(255,255,255,.1)',
+        borderStyle: 'dashed',
       }}
     >
       {pending ? 'Excluindo…' : '🗑 Excluir produto'}

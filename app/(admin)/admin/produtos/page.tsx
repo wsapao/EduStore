@@ -5,6 +5,7 @@ import { toggleProdutoAtivoAction, toggleEsgotadoAction, duplicarProdutoAction }
 import { ExcluirProdutoButton } from './ExcluirProdutoButton'
 import { normalizarProduto } from '@/lib/produtos/normalizers'
 import type { Produto, CategoriaProduto, MetodoPagamento, ProdutoVariante } from '@/types/database'
+import { getAdminButtonStyle, getAdminPillStyle } from '@/lib/admin-ui-tones'
 
 function fmtBRL(v: number) {
   return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -84,10 +85,10 @@ export default async function AdminProdutos({
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', margin: 0, letterSpacing: '-.03em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-1)', margin: 0, letterSpacing: '-.03em' }}>
             Produtos
           </h1>
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: '6px 0 0', fontWeight: 500 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '6px 0 0', fontWeight: 500 }}>
             {totalFiltrado ?? 0} produtos encontrados · {ativos} ativos · {inativos} inativos · {esgotados} esgotados
           </p>
         </div>
@@ -95,9 +96,9 @@ export default async function AdminProdutos({
         <Link href="/admin/produtos/novo" style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           height: 42, padding: '0 20px', borderRadius: 14,
-          background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: '#fff',
+          background: 'linear-gradient(135deg, #f97316, #ec4899)', color: '#fff',
           fontSize: 14, fontWeight: 800, textDecoration: 'none',
-          boxShadow: '0 4px 14px rgba(59,130,246,.3)', transition: 'all .2s'
+          boxShadow: '0 10px 22px rgba(249,115,22,.22)', transition: 'all .2s'
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -108,11 +109,11 @@ export default async function AdminProdutos({
 
       {/* Search Bar */}
       <form style={{
-        background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.05)', borderRadius: 16, padding: '12px 14px',
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '12px 14px',
         display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', backdropFilter: 'blur(10px)'
       }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
-          <svg style={{ position: 'absolute', left: 14, top: 12, color: '#64748b' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg style={{ position: 'absolute', left: 14, top: 12, color: 'var(--text-3)' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
@@ -120,17 +121,17 @@ export default async function AdminProdutos({
             defaultValue={busca}
             placeholder="Buscar por nome ou descrição..."
             style={{
-              width: '100%', height: 44, borderRadius: 12, border: '1px solid rgba(255,255,255,.1)',
-              background: 'rgba(0,0,0,.2)', padding: '0 14px 0 40px', fontSize: 14, color: '#f8fafc', fontFamily: 'inherit',
+              width: '100%', height: 44, borderRadius: 12, border: '1px solid var(--border)',
+              background: 'var(--surface-2)', padding: '0 14px 0 40px', fontSize: 14, color: 'var(--text-1)', fontFamily: 'inherit',
               outline: 'none', boxSizing: 'border-box'
             }}
           />
         </div>
-        <button type="submit" style={actionButton('rgba(255,255,255,.1)', '#f8fafc', '1px solid rgba(255,255,255,.05)')}>
+        <button type="submit" style={getAdminButtonStyle('accent', 'solid', { height: 44, borderRadius: 12 })}>
           Buscar
         </button>
         {busca && (
-          <Link href="/admin/produtos" style={actionButton('rgba(239,68,68,.1)', '#fca5a5', '1px solid rgba(239,68,68,.2)')}>
+          <Link href="/admin/produtos" style={actionButton('var(--surface)', 'var(--text-2)', '1px solid var(--border)')}>
             Limpar
           </Link>
         )}
@@ -154,19 +155,19 @@ export default async function AdminProdutos({
 
           return (
             <div key={produto.id} style={{
-              background: 'rgba(255,255,255,.02)',
-              border: `1.5px solid ${!isAtivo ? 'rgba(239,68,68,.3)' : isEsgotado ? 'rgba(245,158,11,.3)' : 'rgba(255,255,255,.06)'}`,
+              background: !isAtivo ? '#fffdfb' : 'var(--surface)',
+              border: `1.5px solid ${!isAtivo ? '#fca5a5' : isEsgotado ? '#fcd34d' : 'var(--border)'}`,
               borderRadius: 20, overflow: 'hidden', backdropFilter: 'blur(16px)',
-              opacity: isAtivo ? 1 : 0.6, display: 'flex', flexDirection: 'column'
+              opacity: 1, display: 'flex', flexDirection: 'column'
             }}>
               <div style={{
                 padding: '20px',
-                borderBottom: '1px solid rgba(255,255,255,.05)',
+                borderBottom: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', gap: 14,
               }}>
                 <div style={{
                   width: 52, height: 52, borderRadius: 14,
-                  background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)',
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 24, flexShrink: 0,
                 }}>
@@ -175,30 +176,30 @@ export default async function AdminProdutos({
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 16, fontWeight: 800, color: '#f8fafc', letterSpacing: '-.02em',
+                    fontSize: 16, fontWeight: 800, color: 'var(--text-1)', letterSpacing: '-.02em',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>
                     {produto.nome}
                   </div>
                   <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                     <span style={{
-                      fontSize: 10, fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '.05em',
-                      background: 'rgba(59,130,246,.1)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(59,130,246,.2)'
+                      ...getAdminPillStyle('info', { fontSize: 10, padding: '2px 8px', borderRadius: 6, fontWeight: 800 }),
+                      textTransform: 'uppercase', letterSpacing: '.05em',
                     }}>
                       {CAT_LABELS[cat]}
                     </span>
                     {!isAtivo && (
                       <span style={{
-                        fontSize: 10, fontWeight: 800, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '.05em',
-                        background: 'rgba(239,68,68,.1)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(239,68,68,.2)'
+                        ...getAdminPillStyle('danger', { fontSize: 10, padding: '2px 8px', borderRadius: 6, fontWeight: 800 }),
+                        textTransform: 'uppercase', letterSpacing: '.05em',
                       }}>
                         INATIVO
                       </span>
                     )}
                     {isEsgotado && isAtivo && (
                       <span style={{
-                        fontSize: 10, fontWeight: 800, color: '#fcd34d', textTransform: 'uppercase', letterSpacing: '.05em',
-                        background: 'rgba(245,158,11,.1)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(245,158,11,.2)'
+                        ...getAdminPillStyle('warning', { fontSize: 10, padding: '2px 8px', borderRadius: 6, fontWeight: 800 }),
+                        textTransform: 'uppercase', letterSpacing: '.05em',
                       }}>
                         ESGOTADO
                       </span>
@@ -209,14 +210,14 @@ export default async function AdminProdutos({
 
               <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Preço</span>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: '#10b981', letterSpacing: '-.03em' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Preço</span>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: '#15803d', letterSpacing: '-.03em' }}>
                     {fmtBRL(produto.preco)}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Métodos</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Métodos</span>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {(produto.metodos_aceitos ?? []).map((m) => (
                       <span key={m} title={m} style={{ fontSize: 18 }}>
@@ -228,8 +229,8 @@ export default async function AdminProdutos({
 
                 {produto.data_evento && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Evento</span>
-                    <span style={{ fontSize: 12, color: '#f8fafc', fontWeight: 700 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Evento</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-1)', fontWeight: 700 }}>
                       {new Date(produto.data_evento).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>
@@ -237,8 +238,8 @@ export default async function AdminProdutos({
 
                 {produto.prazo_compra && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Prazo</span>
-                    <span style={{ fontSize: 12, color: '#f8fafc', fontWeight: 700 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Prazo</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-1)', fontWeight: 700 }}>
                       {new Date(produto.prazo_compra).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>
@@ -246,12 +247,12 @@ export default async function AdminProdutos({
 
                 {produto.series && produto.series.length > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Séries</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Séries</span>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
                       {produto.series.map((serie) => (
                         <span key={serie} style={{
-                          fontSize: 10, fontWeight: 700, color: '#e2e8f0',
-                          background: 'rgba(255,255,255,.05)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,.1)'
+                          fontSize: 10, fontWeight: 700, color: 'var(--text-2)',
+                          background: 'var(--surface-2)', padding: '2px 8px', borderRadius: 6, border: '1px solid var(--border)'
                         }}>
                           {serie}
                         </span>
@@ -261,11 +262,11 @@ export default async function AdminProdutos({
                 )}
 
                 {variantes.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.05)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-                      <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Variantes</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>Variantes</span>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, maxWidth: '70%' }}>
-                        <span style={{ fontSize: 11, color: '#f8fafc', fontWeight: 800 }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-1)', fontWeight: 800 }}>
                           {variantesDisponiveis.length}/{variantes.length} ativas
                         </span>
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -303,24 +304,20 @@ export default async function AdminProdutos({
 
               <div style={{
                 padding: '14px 20px',
-                background: 'rgba(0,0,0,.15)', borderTop: '1px solid rgba(255,255,255,.05)',
+                background: 'var(--surface-2)', borderTop: '1px solid var(--border)',
                 display: 'flex', flexDirection: 'column', gap: 10,
               }}>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <Link href={`/admin/produtos/${produto.id}/editar`} style={{
-                    flex: 1, padding: '10px', borderRadius: 10,
-                    fontSize: 13, fontWeight: 800, textAlign: 'center',
-                    background: 'rgba(59,130,246,.15)', color: '#60a5fa',
-                    textDecoration: 'none', border: '1.5px solid rgba(59,130,246,.3)', transition: 'all .2s'
+                    ...getAdminButtonStyle('info', 'soft', { height: 42, borderRadius: 10 }),
+                    flex: 1,
+                    textAlign: 'center',
                   }}>
                     ✏️ Editar
                   </Link>
                   <form action={duplicarProdutoAction.bind(null, produto.id) as any} style={{ flex: 1 }}>
                     <button type="submit" style={{
-                      width: '100%', padding: '10px', borderRadius: 10,
-                      fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                      background: 'rgba(255,255,255,.05)', color: '#e2e8f0',
-                      border: '1.5px solid rgba(255,255,255,.1)', transition: 'all .2s'
+                      ...getAdminButtonStyle('neutral', 'soft', { width: '100%', height: 42, borderRadius: 10 }),
                     }}>
                       📋 Duplicar
                     </button>
@@ -330,10 +327,9 @@ export default async function AdminProdutos({
                 <div style={{ display: 'flex', gap: 10 }}>
                   <form action={toggleProdutoAtivoAction.bind(null, produto.id, isAtivo) as any} style={{ flex: 1 }}>
                     <button type="submit" style={{
-                      width: '100%', padding: '10px', borderRadius: 10,
-                      fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                      background: isAtivo ? 'rgba(239,68,68,.1)' : 'rgba(16,185,129,.15)',
-                      color: isAtivo ? '#fca5a5' : '#34d399', border: isAtivo ? '1.5px solid rgba(239,68,68,.2)' : '1.5px solid rgba(16,185,129,.3)',
+                      ...(isAtivo
+                        ? getAdminButtonStyle('danger', 'soft', { width: '100%', height: 42, borderRadius: 10 })
+                        : getAdminButtonStyle('success', 'soft', { width: '100%', height: 42, borderRadius: 10 })),
                     }}>
                       {isAtivo ? '⏸ Desativar' : '▶ Ativar'}
                     </button>
@@ -342,10 +338,9 @@ export default async function AdminProdutos({
                   {isAtivo && (
                     <form action={toggleEsgotadoAction.bind(null, produto.id, isEsgotado) as any} style={{ flex: 1 }}>
                       <button type="submit" style={{
-                        width: '100%', padding: '10px', borderRadius: 10,
-                        fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                        background: isEsgotado ? 'rgba(16,185,129,.1)' : 'rgba(245,158,11,.15)',
-                        color: isEsgotado ? '#34d399' : '#fbbf24', border: isEsgotado ? '1.5px solid rgba(16,185,129,.2)' : '1.5px solid rgba(245,158,11,.3)',
+                        ...(isEsgotado
+                          ? getAdminButtonStyle('success', 'soft', { width: '100%', height: 42, borderRadius: 10 })
+                          : getAdminButtonStyle('warning', 'soft', { width: '100%', height: 42, borderRadius: 10 })),
                       }}>
                         {isEsgotado ? '↩ Reativar' : '🚫 Esgotar'}
                       </button>
@@ -364,13 +359,13 @@ export default async function AdminProdutos({
 
       {lista.length === 0 && !erroQuery && (
         <div style={{
-          background: 'rgba(255,255,255,.02)', border: '1.5px dashed rgba(255,255,255,.1)', borderRadius: 20,
+          background: 'var(--surface)', border: '1.5px dashed var(--border)', borderRadius: 20,
           padding: '80px 20px', textAlign: 'center', backdropFilter: 'blur(10px)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12
         }}>
           <div style={{ fontSize: 40, opacity: 0.5 }}>📦</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc' }}>Nenhum produto cadastrado.</div>
-          <div style={{ fontSize: 13, color: '#94a3b8' }}>Os produtos que você adicionar aparecerão aqui.</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-1)' }}>Nenhum produto cadastrado.</div>
+          <div style={{ fontSize: 13, color: 'var(--text-3)' }}>Os produtos que você adicionar aparecerão aqui.</div>
         </div>
       )}
 
@@ -379,7 +374,7 @@ export default async function AdminProdutos({
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
           flexWrap: 'wrap', padding: '10px 0'
         }}>
-          <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700 }}>
+          <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 700 }}>
             Página {currentPage} de {totalPages}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -407,10 +402,10 @@ function StockPill({ children, tone }: {
   tone: 'neutral' | 'warning' | 'danger' | 'muted'
 }) {
   const styles: Record<typeof tone, { color: string; background: string; border: string }> = {
-    neutral: { color: '#94a3b8', background: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.1)' },
-    warning: { color: '#fbbf24', background: 'rgba(245,158,11,.1)', border: 'rgba(245,158,11,.2)' },
-    danger: { color: '#fca5a5', background: 'rgba(239,68,68,.1)', border: 'rgba(239,68,68,.2)' },
-    muted: { color: '#64748b', background: 'rgba(255,255,255,.02)', border: 'rgba(255,255,255,.05)' },
+    neutral: { color: 'var(--text-2)', background: 'var(--surface-2)', border: 'var(--border)' },
+    warning: { color: '#92400e', background: '#fef3c7', border: '#fcd34d' },
+    danger: { color: '#b91c1c', background: '#fee2e2', border: '#fca5a5' },
+    muted: { color: '#64748b', background: '#f8fafc', border: '#e2e8f0' },
   }
 
   return (
@@ -463,9 +458,9 @@ function pagerButton(enabled: boolean) {
     textDecoration: 'none',
     fontSize: 13,
     fontWeight: 800,
-    background: enabled ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.02)',
-    color: enabled ? '#f8fafc' : '#475569',
-    border: enabled ? '1px solid rgba(255,255,255,.15)' : '1px solid rgba(255,255,255,.05)',
+    background: enabled ? '#f8fafc' : '#f8fafc',
+    color: enabled ? 'var(--text-2)' : '#94a3b8',
+    border: enabled ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
     pointerEvents: enabled ? 'auto' : 'none',
     transition: 'all .2s'
   } as const

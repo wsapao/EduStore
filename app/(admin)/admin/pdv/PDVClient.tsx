@@ -176,14 +176,14 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100%', backgroundColor: '#f1f5f9' }}>
+    <div style={{ display: 'flex', height: '100%', backgroundColor: 'var(--bg)' }}>
       
       {/* Esquerda: Produtos e Categorias */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         
         {/* Header de Categorias */}
         <div style={{ 
-          padding: '16px 24px', backgroundColor: 'white', borderBottom: '1px solid #e2e8f0',
+          padding: '16px 24px', backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)',
           display: 'flex', gap: 12, overflowX: 'auto', flexShrink: 0
         }}>
           {categorias.map(cat => (
@@ -193,9 +193,9 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
               style={{
                 padding: '10px 20px', borderRadius: 999, border: 'none', cursor: 'pointer',
                 fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap',
-                backgroundColor: activeCategory === cat ? '#0f172a' : '#f8fafc',
-                color: activeCategory === cat ? 'white' : '#64748b',
-                boxShadow: activeCategory === cat ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+                backgroundColor: activeCategory === cat ? 'var(--brand)' : 'var(--surface-2)',
+                color: activeCategory === cat ? '#fff' : 'var(--text-2)',
+                boxShadow: activeCategory === cat ? '0 10px 22px rgba(249, 115, 22, 0.18)' : 'none',
                 transition: 'all 0.2s'
               }}
             >
@@ -219,7 +219,7 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
                   onClick={() => handleAddToCart(p)}
                   disabled={restricted}
                   style={{
-                    backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: 16,
+                    backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16,
                     padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center',
                     gap: 12, cursor: restricted ? 'not-allowed' : 'pointer',
                     opacity: restricted ? 0.4 : 1, transition: 'all 0.2s',
@@ -227,15 +227,15 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
                     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
                   }}
                   onMouseOver={(e) => {
-                    if (!restricted) e.currentTarget.style.borderColor = '#94a3b8'
+                    if (!restricted) e.currentTarget.style.borderColor = 'var(--brand)'
                   }}
                   onMouseOut={(e) => {
-                    if (!restricted) e.currentTarget.style.borderColor = '#e2e8f0'
+                    if (!restricted) e.currentTarget.style.borderColor = 'var(--border)'
                   }}
                 >
                   <div style={{ fontSize: 40, marginTop: 10 }}>{p.icone}</div>
                   <div style={{ width: '100%', textAlign: 'center' }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b', marginBottom: 4, lineHeight: 1.2 }}>{p.nome}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', marginBottom: 4, lineHeight: 1.2 }}>{p.nome}</div>
                     <div style={{ fontSize: 15, fontWeight: 800, color: '#059669' }}>{fmtBRL(p.preco)}</div>
                   </div>
                   {restricted && (
@@ -256,19 +256,19 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
 
       {/* Direita: Carrinho e Checkout */}
       <div style={{ 
-        width: 380, backgroundColor: 'white', borderLeft: '1px solid #e2e8f0',
+        width: 380, backgroundColor: 'var(--surface)', borderLeft: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column', flexShrink: 0
       }}>
         {/* Identificação do Aluno */}
-        <div style={{ padding: 20, borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+        <div style={{ padding: 20, borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface-2)' }}>
           {selectedAluno ? (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>
                   Aluno Identificado
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>{selectedAluno.nome}</div>
-                <div style={{ fontSize: 13, color: '#94a3b8' }}>{selectedAluno.serie}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-1)' }}>{selectedAluno.nome}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{selectedAluno.serie}</div>
                 
                 {carteira ? (
                   <div style={{ marginTop: 12, padding: '8px 12px', backgroundColor: carteira.ativo ? '#ecfdf5' : '#fef2f2', borderRadius: 8, display: 'inline-block' }}>
@@ -291,7 +291,7 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
               <button 
                 onClick={clearAluno}
                 style={{ 
-                  background: 'none', border: 'none', color: '#94a3b8', 
+                  background: 'none', border: 'none', color: 'var(--text-3)', 
                   cursor: 'pointer', fontSize: 24, padding: 4 
                 }}
               >×</button>
@@ -305,19 +305,19 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
                 onChange={e => handleSearch(e.target.value)}
                 style={{
                   width: '100%', padding: '12px 16px', borderRadius: 12,
-                  border: '1.5px solid #cbd5e1', fontSize: 14, outline: 'none',
+                  border: '1.5px solid var(--border)', fontSize: 14, outline: 'none',
                   boxSizing: 'border-box'
                 }}
               />
               {isSearching && (
-                <div style={{ position: 'absolute', right: 16, top: 14, fontSize: 12, color: '#94a3b8' }}>Buscando...</div>
+                <div style={{ position: 'absolute', right: 16, top: 14, fontSize: 12, color: 'var(--text-3)' }}>Buscando...</div>
               )}
               
               {searchResults.length > 0 && (
                 <div style={{
                   position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 8,
-                  backgroundColor: 'white', borderRadius: 12, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid #e2e8f0', zIndex: 10, maxHeight: 300, overflowY: 'auto'
+                  backgroundColor: 'var(--surface)', borderRadius: 12, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                  border: '1px solid var(--border)', zIndex: 10, maxHeight: 300, overflowY: 'auto'
                 }}>
                   {searchResults.map(aluno => (
                     <button
@@ -330,13 +330,13 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
                         setSuccess('')
                       }}
                       style={{
-                        width: '100%', padding: '12px 16px', border: 'none', borderBottom: '1px solid #f1f5f9',
-                        backgroundColor: 'white', textAlign: 'left', cursor: 'pointer',
+                        width: '100%', padding: '12px 16px', border: 'none', borderBottom: '1px solid var(--border)',
+                        backgroundColor: 'var(--surface)', textAlign: 'left', cursor: 'pointer',
                         display: 'flex', flexDirection: 'column', gap: 2
                       }}
                     >
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{aluno.nome}</span>
-                      <span style={{ fontSize: 12, color: '#64748b' }}>{aluno.serie}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>{aluno.nome}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{aluno.serie}</span>
                     </button>
                   ))}
                 </div>
@@ -348,7 +348,7 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
         {/* Itens do Carrinho */}
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
           {cart.length === 0 ? (
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)' }}>
               <span style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }}>🛒</span>
               <span style={{ fontSize: 14, fontWeight: 500 }}>Carrinho vazio</span>
             </div>
@@ -358,24 +358,24 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
                 <div key={item.produto.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ 
-                      width: 40, height: 40, backgroundColor: '#f1f5f9', borderRadius: 8, 
+                      width: 40, height: 40, backgroundColor: 'var(--bg)', borderRadius: 8, 
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 
                     }}>{item.produto.icone}</div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{item.produto.nome}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>{item.produto.nome}</div>
                       <div style={{ fontSize: 13, color: '#059669', fontWeight: 600 }}>{fmtBRL(item.produto.preco)}</div>
                     </div>
                   </div>
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, backgroundColor: '#f8fafc', borderRadius: 8, padding: '4px 8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, backgroundColor: 'var(--surface-2)', borderRadius: 8, padding: '4px 8px', border: '1px solid var(--border)' }}>
                     <button 
                       onClick={() => handleRemoveOne(item.produto.id)}
-                      style={{ background: 'none', border: 'none', fontSize: 16, color: '#64748b', cursor: 'pointer', padding: '0 4px' }}
+                      style={{ background: 'none', border: 'none', fontSize: 16, color: 'var(--text-3)', cursor: 'pointer', padding: '0 4px' }}
                     >−</button>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', minWidth: 16, textAlign: 'center' }}>{item.quantidade}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', minWidth: 16, textAlign: 'center' }}>{item.quantidade}</span>
                     <button 
                       onClick={() => handleAddToCart(item.produto)}
-                      style={{ background: 'none', border: 'none', fontSize: 16, color: '#64748b', cursor: 'pointer', padding: '0 4px' }}
+                      style={{ background: 'none', border: 'none', fontSize: 16, color: 'var(--text-3)', cursor: 'pointer', padding: '0 4px' }}
                     >+</button>
                   </div>
                 </div>
@@ -385,10 +385,10 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
         </div>
 
         {/* Footer do Checkout */}
-        <div style={{ padding: 24, borderTop: '1px solid #e2e8f0', backgroundColor: 'white' }}>
+        <div style={{ padding: 24, borderTop: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Total</span>
-            <span style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{fmtBRL(totalCart)}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase' }}>Total</span>
+            <span style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1 }}>{fmtBRL(totalCart)}</span>
           </div>
 
           {error && (
@@ -408,8 +408,8 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
               onClick={clearCart}
               disabled={cart.length === 0 || isFinalizing}
               style={{ 
-                padding: '0 20px', height: 56, borderRadius: 12, border: '1.5px solid #e2e8f0', 
-                backgroundColor: 'white', color: '#64748b', fontWeight: 700, fontSize: 15,
+                padding: '0 20px', height: 56, borderRadius: 12, border: '1.5px solid var(--border)', 
+                backgroundColor: 'var(--surface)', color: 'var(--text-3)', fontWeight: 700, fontSize: 15,
                 cursor: cart.length === 0 ? 'not-allowed' : 'pointer', opacity: cart.length === 0 ? 0.5 : 1
               }}
             >
@@ -420,7 +420,7 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
               disabled={cart.length === 0 || isFinalizing}
               style={{ 
                 flex: 1, height: 56, borderRadius: 12, border: 'none', 
-                backgroundColor: cart.length === 0 ? '#94a3b8' : '#059669', 
+                backgroundColor: cart.length === 0 ? 'var(--text-3)' : '#059669', 
                 color: 'white', fontWeight: 800, fontSize: 16,
                 cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
                 boxShadow: cart.length > 0 ? '0 4px 14px -2px rgba(5, 150, 105, 0.4)' : 'none',
@@ -441,13 +441,13 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{
-            backgroundColor: 'white', borderRadius: 24, width: 320, padding: 24,
+            backgroundColor: 'var(--surface)', borderRadius: 24, width: 320, padding: 24,
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
             display: 'flex', flexDirection: 'column', alignItems: 'center'
           }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>Digite a Senha</h3>
-            <p style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', marginBottom: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)', margin: '0 0 8px' }}>Digite a Senha</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', textAlign: 'center', marginBottom: 24 }}>
               Esta carteira requer a senha de 4 dígitos para autorizar a compra.
             </p>
 
@@ -455,8 +455,8 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
               {[0, 1, 2, 3].map(i => (
                 <div key={i} style={{
                   width: 48, height: 56, borderRadius: 12, border: '2px solid #e2e8f0',
-                  backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24, fontWeight: 800, color: '#0f172a',
+                  backgroundColor: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 24, fontWeight: 800, color: 'var(--text-1)',
                   borderColor: pinInput.length === i ? '#6366f1' : '#e2e8f0',
                 }}>
                   {pinInput[i] ? '•' : ''}
@@ -475,8 +475,8 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
                   }}
                   style={{
                     height: 56, borderRadius: 16, border: 'none',
-                    backgroundColor: key === 'OK' ? '#0f172a' : key === 'C' ? '#fef2f2' : '#f1f5f9',
-                    color: key === 'OK' ? 'white' : key === 'C' ? '#ef4444' : '#1e293b',
+                    backgroundColor: key === 'OK' ? 'var(--brand)' : key === 'C' ? '#fef2f2' : '#f1f5f9',
+                    color: key === 'OK' ? 'white' : key === 'C' ? '#ef4444' : 'var(--text-1)',
                     fontSize: typeof key === 'number' ? 24 : 16,
                     fontWeight: 800, cursor: 'pointer',
                     boxShadow: key === 'OK' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
@@ -493,7 +493,7 @@ export function PDVClient({ produtos }: { produtos: CantinaProduto[] }) {
                 setPinInput('')
               }}
               style={{
-                background: 'none', border: 'none', color: '#64748b',
+                background: 'none', border: 'none', color: 'var(--text-3)',
                 fontSize: 14, fontWeight: 600, cursor: 'pointer'
               }}
             >

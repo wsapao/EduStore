@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { aprovarEstornoParcialAction, negarEstornoParcialAction } from '@/app/actions/admin'
+import { getAdminButtonStyle } from '@/lib/admin-ui-tones'
 
 interface ItemEstornoAdmin {
   item_pedido_id: string
@@ -61,22 +62,22 @@ export function EstornoAdminCard({ estorno, metodoPagamento }: Props) {
   return (
     <div style={{
       marginTop: 10, padding: '12px 14px',
-      background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)',
+      background: '#fff7ed', border: '1px solid #fdba74',
       borderRadius: 8,
     }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color: '#fcd34d', marginBottom: 6 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: '#9a3412', marginBottom: 6 }}>
         ⚠️ Solicitação de estorno — {fmtData(estorno.created_at)}
       </div>
 
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
-        <strong style={{ color: '#f1f5f9' }}>Motivo:</strong> {estorno.motivo}
+      <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 8 }}>
+        <strong style={{ color: 'var(--text-1)' }}>Motivo:</strong> {estorno.motivo}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
         {estorno.itens.map(item => (
           <div
             key={item.item_pedido_id}
-            style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.7)' }}
+            style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-2)' }}
           >
             <span>
               {item.produto_nome} — {item.aluno_nome}
@@ -87,44 +88,34 @@ export function EstornoAdminCard({ estorno, metodoPagamento }: Props) {
         ))}
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-1)', marginBottom: 10 }}>
         Total: {fmtBRL(estorno.valor_total)}
       </div>
 
       {metodoPagamento === 'boleto' && (
         <div style={{
-          fontSize: 11, color: '#fbbf24', padding: '6px 8px',
-          background: 'rgba(245,158,11,0.1)', borderRadius: 6, marginBottom: 10,
+          fontSize: 11, color: '#9a3412', padding: '6px 8px',
+          background: '#ffedd5', border: '1px solid #fdba74', borderRadius: 6, marginBottom: 10,
         }}>
           📄 Pedido pago com boleto. Processe o reembolso manualmente no Asaas antes de aprovar.
         </div>
       )}
 
       {erro && (
-        <div style={{ fontSize: 12, color: '#f87171', marginBottom: 8 }}>{erro}</div>
+        <div style={{ fontSize: 12, color: '#b91c1c', marginBottom: 8 }}>{erro}</div>
       )}
 
       {modo === 'idle' && (
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={() => setModo('confirmar')}
-            style={{
-              padding: '7px 14px', borderRadius: 7,
-              background: 'rgba(16,185,129,0.15)', color: '#34d399',
-              border: '1px solid rgba(16,185,129,0.3)',
-              fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            }}
+            style={getAdminButtonStyle('success', 'soft', { height: 34, padding: '0 14px', fontSize: 12, fontWeight: 700, borderRadius: 7 })}
           >
             ✓ Aprovar estorno
           </button>
           <button
             onClick={() => setModo('negar')}
-            style={{
-              padding: '7px 14px', borderRadius: 7,
-              background: 'rgba(239,68,68,0.1)', color: '#f87171',
-              border: '1px solid rgba(239,68,68,0.2)',
-              fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            }}
+            style={getAdminButtonStyle('danger', 'soft', { height: 34, padding: '0 14px', fontSize: 12, fontWeight: 700, borderRadius: 7 })}
           >
             ✕ Negar
           </button>
@@ -133,31 +124,21 @@ export function EstornoAdminCard({ estorno, metodoPagamento }: Props) {
 
       {modo === 'confirmar' && (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9', marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)', marginBottom: 8 }}>
             Reembolsar {fmtBRL(estorno.valor_total)} via {metodoLabel}?
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={executarAprovacao}
               disabled={pending}
-              style={{
-                padding: '7px 14px', borderRadius: 7,
-                background: '#10b981', color: '#fff', border: 'none',
-                fontSize: 12, fontWeight: 700,
-                cursor: pending ? 'not-allowed' : 'pointer',
-                opacity: pending ? 0.7 : 1,
-              }}
+              style={{ ...getAdminButtonStyle('success', 'solid', { height: 34, padding: '0 14px', fontSize: 12, fontWeight: 700, borderRadius: 7 }), opacity: pending ? 0.7 : 1, cursor: pending ? 'not-allowed' : 'pointer' }}
             >
               {pending ? 'Processando…' : 'Confirmar'}
             </button>
             <button
               onClick={() => setModo('idle')}
               disabled={pending}
-              style={{
-                padding: '7px 14px', borderRadius: 7,
-                background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-                color: '#94a3b8', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              }}
+              style={{ ...getAdminButtonStyle('neutral', 'soft', { height: 34, padding: '0 14px', fontSize: 12, fontWeight: 600, borderRadius: 7 }), opacity: pending ? 0.7 : 1 }}
             >
               Voltar
             </button>
@@ -174,9 +155,9 @@ export function EstornoAdminCard({ estorno, metodoPagamento }: Props) {
             rows={2}
             style={{
               width: '100%', borderRadius: 6,
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(0,0,0,0.2)', padding: '8px',
-              fontSize: 12, color: '#fff', fontFamily: 'inherit',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)', padding: '8px',
+              fontSize: 12, color: 'var(--text-1)', fontFamily: 'inherit',
               boxSizing: 'border-box', resize: 'vertical', marginBottom: 8,
             }}
           />
@@ -184,24 +165,14 @@ export function EstornoAdminCard({ estorno, metodoPagamento }: Props) {
             <button
               onClick={executarNegacao}
               disabled={pending}
-              style={{
-                padding: '7px 14px', borderRadius: 7,
-                background: '#dc2626', color: '#fff', border: 'none',
-                fontSize: 12, fontWeight: 700,
-                cursor: pending ? 'not-allowed' : 'pointer',
-                opacity: pending ? 0.7 : 1,
-              }}
+              style={{ ...getAdminButtonStyle('danger', 'solid', { height: 34, padding: '0 14px', fontSize: 12, fontWeight: 700, borderRadius: 7 }), opacity: pending ? 0.7 : 1, cursor: pending ? 'not-allowed' : 'pointer' }}
             >
               {pending ? 'Negando…' : 'Confirmar negação'}
             </button>
             <button
               onClick={() => { setModo('idle'); setObsNegacao(''); setErro(null) }}
               disabled={pending}
-              style={{
-                padding: '7px 14px', borderRadius: 7,
-                background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-                color: '#94a3b8', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              }}
+              style={{ ...getAdminButtonStyle('neutral', 'soft', { height: 34, padding: '0 14px', fontSize: 12, fontWeight: 600, borderRadius: 7 }), opacity: pending ? 0.7 : 1 }}
             >
               Voltar
             </button>

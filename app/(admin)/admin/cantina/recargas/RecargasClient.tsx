@@ -2,6 +2,17 @@
 
 import { useState, useTransition } from 'react'
 import { estornarRecargaAdminAction, cancelarRecargaAdminAction } from '@/app/actions/admin'
+import {
+  getAdminButtonStyle,
+  getAdminPillStyle,
+  getAdminTone,
+} from '@/lib/admin-ui-tones'
+import {
+  formatGatewayId,
+  getRecargaMetodoMeta,
+  getRecargaPrimaryEvent,
+  getRecargaStatusMeta,
+} from '@/lib/cantina/recargas'
 
 interface Recarga {
   id: string
@@ -29,34 +40,74 @@ function fmtData(iso: string) {
   })
 }
 
-// Badges adaptados para UI escura: fundo semitransparente + borda colorida
-const STATUS_CONFIG: Record<string, { label: string; cor: string; bg: string; border: string }> = {
-  aguardando:       { label: 'Aguardando',          cor: '#fbbf24', bg: 'rgba(245,158,11,0.12)',   border: 'rgba(245,158,11,0.3)' },
-  confirmada:       { label: 'Confirmada',           cor: '#34d399', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.28)' },
-  expirada:         { label: 'Expirada',             cor: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.18)' },
-  cancelada:        { label: 'Cancelada',            cor: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.18)' },
-  estornada:        { label: 'Estornada',            cor: '#a78bfa', bg: 'rgba(124,58,237,0.15)',  border: 'rgba(124,58,237,0.32)' },
-  estorno_aprovado: { label: 'Estorno em andamento', cor: '#fbbf24', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.3)' },
-  falhou:           { label: 'Falhou',               cor: '#f87171', bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.28)' },
-}
-
 function BadgeStatus({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.falhou
+  const meta = getRecargaStatusMeta(status)
   return (
-    <span style={{
-      display: 'inline-block', padding: '3px 9px',
-      borderRadius: 99, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap',
-      color: cfg.cor, background: cfg.bg, border: `1px solid ${cfg.border}`,
-    }}>
-      {cfg.label}
-    </span>
+    <span style={getAdminPillStyle(meta.tone, { fontSize: 11, fontWeight: 800, padding: '5px 11px' })}>{meta.label}</span>
   )
 }
 
-function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: () => void }) {
+function getInitials(nome: string) {
+  const parts = nome.trim().split(/\s+/).filter(Boolean)
+  return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'AL'
+}
+
+function DetailCard({
+  label,
+  value,
+  tone = 'muted',
+}: {
+  label: string
+  value: string
+  tone?: 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'muted' | 'neutral' | 'violet'
+}) {
+  const cfg = getAdminTone(tone)
+
+  return (
+    <div style={{
+      padding: '10px 12px',
+      borderRadius: 14,
+      background: tone === 'muted' ? 'var(--surface-2)' : cfg.bg,
+      border: `1px solid ${tone === 'muted' ? 'var(--border)' : cfg.border}`,
+      minWidth: 0,
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: tone === 'muted' ? 'var(--text-3)' : cfg.text, marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (novoStatus: string) => void }) {
   const [pending, startTransition] = useTransition()
   const [acao, setAcao] = useState<'estornar' | 'cancelar' | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const metodoMeta = getRecargaMetodoMeta(recarga.metodo)
+  const primaryEvent = getRecargaPrimaryEvent(recarga)
+  const statusMeta = getRecargaStatusMeta(recarga.status)
+  const amountTone = recarga.status === 'confirmada'
+    ? getAdminTone('success')
+    : recarga.status === 'estornada'
+      ? getAdminTone('violet')
+      : recarga.status === 'falhou'
+        ? getAdminTone('danger')
+        : recarga.status === 'cancelada' || recarga.status === 'expirada'
+          ? getAdminTone('neutral')
+          : getAdminTone('accent')
+  const secondaryCard = primaryEvent.label === 'Solicitada em'
+    ? {
+      label: 'Status atual',
+      value: statusMeta.label,
+      tone: statusMeta.tone,
+    }
+    : {
+      label: primaryEvent.label,
+      value: fmtData(primaryEvent.value),
+      tone: 'neutral' as const,
+    }
 
   function confirmar(tipo: 'estornar' | 'cancelar') {
     setErro(null)
@@ -74,7 +125,7 @@ function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (
         setAcao(null)
       } else {
         setAcao(null)
-        onAtualizar()
+        onAtualizar(acao === 'estornar' ? 'estornada' : 'cancelada')
       }
     })
   }
@@ -84,46 +135,69 @@ function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (
 
   return (
     <div style={{
-      padding: '13px 16px',
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      background: '#ffffff',
+      border: '1px solid rgba(249,115,22,.14)',
+      borderRadius: 24,
+      padding: '18px',
+      boxShadow: '0 16px 28px rgba(249,115,22,.08)',
     }}>
-      {/* Linha principal: info à esq · preço + badge + ação à dir (todos alinhados) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div className="recarga-row-shell" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 16, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gap: 14, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, #f97316, #fb923c)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 14,
+              fontWeight: 900,
+              boxShadow: '0 12px 22px rgba(249,115,22,.2)',
+              flexShrink: 0,
+            }}>
+              {getInitials(recarga.aluno_nome)}
+            </div>
 
-        {/* Info: nome + data */}
-        <div style={{ flex: 1, minWidth: 160 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', lineHeight: 1.3 }}>
-            {recarga.aluno_nome}
-            <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6, fontSize: 12 }}>
-              {recarga.aluno_serie}
-            </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-1)', letterSpacing: '-.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {recarga.aluno_nome}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+                <span style={getAdminPillStyle('neutral', { fontSize: 11, fontWeight: 700, padding: '4px 10px' })}>
+                  {recarga.aluno_serie || 'Série não informada'}
+                </span>
+              </div>
+            </div>
           </div>
-          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>
-            {fmtData(recarga.created_at)}
-            <span style={{ margin: '0 5px', opacity: 0.4 }}>·</span>
-            {recarga.metodo === 'cartao' ? '💳 Cartão' : '⚡ PIX'}
+
+          <div className="recarga-meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+            <DetailCard label="Solicitada em" value={fmtData(recarga.created_at)} />
+            <DetailCard label="Método" value={`${metodoMeta.icon} ${metodoMeta.label}`} tone={metodoMeta.tone as 'warning' | 'info'} />
+            <DetailCard label={secondaryCard.label} value={secondaryCard.value} tone={secondaryCard.tone} />
+            <DetailCard label="Gateway" value={formatGatewayId(recarga.gateway_id)} />
           </div>
         </div>
 
-        {/* Direita: preço + badge + botão — todos na mesma linha horizontal */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <span style={{ fontSize: 15, fontWeight: 800, color: '#34d399', letterSpacing: '-0.01em' }}>
-            {fmtMoeda(recarga.valor)}
-          </span>
-
+        <div className="recarga-row-side" style={{ display: 'grid', gap: 10, justifyItems: 'end', minWidth: 190 }}>
+          <div style={{ display: 'grid', gap: 4, justifyItems: 'end' }}>
+            <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
+              Valor da recarga
+            </span>
+            <span style={{ fontSize: 28, fontWeight: 900, color: amountTone.text, letterSpacing: '-.04em', lineHeight: 1 }}>
+              {fmtMoeda(recarga.valor)}
+            </span>
+          </div>
           <BadgeStatus status={recarga.status} />
 
           {(podeEstornar || podeCancelar) && !acao && (
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               {podeEstornar && (
                 <button
                   onClick={() => confirmar('estornar')}
-                  style={{
-                    padding: '5px 12px', borderRadius: 7,
-                    background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.32)',
-                    color: '#a78bfa', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                    transition: 'background 0.15s',
-                  }}
+                  style={getAdminButtonStyle('violet', 'soft', { height: 38, padding: '0 14px', fontSize: 12, fontWeight: 800 })}
                 >
                   Estornar
                 </button>
@@ -131,11 +205,7 @@ function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (
               {podeCancelar && (
                 <button
                   onClick={() => confirmar('cancelar')}
-                  style={{
-                    padding: '5px 12px', borderRadius: 7,
-                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)',
-                    color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  }}
+                  style={getAdminButtonStyle('danger', 'soft', { height: 38, padding: '0 14px', fontSize: 12, fontWeight: 800 })}
                 >
                   Cancelar
                 </button>
@@ -148,9 +218,13 @@ function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (
       {/* Motivo da falha */}
       {recarga.status === 'falhou' && recarga.motivo_falha && (
         <div style={{
-          marginTop: 8, padding: '8px 10px',
-          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)',
-          borderRadius: 6, fontSize: 11, color: '#fca5a5',
+          marginTop: 12,
+          padding: '12px 14px',
+          background: '#fff5f5',
+          border: `1px solid ${getAdminTone('danger').border}`,
+          borderRadius: 14,
+          fontSize: 12,
+          color: '#b91c1c',
         }}>
           <span style={{ fontWeight: 700, marginRight: 4 }}>Motivo:</span>
           {recarga.motivo_falha}
@@ -160,28 +234,31 @@ function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (
       {/* Confirmação inline */}
       {acao && (
         <div style={{
-          marginTop: 10, padding: '12px 14px',
-          background: acao === 'estornar' ? 'rgba(124,58,237,0.1)' : 'rgba(239,68,68,0.08)',
-          border: `1px solid ${acao === 'estornar' ? 'rgba(124,58,237,0.25)' : 'rgba(239,68,68,0.2)'}`,
-          borderRadius: 8,
+          marginTop: 14,
+          padding: '14px 16px',
+          background: acao === 'estornar' ? getAdminTone('violet').bg : '#fff5f5',
+          border: `1px solid ${acao === 'estornar' ? getAdminTone('violet').border : getAdminTone('danger').border}`,
+          borderRadius: 16,
         }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9', marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)', marginBottom: 10, lineHeight: 1.5 }}>
             {acao === 'estornar'
               ? `Estornar ${fmtMoeda(recarga.valor)} de ${recarga.aluno_nome.split(' ')[0]}? O saldo será debitado (pode ficar negativo).`
               : `Cancelar recarga de ${fmtMoeda(recarga.valor)}? O pagamento será cancelado no Asaas.`
             }
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
               onClick={executar}
               disabled={pending}
               style={{
-                padding: '7px 16px', borderRadius: 7,
-                background: acao === 'estornar' ? '#7c3aed' : '#dc2626',
-                color: '#fff', border: 'none',
-                fontSize: 12, fontWeight: 700,
-                cursor: pending ? 'not-allowed' : 'pointer',
+                ...getAdminButtonStyle(acao === 'estornar' ? 'violet' : 'danger', 'solid', {
+                  height: 38,
+                  padding: '0 16px',
+                  fontSize: 12,
+                  fontWeight: 800,
+                }),
                 opacity: pending ? 0.7 : 1,
+                cursor: pending ? 'not-allowed' : 'pointer',
               }}
             >
               {pending ? 'Processando…' : 'Confirmar'}
@@ -189,17 +266,13 @@ function RecargaRow({ recarga, onAtualizar }: { recarga: Recarga; onAtualizar: (
             <button
               onClick={() => { setAcao(null); setErro(null) }}
               disabled={pending}
-              style={{
-                padding: '7px 14px', borderRadius: 7,
-                background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-                color: '#94a3b8', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              }}
+              style={getAdminButtonStyle('neutral', 'soft', { height: 38, padding: '0 14px', fontSize: 12, fontWeight: 700 })}
             >
               Voltar
             </button>
           </div>
           {erro && (
-            <div style={{ marginTop: 8, fontSize: 12, color: '#f87171', fontWeight: 600 }}>
+            <div style={{ marginTop: 8, fontSize: 12, color: '#b91c1c', fontWeight: 700 }}>
               ❌ {erro}
             </div>
           )}
@@ -239,13 +312,9 @@ export function RecargasClient({ recargas: inicial }: { recargas: Recarga[] }) {
           <button
             key={f.value}
             onClick={() => setFiltro(f.value)}
-            style={{
-              padding: '6px 14px', borderRadius: 99,
-              background: filtro === f.value ? 'var(--brand)' : 'rgba(255,255,255,0.05)',
-              border: filtro === f.value ? 'none' : '1px solid rgba(255,255,255,0.1)',
-              color: filtro === f.value ? '#fff' : '#94a3b8',
-              fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            }}
+            style={filtro === f.value
+              ? getAdminButtonStyle('accent', 'solid', { height: 44, padding: '0 16px', borderRadius: 999, fontSize: 12, fontWeight: 800 })
+              : getAdminButtonStyle('neutral', 'soft', { height: 44, padding: '0 16px', borderRadius: 999, fontSize: 12, fontWeight: 800 })}
           >
             {f.label}
           </button>
@@ -254,11 +323,20 @@ export function RecargasClient({ recargas: inicial }: { recargas: Recarga[] }) {
 
       {/* Lista */}
       <div style={{
-        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 'var(--r-xl)', overflow: 'hidden',
+        display: 'grid',
+        gap: 12,
       }}>
         {filtradas.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+          <div style={{
+            padding: '40px',
+            textAlign: 'center',
+            color: 'var(--text-3)',
+            fontSize: 13,
+            background: '#ffffff',
+            border: '1px solid rgba(249,115,22,.14)',
+            borderRadius: 24,
+            boxShadow: '0 16px 28px rgba(249,115,22,.08)',
+          }}>
             Nenhuma recarga encontrada.
           </div>
         ) : (
@@ -266,11 +344,34 @@ export function RecargasClient({ recargas: inicial }: { recargas: Recarga[] }) {
             <RecargaRow
               key={r.id}
               recarga={r}
-              onAtualizar={() => atualizarRecarga(r.id, r.status === 'confirmada' ? 'estornada' : 'cancelada')}
+              onAtualizar={(novoStatus) => atualizarRecarga(r.id, novoStatus)}
             />
           ))
         )}
       </div>
+
+      <style>{`
+        @media (max-width: 980px) {
+          .recarga-row-shell {
+            grid-template-columns: 1fr !important;
+          }
+
+          .recarga-row-side {
+            justify-items: start !important;
+            min-width: 0 !important;
+          }
+
+          .recarga-meta-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .recarga-meta-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }

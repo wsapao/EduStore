@@ -14,7 +14,7 @@ export default async function AuditoriaPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', marginBottom: 24 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', marginBottom: 24 }}>
         Auditoria
       </h1>
       <AuditoriaView initialEntries={initialEntries} initialError={initialError} />

@@ -88,11 +88,11 @@ export function UsuarioRow({
       opacity,
     }}>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {usuario.nome ?? usuario.email ?? '(sem nome)'}
           {isSelf && <span style={{ marginLeft: 6, fontSize: 10, color: '#fbbf24' }}>(você)</span>}
         </div>
-        <div style={{ fontSize: 11, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {usuario.email}
         </div>
       </div>
@@ -110,7 +110,7 @@ export function UsuarioRow({
         </select>
       </div>
 
-      <div style={{ fontSize: 11, color: '#94a3b8' }}>
+      <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
         {usuario.suspenso ? <span style={{ color: '#ef4444', fontWeight: 700 }}>Suspenso</span> : fmtData(usuario.last_sign_in_at)}
       </div>
 
@@ -137,11 +137,11 @@ export function UsuarioRow({
 }
 
 const selectStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.25)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 8,
   padding: '6px 10px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 12,
   outline: 'none',
   width: '100%',
@@ -150,10 +150,10 @@ const selectStyle: React.CSSProperties = {
 
 const btnGhost: React.CSSProperties = {
   background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid var(--border)',
   borderRadius: 8,
   padding: '6px 12px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 12,
   fontWeight: 700,
   cursor: 'pointer',

@@ -152,10 +152,10 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', margin: '0 0 6px', letterSpacing: '-.03em' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-1)', margin: '0 0 6px', letterSpacing: '-.03em' }}>
           📷 Check-in
         </h1>
-        <p style={{ fontSize: 13, color: '#94a3b8', margin: 0, fontWeight: 500 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0, fontWeight: 500 }}>
           Escaneie o QR Code do ingresso digital para validar a entrada.
         </p>
       </div>
@@ -171,7 +171,7 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
         <>
           {/* Seletor de evento */}
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,.35)', marginBottom: 8, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '.08em', textTransform: 'uppercase' }}>
               Evento
             </label>
             <select
@@ -179,9 +179,9 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
               onChange={e => { setProdutoId(e.target.value); pararCamera() }}
               style={{
                 width: '100%', padding: '10px 14px',
-                borderRadius: 10, border: '1px solid rgba(255,255,255,.1)',
-                fontSize: 14, fontWeight: 600, color: '#f8fafc',
-                background: 'rgba(0,0,0,.2)', appearance: 'none', cursor: 'pointer',
+                borderRadius: 10, border: '1px solid var(--border)',
+                fontSize: 14, fontWeight: 600, color: 'var(--text-1)',
+                background: 'var(--surface-2)', appearance: 'none', cursor: 'pointer',
                 fontFamily: 'inherit',
               }}
             >
@@ -196,23 +196,23 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
 
           {/* Contador */}
           <div style={{
-            background: 'rgba(255,255,255,.02)', border: '1.5px solid rgba(255,255,255,.06)',
+            background: 'var(--surface)', border: '1.5px solid var(--border)',
             borderRadius: 16, padding: '20px 24px', marginBottom: 20,
             backdropFilter: 'blur(16px)',
           }}>
             <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
               <StatBox value={totalPresentes} label="Presentes" color="#4ade80" bg="rgba(16,185,129,.1)" border="rgba(16,185,129,.2)" />
               <StatBox value={contagem.emitido} label="Aguardando" color="#60a5fa" bg="rgba(59,130,246,.1)" border="rgba(59,130,246,.2)" />
-              <StatBox value={totalEsperados} label="Total" color="#f8fafc" bg="rgba(255,255,255,.04)" border="rgba(255,255,255,.1)" />
+              <StatBox value={totalEsperados} label="Total" color="var(--text-1)" bg="var(--surface-2)" border="var(--border)" />
             </div>
 
             {/* Barra de progresso */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8' }}>Presença</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)' }}>Presença</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#4ade80' }}>{pct}%</span>
               </div>
-              <div style={{ height: 6, background: 'rgba(255,255,255,.08)', borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ height: 6, background: 'var(--surface-2)', borderRadius: 999, overflow: 'hidden' }}>
                 <div style={{
                   height: '100%', borderRadius: 999,
                   background: 'linear-gradient(90deg, #22c55e, #16a34a)',
@@ -227,11 +227,11 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
             <div style={{
               borderRadius: 14, padding: '16px 20px', marginBottom: 20,
               background: processing
-                ? 'rgba(255,255,255,.04)'
+                ? 'var(--surface-2)'
                 : result?.ok
                   ? 'rgba(16,185,129,.1)'
                   : 'rgba(239,68,68,.1)',
-              border: `2px solid ${processing ? 'rgba(255,255,255,.1)' : result?.ok ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)'}`,
+              border: `2px solid ${processing ? 'var(--border)' : result?.ok ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)'}`,
               display: 'flex', alignItems: 'flex-start', gap: 14,
               animation: 'fadeIn .2s ease',
             }}>
@@ -241,7 +241,7 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
               <div>
                 <div style={{
                   fontSize: 16, fontWeight: 800, marginBottom: 4,
-                  color: processing ? '#94a3b8' : result?.ok ? '#4ade80' : '#f87171',
+                  color: processing ? 'var(--text-3)' : result?.ok ? '#4ade80' : '#f87171',
                 }}>
                   {processing ? 'Validando…' : result?.ok ? 'ENTRADA LIBERADA' : 'ENTRADA NEGADA'}
                 </div>
@@ -256,7 +256,7 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
 
           {/* Câmera */}
           <div style={{
-            background: 'rgba(255,255,255,.02)', border: '1.5px solid rgba(255,255,255,.06)',
+            background: 'var(--surface)', border: '1.5px solid var(--border)',
             borderRadius: 16, overflow: 'hidden', marginBottom: 20,
             backdropFilter: 'blur(16px)',
           }}>
@@ -274,7 +274,7 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
               {!scanning && (
                 <div style={{ textAlign: 'center', padding: 32 }}>
                   <div style={{ fontSize: 64, marginBottom: 12 }}>📷</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,.3)' }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-3)' }}>
                     Câmera desligada
                   </div>
                 </div>
@@ -301,9 +301,9 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
 
               {scanning && processing && (
                 <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ background: 'rgba(255,255,255,.08)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 14, padding: '16px 24px', textAlign: 'center' }}>
+                  <div style={{ background: 'var(--surface-2)', backdropFilter: 'blur(16px)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 24px', textAlign: 'center' }}>
                     <div style={{ fontSize: 28, marginBottom: 8 }}>⏳</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>Validando…</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>Validando…</div>
                   </div>
                 </div>
               )}
@@ -314,7 +314,7 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
               {!scanning ? (
                 <button onClick={iniciarCamera} style={{
                   flex: 1, height: 48,
-                  background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                  background: 'linear-gradient(135deg, #f97316, #ec4899)',
                   color: '#fff', border: 'none', borderRadius: 12,
                   fontSize: 14, fontWeight: 700, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -324,8 +324,8 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
               ) : (
                 <button onClick={pararCamera} style={{
                   flex: 1, height: 48,
-                  background: 'rgba(255,255,255,.06)', color: '#94a3b8',
-                  border: '1px solid rgba(255,255,255,.1)', borderRadius: 12,
+                  background: 'var(--surface-2)', color: 'var(--text-3)',
+                  border: '1px solid var(--border)', borderRadius: 12,
                   fontSize: 14, fontWeight: 700, cursor: 'pointer',
                 }}>
                   ⏹ Desligar câmera
@@ -346,10 +346,10 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
 
           {/* Entrada manual */}
           <div style={{
-            background: 'rgba(255,255,255,.02)', border: '1.5px solid rgba(255,255,255,.06)',
+            background: 'var(--surface)', border: '1.5px solid var(--border)',
             borderRadius: 16, padding: '20px', backdropFilter: 'blur(16px)',
           }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 12 }}>
               🔢 Inserir código manualmente
             </div>
             <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: 10 }}>
@@ -359,9 +359,9 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
                 placeholder="Cole o token UUID do ingresso…"
                 style={{
                   flex: 1, height: 44, padding: '0 14px',
-                  borderRadius: 10, border: '1px solid rgba(255,255,255,.1)',
+                  borderRadius: 10, border: '1px solid var(--border)',
                   fontSize: 13, fontFamily: 'monospace',
-                  color: '#f8fafc', background: 'rgba(0,0,0,.2)',
+                  color: 'var(--text-1)', background: 'var(--surface-2)',
                 }}
               />
               <button
@@ -369,16 +369,16 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
                 disabled={!manualToken.trim() || processing}
                 style={{
                   height: 44, padding: '0 18px',
-                  background: manualToken.trim() && !processing ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.03)',
-                  color: manualToken.trim() && !processing ? '#f8fafc' : 'rgba(255,255,255,.2)',
-                  border: '1px solid rgba(255,255,255,.1)', borderRadius: 10,
+                  background: manualToken.trim() && !processing ? 'linear-gradient(135deg, #f97316, #fb923c)' : 'var(--surface-2)',
+                  color: manualToken.trim() && !processing ? '#fff' : 'var(--text-3)',
+                  border: '1px solid var(--border)', borderRadius: 10,
                   fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
                 }}
               >
                 Validar
               </button>
             </form>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', margin: '8px 0 0' }}>
+            <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '8px 0 0' }}>
               O token é o UUID exibido no ingresso digital (ex: 9aeef2df-3ef2-…)
             </p>
           </div>
@@ -389,8 +389,8 @@ export function CheckinClient({ produtos }: { produtos: ProdutoCheckin[] }) {
       {produtoSelecionado && (
         <div style={{
           marginTop: 20, padding: '14px 16px',
-          background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
-          borderRadius: 12, fontSize: 12, color: '#94a3b8',
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 12, fontSize: 12, color: 'var(--text-3)',
           display: 'flex', gap: 16, flexWrap: 'wrap',
         }}>
           {produtoSelecionado.data_evento && (

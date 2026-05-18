@@ -62,8 +62,8 @@ export function TermosForm({
   return (
     <section
       style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
         borderRadius: 16,
         padding: 24,
       }}
@@ -77,7 +77,7 @@ export function TermosForm({
           gap: 12,
         }}
       >
-        <h2 style={{ fontSize: 16, fontWeight: 800, color: '#f8fafc', margin: 0 }}>{titulo}</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-1)', margin: 0 }}>{titulo}</h2>
         {versaoAtual ? (
           <span
             style={{
@@ -116,11 +116,11 @@ export function TermosForm({
         placeholder={PLACEHOLDERS[tipo]}
         style={{
           width: '100%',
-          background: 'rgba(0,0,0,0.25)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
           borderRadius: 10,
           padding: '12px 14px',
-          color: '#f8fafc',
+          color: 'var(--text-1)',
           fontSize: 14,
           fontFamily:
             'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
@@ -169,7 +169,7 @@ export function TermosForm({
             {msg.texto}
           </span>
         )}
-        <span style={{ fontSize: 12, color: '#64748b', marginLeft: 'auto' }}>
+        <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 'auto' }}>
           {conteudo.trim().length} caracteres
         </span>
       </div>
@@ -181,7 +181,7 @@ export function TermosForm({
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#cbd5e1',
+            color: 'var(--text-2)',
             fontSize: 13,
             fontWeight: 700,
             cursor: 'pointer',
@@ -209,26 +209,26 @@ export function TermosForm({
             }}
           >
             {historico.length === 0 && (
-              <li style={{ fontSize: 12, color: '#64748b' }}>Nenhuma versão publicada ainda.</li>
+              <li style={{ fontSize: 12, color: 'var(--text-3)' }}>Nenhuma versão publicada ainda.</li>
             )}
             {historico.map((h) => (
               <li
                 key={h.id}
                 style={{
                   fontSize: 12,
-                  color: '#94a3b8',
+                  color: 'var(--text-3)',
                   padding: '6px 10px',
                   borderRadius: 8,
-                  background: 'rgba(0,0,0,0.2)',
+                  background: 'var(--surface-2)',
                 }}
               >
-                <strong style={{ color: '#cbd5e1' }}>v{h.versao}</strong>
+                <strong style={{ color: 'var(--text-2)' }}>v{h.versao}</strong>
                 {' — '}
                 {formatarData(h.publicado_em)}
                 {h.publicado_por_email && (
                   <>
                     {' por '}
-                    <span style={{ color: '#cbd5e1' }}>{h.publicado_por_email}</span>
+                    <span style={{ color: 'var(--text-2)' }}>{h.publicado_por_email}</span>
                   </>
                 )}
               </li>

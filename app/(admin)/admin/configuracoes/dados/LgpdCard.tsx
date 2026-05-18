@@ -268,7 +268,7 @@ export function LgpdCard() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <label style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{label}</label>
+      <label style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 700 }}>{label}</label>
       {children}
     </div>
   )
@@ -287,18 +287,18 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(15,23,42,.6)',
-  border: '1px solid rgba(255,255,255,.08)',
+  border: '1px solid var(--border)',
   borderRadius: 16,
   padding: 24,
 }
 const titleStyle: React.CSSProperties = {
   fontSize: 18,
   fontWeight: 800,
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   margin: 0,
 }
 const subStyle: React.CSSProperties = {
-  color: '#94a3b8',
+  color: 'var(--text-3)',
   fontSize: 13,
   marginTop: 4,
   marginBottom: 0,
@@ -318,24 +318,24 @@ const blockTitleStyle: React.CSSProperties = {
   margin: 0,
 }
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,.3)',
-  border: '1px solid rgba(255,255,255,.1)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 8,
   padding: '8px 10px',
-  color: '#f8fafc',
+  color: 'var(--text-1)',
   fontSize: 13,
   fontFamily: 'inherit',
 }
 const previewBoxStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,.25)',
-  border: '1px solid rgba(255,255,255,.08)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 12,
   padding: 16,
   marginTop: 4,
 }
 const kvLabel: React.CSSProperties = {
   fontSize: 11,
-  color: '#94a3b8',
+  color: 'var(--text-3)',
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '.05em',
@@ -348,7 +348,7 @@ const kvValue: React.CSSProperties = {
 }
 const kvValueMuted: React.CSSProperties = {
   fontSize: 13,
-  color: '#94a3b8',
+  color: 'var(--text-3)',
   marginTop: 2,
 }
 function primaryBtn(disabled: boolean): React.CSSProperties {
@@ -367,8 +367,8 @@ function primaryBtn(disabled: boolean): React.CSSProperties {
 function secondaryBtn(disabled: boolean): React.CSSProperties {
   return {
     background: disabled ? 'rgba(255,255,255,.05)' : 'rgba(255,255,255,.08)',
-    color: disabled ? '#64748b' : '#e2e8f0',
-    border: '1px solid rgba(255,255,255,.1)',
+    color: disabled ? 'var(--text-3)' : '#e2e8f0',
+    border: '1px solid var(--border)',
     borderRadius: 8,
     padding: '9px 16px',
     fontSize: 13,
