@@ -17,7 +17,7 @@ export function XkolaMark({
   const markFilter =
     theme === 'dark'
       ? 'drop-shadow(0 10px 20px rgba(7,17,35,.32))'
-      : 'drop-shadow(0 8px 16px rgba(37,99,235,.12))'
+      : 'drop-shadow(0 8px 16px rgba(255,107,26,.18))'
 
   return (
     <svg
@@ -35,25 +35,25 @@ export function XkolaMark({
     >
       <defs>
         <linearGradient id={`${gradientSeed}-left`} x1="16" y1="12" x2="64" y2="72" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#33D6FF" />
-          <stop offset="1" stopColor="#245BFF" />
+          <stop stopColor="#FFA875" />
+          <stop offset="1" stopColor="#FF5500" />
         </linearGradient>
         <linearGradient id={`${gradientSeed}-main`} x1="22" y1="100" x2="104" y2="10" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#2EC9FF" />
-          <stop offset="0.58" stopColor="#2156FF" />
-          <stop offset="1" stopColor="#4EC8FF" />
+          <stop stopColor="#FFC093" />
+          <stop offset="0.58" stopColor="#FF6B1A" />
+          <stop offset="1" stopColor="#FF8540" />
         </linearGradient>
         <linearGradient id={`${gradientSeed}-upper`} x1="102" y1="60" x2="137" y2="12" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#39CFFF" />
-          <stop offset="1" stopColor="#2152FF" />
+          <stop stopColor="#FFA875" />
+          <stop offset="1" stopColor="#E2510A" />
         </linearGradient>
         <linearGradient id={`${gradientSeed}-lower`} x1="92" y1="56" x2="140" y2="102" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#214EFF" />
-          <stop offset="1" stopColor="#38E2F6" />
+          <stop stopColor="#E2510A" />
+          <stop offset="1" stopColor="#FF8540" />
         </linearGradient>
         <linearGradient id={`${gradientSeed}-cross`} x1="68" y1="76" x2="96" y2="106" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#3498FF" />
-          <stop offset="1" stopColor="#2550FF" />
+          <stop stopColor="#FF8540" />
+          <stop offset="1" stopColor="#FF5500" />
         </linearGradient>
       </defs>
       <path
