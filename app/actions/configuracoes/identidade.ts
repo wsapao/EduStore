@@ -44,7 +44,16 @@ export async function atualizarIdentidadeAction(formData: FormData) {
   }
 
   const { error } = await supabase.from('escolas').update(payload).eq('id', escolaId)
-  if (error) return { error: 'Erro ao salvar identidade.' }
+  if (error) {
+    console.error('[atualizarIdentidadeAction] supabase update failed', {
+      escolaId,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    })
+    return { error: 'Erro ao salvar identidade.' }
+  }
 
   await auditLog({ modulo: 'identidade', acao: 'atualizou_identidade' })
 
@@ -97,7 +106,16 @@ export async function atualizarEnderecoAction(formData: FormData) {
     })
     .eq('id', escolaId)
 
-  if (error) return { error: 'Erro ao salvar endereço.' }
+  if (error) {
+    console.error('[atualizarEnderecoAction] supabase update failed', {
+      escolaId,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    })
+    return { error: 'Erro ao salvar endereço.' }
+  }
 
   await auditLog({ modulo: 'identidade', acao: 'atualizou_endereco' })
 
@@ -154,7 +172,16 @@ export async function uploadAssetEscolaAction(kind: AssetKind, file: File) {
     .from('escola-assets')
     .upload(fileName, file, { upsert: false, contentType: file.type })
 
-  if (upErr || !upData) return { error: 'Falha no upload do arquivo.' }
+  if (upErr || !upData) {
+    console.error('[uploadAssetEscolaAction] storage upload failed', {
+      escolaId,
+      kind,
+      fileName,
+      message: upErr?.message,
+      name: upErr?.name,
+    })
+    return { error: 'Falha no upload do arquivo.' }
+  }
 
   const { data: pub } = supabase.storage.from('escola-assets').getPublicUrl(upData.path)
   const url = pub.publicUrl
@@ -164,7 +191,18 @@ export async function uploadAssetEscolaAction(kind: AssetKind, file: File) {
     .update({ [COLUNAS[kind]]: url })
     .eq('id', escolaId)
 
-  if (updErr) return { error: 'Upload OK, mas falhou ao atualizar a escola.' }
+  if (updErr) {
+    console.error('[uploadAssetEscolaAction] supabase update failed', {
+      escolaId,
+      kind,
+      path: upData.path,
+      code: updErr.code,
+      message: updErr.message,
+      details: updErr.details,
+      hint: updErr.hint,
+    })
+    return { error: 'Upload OK, mas falhou ao atualizar a escola.' }
+  }
 
   await auditLog({ modulo: 'identidade', acao: 'upload_asset', metadata: { kind } })
 
