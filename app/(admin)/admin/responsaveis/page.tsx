@@ -445,19 +445,24 @@ export default async function AdminResponsaveisPage({
               }}
             >
               <input type="hidden" name="responsavel_id" value={responsavel.id} />
-              <select name="aluno_id" defaultValue="" style={selectStyle}>
-                <option value="" style={{ color: '#111827' }}>
-                  Vincular um aluno...
-                </option>
-                {alunosDisponiveis
-                  .filter((aluno) => !responsavel.alunos.some((linked) => linked.id === aluno.id))
-                  .map((aluno) => (
-                    <option key={aluno.id} value={aluno.id} style={{ color: '#111827' }}>
-                      {aluno.nome} · {aluno.serie}
-                      {aluno.turma ? ` · ${aluno.turma}` : ''}
+              {(() => {
+                const linkedIds = new Set(responsavel.alunos.map((linked) => linked.id))
+                return (
+                  <select name="aluno_id" defaultValue="" style={selectStyle}>
+                    <option value="" style={{ color: '#111827' }}>
+                      Vincular um aluno...
                     </option>
-                  ))}
-              </select>
+                    {alunosDisponiveis
+                      .filter((aluno) => !linkedIds.has(aluno.id))
+                      .map((aluno) => (
+                        <option key={aluno.id} value={aluno.id} style={{ color: '#111827' }}>
+                          {aluno.nome} · {aluno.serie}
+                          {aluno.turma ? ` · ${aluno.turma}` : ''}
+                        </option>
+                      ))}
+                  </select>
+                )
+              })()}
               <button
                 type="submit"
                 style={getAdminButtonStyle('accent', 'solid', {

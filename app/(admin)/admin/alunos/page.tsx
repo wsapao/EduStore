@@ -65,15 +65,15 @@ export default async function AdminAlunosPage({
   if (selectedSerie) query = query.eq('serie', selectedSerie)
   if (term) query = query.ilike('nome', `%${term}%`)
 
-  const [{ data: rows, count: totalCount }, seriesDisponiveis] = await Promise.all([
-    query.range(from, to),
-    getSeriesDisponiveis(),
-  ])
-
-  const { data: responsaveisRows } = await supabase
-    .from('responsaveis')
-    .select('id, nome, email, cpf, telefone, escola_id, created_at')
-    .order('nome', { ascending: true })
+  const [{ data: rows, count: totalCount }, seriesDisponiveis, { data: responsaveisRows }] =
+    await Promise.all([
+      query.range(from, to),
+      getSeriesDisponiveis(),
+      supabase
+        .from('responsaveis')
+        .select('id, nome, email, cpf, telefone, escola_id, created_at')
+        .order('nome', { ascending: true }),
+    ])
 
   const alunos = ((rows ?? []) as unknown as AlunoAdminRow[]).map((row) => ({
     ...row,
@@ -369,18 +369,23 @@ export default async function AdminAlunosPage({
               }}
             >
               <input type="hidden" name="aluno_id" value={aluno.id} />
-              <select name="responsavel_id" defaultValue="" style={compactSelectStyle}>
-                <option value="" style={{ color: '#111827' }}>
-                  Vincular um responsável...
-                </option>
-                {responsaveisDisponiveis
-                  .filter((responsavel) => !aluno.responsaveis.some((linked) => linked.id === responsavel.id))
-                  .map((responsavel) => (
-                    <option key={responsavel.id} value={responsavel.id} style={{ color: '#111827' }}>
-                      {responsavel.nome} · {responsavel.email}
+              {(() => {
+                const linkedIds = new Set(aluno.responsaveis.map((linked) => linked.id))
+                return (
+                  <select name="responsavel_id" defaultValue="" style={compactSelectStyle}>
+                    <option value="" style={{ color: '#111827' }}>
+                      Vincular um responsável...
                     </option>
-                  ))}
-              </select>
+                    {responsaveisDisponiveis
+                      .filter((responsavel) => !linkedIds.has(responsavel.id))
+                      .map((responsavel) => (
+                        <option key={responsavel.id} value={responsavel.id} style={{ color: '#111827' }}>
+                          {responsavel.nome} · {responsavel.email}
+                        </option>
+                      ))}
+                  </select>
+                )
+              })()}
               <button
                 type="submit"
                 style={getAdminButtonStyle('accent', 'solid', {
