@@ -91,7 +91,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
 
         {selectedAluno ? (
           <>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.04em', marginBottom: 2 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,.85)', letterSpacing: '.02em', marginBottom: 2 }}>
               {greeting}, responsável
             </div>
             <div style={{ fontSize: 24, fontWeight: 900, color: 'white', letterSpacing: '-.04em', marginBottom: 5 }}>
@@ -112,7 +112,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
           </>
         ) : (
           <>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.04em', marginBottom: 2 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,.85)', letterSpacing: '.02em', marginBottom: 2 }}>
               {greeting}, {responsavel?.nome?.split(' ')[0] ?? 'Usuário'}
             </div>
             <div style={{ fontSize: 24, fontWeight: 900, color: 'white', letterSpacing: '-.04em', marginBottom: 5 }}>

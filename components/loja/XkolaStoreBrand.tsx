@@ -23,23 +23,30 @@ export function XkolaStoreBrand({
       <XkolaMark theme={theme} width={markWidth} height={markHeight} />
 
       <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, minWidth: 0 }}>
-        <div style={{ fontSize: compact ? 14 : 15, fontWeight: 900, color: titleColor, letterSpacing: '-.03em' }}>
-          {LOJA_BRAND_NAME}
-        </div>
         <div
           style={{
-            fontSize: compact ? 10 : 11,
-            fontWeight: 700,
-            color: subtitleColor,
-            letterSpacing: compact ? '.02em' : '.03em',
+            fontSize: compact ? 13 : 14,
+            fontWeight: 800,
+            color: titleColor,
+            letterSpacing: '-.02em',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            maxWidth: compact ? 160 : 190,
+            maxWidth: compact ? 180 : 220,
+          }}
+        >
+          {getLojaBrandSubtitle(escolaNome) || 'Loja Escolar'}
+        </div>
+        <div
+          style={{
+            fontSize: compact ? 9 : 10,
+            fontWeight: 600,
+            color: subtitleColor,
+            letterSpacing: '.03em',
             marginTop: 2,
           }}
         >
-          {getLojaBrandSubtitle(escolaNome)}
+          by {LOJA_BRAND_NAME}
         </div>
       </div>
     </div>
