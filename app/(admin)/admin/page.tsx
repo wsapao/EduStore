@@ -601,18 +601,23 @@ export default async function AdminDashboard({
                       {produto.vendas} vendas · {fmtBRL(produto.receita)}
                     </div>
                   </div>
-                  <div
-                    style={{
-                      borderRadius: 999,
-                      padding: '4px 10px',
-                      fontSize: 11,
-                      fontWeight: 800,
-                      color: CATEGORY_META[produto.categoria].color,
-                      background: `${CATEGORY_META[produto.categoria].color}12`,
-                    }}
-                  >
-                    {CATEGORY_META[produto.categoria].label}
-                  </div>
+                    {
+                      const meta = CATEGORY_META[produto.categoria as keyof typeof CATEGORY_META] || CATEGORY_META.outros;
+                      return (
+                        <div
+                          style={{
+                            borderRadius: 999,
+                            padding: '4px 10px',
+                            fontSize: 11,
+                            fontWeight: 800,
+                            color: meta.color,
+                            background: `${meta.color}12`,
+                          }}
+                        >
+                          {meta.label}
+                        </div>
+                      );
+                    }
                 </div>
               ))
             ) : (
@@ -630,11 +635,13 @@ export default async function AdminDashboard({
 
           <div style={{ display: 'grid', gap: 12 }}>
             {categoryPerformance.length > 0 ? (
-              categoryPerformance.map((item) => (
+              categoryPerformance.map((item) => {
+                const meta = CATEGORY_META[item.categoria as keyof typeof CATEGORY_META] || CATEGORY_META.outros;
+                return (
                 <div key={item.categoria} style={{ display: 'grid', gap: 6 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
-                      {CATEGORY_META[item.categoria].icon} {CATEGORY_META[item.categoria].label}
+                      {meta.icon} {meta.label}
                     </span>
                     <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{item.percentual}%</span>
                   </div>
@@ -644,13 +651,13 @@ export default async function AdminDashboard({
                         width: `${item.percentual}%`,
                         height: '100%',
                         borderRadius: 999,
-                        background: CATEGORY_META[item.categoria].color,
+                        background: meta.color,
                       }}
                     />
                   </div>
                   <div style={{ fontSize: 11, color: '#94a3b8' }}>{item.vendas} itens vendidos no periodo</div>
                 </div>
-              ))
+              )})
             ) : (
               <EmptyPanel text="Sem volume suficiente para gerar leitura por categoria." />
             )}
