@@ -16,7 +16,7 @@ export function BottomNavigation() {
   const items = [
     { label: 'Loja', href: '/loja', icon: Store },
     { label: 'Pedidos', href: '/pedidos', icon: ShoppingBag },
-    { label: 'Cantina', href: '/cantina', icon: Utensils },
+    // { label: 'Cantina', href: '/cantina', icon: Utensils }, // Temporariamente oculto
     { label: 'Perfil', href: '/perfil', icon: User },
   ]
 

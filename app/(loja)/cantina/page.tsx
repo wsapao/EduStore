@@ -16,6 +16,9 @@ export default async function CantinaPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // Temporariamente oculto (redireciona para loja)
+  redirect('/loja')
+
   // Buscar alunos vinculados
   const { data: vinculos } = await supabase
     .from('responsavel_aluno')
