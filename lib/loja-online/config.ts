@@ -23,6 +23,7 @@ function uniqueStrings(values: readonly string[]) {
   const seen = new Set<string>()
 
   for (const value of values) {
+    if (typeof value !== 'string') continue
     const normalized = value.trim()
     if (!normalized || seen.has(normalized)) continue
     seen.add(normalized)
@@ -99,6 +100,7 @@ export function pickProdutosDestaque<T extends { id: string }>(
   const seen = new Set<string>()
 
   for (const id of ids) {
+    if (typeof id !== 'string') continue
     const normalized = id.trim()
     if (!normalized || seen.has(normalized)) continue
 
