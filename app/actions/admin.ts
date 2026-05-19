@@ -247,7 +247,6 @@ export async function duplicarProdutoAction(produtoId: string) {
 function parseProdutoForm(formData: FormData, escolaId?: string) {
   const metodos = formData.getAll('metodos_aceitos') as string[]
   const series  = formData.getAll('series') as string[]
-  const variantes = parseVariantesForm(formData).map((variante) => variante.nome)
 
   // Converte preço: "25,90" ou "25.90" → 25.90
   const precoRaw = (formData.get('preco') as string ?? '0').replace(',', '.')
@@ -282,7 +281,6 @@ function parseProdutoForm(formData: FormData, escolaId?: string) {
     aceita_vouchers,
     capacidade,
     series:         series.length ? series : null,
-    variantes:      variantes.length ? variantes : null,
     icon:           (formData.get('icon') as string || '').trim() || null,
     estoque:        (formData.get('estoque') as string) ? parseInt(formData.get('estoque') as string) : null,
     exige_termo:    formData.get('exige_termo') === 'on',
