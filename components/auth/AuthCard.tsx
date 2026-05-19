@@ -17,7 +17,7 @@ export function AuthCard({ children }: { children: React.ReactNode }) {
 }
 
 /* ── Topo com cor da escola ── */
-export function AuthCardTop({ title, subtitle }: { title: string; subtitle: string }) {
+export function AuthCardTop({ title, subtitle, logoUrl }: { title: string; subtitle: string; logoUrl?: string | null }) {
   return (
     <div style={{
       background: 'var(--brand)', padding: '36px 40px 28px',
@@ -29,12 +29,17 @@ export function AuthCardTop({ title, subtitle }: { title: string; subtitle: stri
         <div style={{
           width:76, height:76, background:'white', borderRadius:'var(--r-lg)',
           display:'flex', alignItems:'center', justifyContent:'center',
-          boxShadow:'0 4px 20px rgba(0,0,0,.25)', margin:'0 auto',
+          boxShadow:'0 4px 20px rgba(0,0,0,.25)', margin:'0 auto', overflow: 'hidden'
         }}>
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
+          {logoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={logoUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          ) : (
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          )}
         </div>
         <div style={{
           position:'absolute', bottom:-4, right:-4,
