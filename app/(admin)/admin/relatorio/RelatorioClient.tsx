@@ -90,7 +90,7 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
       {produtos.length === 0 ? (
         <div style={{
           background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.25)',
-          borderRadius: 12, padding: '16px 20px', fontSize: 14, color: '#fcd34d',
+          borderRadius: 12, padding: '16px 20px', fontSize: 14, color: '#b45309', fontWeight: 600,
         }}>
           ⚠️ Nenhum produto com ingresso encontrado.
         </div>
