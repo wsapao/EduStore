@@ -150,14 +150,20 @@ export async function cadastroAction(formData: FormData) {
     
     if (activesoft.isConfigured()) {
       const alunosSiga = await activesoft.findAlunosByResponsavelCpf(cpf)
-      
+
       if (alunosSiga && alunosSiga.length > 0) {
-        // Insere alunos com os mesmos IDs do ERP
+        // TODO(onboarding-activesoft): este bloco ainda não funciona em prod.
+        // 1) `id: s.id.toString()` envia o numeric id do ActiveSoft pra coluna
+        //    uuid de `alunos.id` — vai falhar conversão.
+        // 2) `escola_id: null` viola NOT NULL — falta tabela de mapeamento
+        //    unidade ActiveSoft → escola UUID.
+        // Por enquanto o try/catch envolve tudo, então o cadastro segue mesmo
+        // com o upsert falhando — só os alunos não são vinculados automaticamente.
         const { error: alunosError } = await supabase.from('alunos').upsert(
           alunosSiga.map((s: any) => ({
-            id: s.id.toString(), // Mantém o ID original do ERP
+            id: s.id.toString(),
             nome: s.nome,
-            serie: 'SigaWeb', // Podemos melhorar buscando a série exata depois
+            serie: 'SigaWeb',
             escola_id: null,
             ativo: true
           }))
