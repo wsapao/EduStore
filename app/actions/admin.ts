@@ -488,10 +488,26 @@ export async function resetSenhaResponsavelAction(formData: FormData) {
 
 // ── Categorias ────────────────────────────────────────────────────────────────
 export async function criarCategoriaAction(formData: FormData) {
-  const { supabase } = await verificarAdmin()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: resp } = await supabase.from('responsaveis').select('escola_id').eq('id', user!.id).single()
-  if (!resp?.escola_id) return { success: false, error: 'Admin sem escola vinculada.' }
+  const { supabase, user } = await verificarAdmin()
+  const { data: resp, error: respErr } = await supabase
+    .from('responsaveis')
+    .select('escola_id')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (respErr) {
+    console.error('[criarCategoriaAction] falha ao buscar escola do admin', {
+      userId: user.id,
+      code: respErr.code,
+      message: respErr.message,
+      details: respErr.details,
+      hint: respErr.hint,
+    })
+    return { success: false, error: 'Erro ao identificar escola do admin.' }
+  }
+  if (!resp?.escola_id) {
+    console.error('[criarCategoriaAction] admin sem responsavel vinculado', { userId: user.id })
+    return { success: false, error: 'Admin sem escola vinculada.' }
+  }
 
   const nome = (formData.get('nome') as string).trim()
   const icone = (formData.get('icone') as string).trim() || '🏷️'
@@ -512,7 +528,24 @@ export async function criarCategoriaAction(formData: FormData) {
     .select('id, escola_id, nome, icone, tem_variantes, ativo, created_at')
     .single()
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    console.error('[criarCategoriaAction] insert failed', {
+      escolaId: resp.escola_id,
+      nome,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    })
+    return { success: false, error: error.message }
+  }
+  if (!data?.id) {
+    console.error('[criarCategoriaAction] insert returned no data', { escolaId: resp.escola_id, nome })
+    return { success: false, error: 'Categoria não foi salva (resposta vazia).' }
+  }
+
+  console.log('[criarCategoriaAction] categoria criada', { id: data.id, nome: data.nome, escolaId: data.escola_id })
+
   revalidatePath('/admin/produtos/categorias')
   revalidatePath('/admin/produtos/novo')
   return { success: true, categoria: data }
