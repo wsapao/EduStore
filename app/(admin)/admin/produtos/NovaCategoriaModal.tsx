@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { criarCategoriaAction } from '@/app/actions/admin'
 import type { Categoria } from '@/types/database'
 
@@ -43,7 +44,10 @@ export function NovaCategoriaModal({ open, onClose, onCreated }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  if (!open) return null
+  // Portal evita aninhamento de <form> quando o modal é usado dentro de outro
+  // form (ex.: ProdutoForm). HTML descarta forms aninhados e o submit não
+  // chega no handleSubmit local — categoria parecia ser criada mas não persistia.
+  if (!open || typeof document === 'undefined') return null
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -64,7 +68,7 @@ export function NovaCategoriaModal({ open, onClose, onCreated }: Props) {
     })
   }
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -208,7 +212,8 @@ export function NovaCategoriaModal({ open, onClose, onCreated }: Props) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
