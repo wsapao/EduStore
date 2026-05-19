@@ -25,7 +25,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
   else if (hour < 18) greeting = 'Boa tarde'
 
   const avatarColor = selectedAluno?.cor ?? '#6366f1'
-  const initials = selectedAluno ? selectedAluno.nome.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?'
+  const initials = selectedAluno ? (selectedAluno.nome || '').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?'
 
   return (
     <div style={{
@@ -95,7 +95,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
               {greeting}, responsável
             </div>
             <div style={{ fontSize: 24, fontWeight: 900, color: 'white', letterSpacing: '-.04em', marginBottom: 5 }}>
-              {selectedAluno.nome.split(' ')[0]}
+              {(selectedAluno.nome || '').split(' ')[0]}
             </div>
             <div style={{
               background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)',

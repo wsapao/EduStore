@@ -63,7 +63,7 @@ export function ChildSelector({ alunos }: Props) {
   }
 
   const avatarColor = AVATAR_COLORS[alunos.findIndex(a => a.id === selectedAluno?.id) % AVATAR_COLORS.length] || AVATAR_COLORS[0]
-  const initials = selectedAluno ? selectedAluno.nome.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : ''
+  const initials = selectedAluno ? (selectedAluno.nome || '').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : ''
   const showDropdown = alunos.length > 1
 
   return (
@@ -101,7 +101,7 @@ export function ChildSelector({ alunos }: Props) {
             fontSize: 16, fontWeight: 800, color: 'var(--text-1)',
             letterSpacing: '-.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
           }}>
-            {selectedAluno?.nome.split(' ')[0]} {selectedAluno?.nome.split(' ').slice(-1)[0]}
+            {(selectedAluno?.nome || '').split(' ')[0]} {(selectedAluno?.nome || '').split(' ').slice(-1)[0]}
           </div>
           <div style={{
             fontSize: 13, fontWeight: 600, color: 'var(--text-3)', marginTop: 2,
@@ -132,7 +132,7 @@ export function ChildSelector({ alunos }: Props) {
           {alunos.map((aluno, i) => {
             const isSelected = aluno.id === selectedId
             const color = AVATAR_COLORS[i % AVATAR_COLORS.length]
-            const inits = aluno.nome.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+            const inits = (aluno.nome || '').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 
             return (
               <button
@@ -157,7 +157,7 @@ export function ChildSelector({ alunos }: Props) {
                 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)' }}>
-                    {aluno.nome.split(' ')[0]} {aluno.nome.split(' ').slice(-1)[0]}
+                    {(aluno.nome || '').split(' ')[0]} {(aluno.nome || '').split(' ').slice(-1)[0]}
                   </div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-3)' }}>
                     {aluno.serie}{aluno.turma ? ` · ${aluno.turma}` : ''}
