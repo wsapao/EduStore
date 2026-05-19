@@ -601,7 +601,7 @@ export default async function AdminDashboard({
                       {produto.vendas} vendas · {fmtBRL(produto.receita)}
                     </div>
                   </div>
-                    {
+                    {(() => {
                       const meta = CATEGORY_META[produto.categoria as keyof typeof CATEGORY_META] || CATEGORY_META.outros;
                       return (
                         <div
@@ -617,7 +617,7 @@ export default async function AdminDashboard({
                           {meta.label}
                         </div>
                       );
-                    }
+                    })()}
                 </div>
               ))
             ) : (
