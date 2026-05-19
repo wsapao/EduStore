@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { renovarPixAction } from '@/app/actions/orders'
 import type { Pedido, Pagamento, ItemPedido, Produto, Aluno, Ingresso, PedidoEstorno } from '@/types/database'
 import { EstornoParcialForm } from '../../pedidos/EstornoParcialForm'
@@ -66,6 +67,20 @@ export function ConfirmacaoClient({ pedido, estorno, mensagemPosCompra }: Props)
   const [copied, setCopied] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [renewError, setRenewError] = useState('')
+
+  const router = useRouter()
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (isPix && !isPago && !isCancelado && !isPixExpirado) {
+      interval = setInterval(() => {
+        router.refresh()
+      }, 4000)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isPix, isPago, isCancelado, isPixExpirado, router])
 
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text).then(() => {
