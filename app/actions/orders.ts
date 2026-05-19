@@ -290,6 +290,9 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
         affectedRows: rows?.length ?? 0,
       })
       // Não interrompe o fluxo — o webhook do Asaas vai tentar reconciliar depois.
+    } else {
+      // Gera ingressos caso existam produtos com gera_ingresso
+      await supabase.rpc('gerar_ingressos_pedido', { p_pedido_id: pedido.id })
     }
   }
 
