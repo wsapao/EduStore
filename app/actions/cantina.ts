@@ -98,12 +98,20 @@ export async function configurarCarteiraAction(
     updateData.senha_pin_hash = senhaPin ? await hashPin(senhaPin) : null
   }
 
-  const { error } = await supabase
+  const { data: rows, error } = await supabase
     .from('cantina_carteiras')
     .update(updateData)
     .eq('aluno_id', alunoId)
+    .select('id')
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[atualizarConfigCarteiraAction] update failed', { alunoId, message: error.message })
+    return { error: error.message }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[atualizarConfigCarteiraAction] carteira não atualizada (zero rows)', { alunoId })
+    return { error: 'Carteira não encontrada ou sem permissão.' }
+  }
 
   revalidatePath('/cantina')
   revalidatePath(`/cantina/${alunoId}/configurar`)
@@ -199,12 +207,20 @@ export async function ajusteManualAdminAction(
 
     const novoSaldo = (carteira.saldo as number) - valor
 
-    const { error: errUpdate } = await adminClient
+    const { data: rowsUpdate, error: errUpdate } = await adminClient
       .from('cantina_carteiras')
       .update({ saldo: novoSaldo, updated_at: new Date().toISOString() })
       .eq('id', carteiraId)
+      .select('id')
 
-    if (errUpdate) return { error: errUpdate.message }
+    if (errUpdate) {
+      console.error('[debitoManual] update saldo failed', { carteiraId, message: errUpdate.message })
+      return { error: errUpdate.message }
+    }
+    if (!rowsUpdate || rowsUpdate.length === 0) {
+      console.error('[debitoManual] saldo não atualizado (zero rows)', { carteiraId })
+      return { error: 'Carteira não encontrada.' }
+    }
 
     const { error: errMov } = await adminClient
       .from('cantina_movimentacoes')
@@ -601,12 +617,20 @@ export async function toggleProdutoCantinaAction(produtoId: string, ativo: boole
   if (!user || user.app_metadata?.role !== 'admin') return { error: 'Acesso negado.' }
 
   const adminClient = createAdminClient()
-  const { error } = await adminClient
+  const { data: rows, error } = await adminClient
     .from('cantina_produtos')
     .update({ ativo: !ativo })
     .eq('id', produtoId)
+    .select('id')
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[toggleProdutoCantinaAction] update failed', { produtoId, message: error.message })
+    return { error: error.message }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[toggleProdutoCantinaAction] produto não atualizado (zero rows)', { produtoId })
+    return { error: 'Produto não encontrado.' }
+  }
 
   revalidatePath('/admin/cantina/produtos')
   revalidatePath('/admin/cantina')
@@ -619,7 +643,7 @@ export async function bloquearCarteiraAdminAction(carteiraId: string, bloquear: 
   if (!user || user.app_metadata?.role !== 'admin') return { error: 'Acesso negado.' }
 
   const adminClient = createAdminClient()
-  const { error } = await adminClient
+  const { data: rows, error } = await adminClient
     .from('cantina_carteiras')
     .update({
       ativo: !bloquear,
@@ -627,8 +651,16 @@ export async function bloquearCarteiraAdminAction(carteiraId: string, bloquear: 
       updated_at: new Date().toISOString(),
     })
     .eq('id', carteiraId)
+    .select('id')
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[bloquearCarteiraAdminAction] update failed', { carteiraId, bloquear, message: error.message })
+    return { error: error.message }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[bloquearCarteiraAdminAction] carteira não atualizada (zero rows)', { carteiraId })
+    return { error: 'Carteira não encontrada.' }
+  }
 
   revalidatePath('/admin/cantina/carteiras')
   return { success: true }

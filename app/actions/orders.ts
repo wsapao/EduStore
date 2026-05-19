@@ -258,10 +258,20 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
 
   // 5. Se cartão aprovado, atualiza status do pedido
   if (resultado.metodo === 'cartao' && resultado.status === 'confirmado') {
-    await supabase
+    const { data: rows, error: pagoErr } = await supabase
       .from('pedidos')
       .update({ status: 'pago', data_pagamento: new Date().toISOString() })
       .eq('id', pedido.id)
+      .select('id')
+    if (pagoErr || !rows || rows.length === 0) {
+      console.error('[finalizarPedidoAction] cartão aprovado mas pedido não marcado como pago', {
+        pedidoId: pedido.id,
+        code: pagoErr?.code,
+        message: pagoErr?.message,
+        affectedRows: rows?.length ?? 0,
+      })
+      // Não interrompe o fluxo — o webhook do Asaas vai tentar reconciliar depois.
+    }
   }
 
   // 6. Envia email de confirmação do pedido (em background — não bloqueia)
@@ -355,7 +365,7 @@ export async function renovarPixAction(pedidoId: string): Promise<RenovarPixResu
   }
 
   // Atualiza pagamento com novo PIX
-  const { error: updateErr } = await supabase
+  const { data: pagRows, error: updateErr } = await supabase
     .from('pagamentos')
     .update({
       gateway_id:        resultado.gateway_id,
@@ -366,13 +376,31 @@ export async function renovarPixAction(pedidoId: string): Promise<RenovarPixResu
       status:            'aguardando',
     })
     .eq('id', pag.id)
+    .select('id')
 
-  if (updateErr) return { success: false, error: 'Erro ao salvar novo PIX.' }
+  if (updateErr) {
+    console.error('[renovarPixAction] update pagamento failed', { pagId: pag.id, message: updateErr.message })
+    return { success: false, error: 'Erro ao salvar novo PIX.' }
+  }
+  if (!pagRows || pagRows.length === 0) {
+    console.error('[renovarPixAction] pagamento não atualizado (zero rows)', { pagId: pag.id })
+    return { success: false, error: 'Pagamento não encontrado.' }
+  }
 
-  await supabase
+  const { data: pedRows, error: pedErr } = await supabase
     .from('pedidos')
     .update({ status: 'pendente' })
     .eq('id', pedido.id)
+    .select('id')
+  if (pedErr || !pedRows || pedRows.length === 0) {
+    console.error('[renovarPixAction] pedido não voltou pra pendente', {
+      pedidoId: pedido.id,
+      code: pedErr?.code,
+      message: pedErr?.message,
+      affectedRows: pedRows?.length ?? 0,
+    })
+    // Não interrompe — o PIX já foi salvo, webhook reconcilia.
+  }
 
   return {
     success: true,

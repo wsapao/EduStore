@@ -121,12 +121,20 @@ export async function atualizarPapelAction(papelId: string, formData: FormData) 
 
   if (dup) return { error: 'Já existe outro papel com este nome.' }
 
-  const { error: updErr } = await supabase
+  const { data: rows, error: updErr } = await supabase
     .from('papeis')
     .update({ nome, descricao })
     .eq('id', papelId)
+    .select('id')
 
-  if (updErr) return { error: 'Erro ao salvar papel.' }
+  if (updErr) {
+    console.error('[atualizarPapelAction] update failed', { papelId, message: updErr.message })
+    return { error: 'Erro ao salvar papel.' }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[atualizarPapelAction] papel não atualizado (zero rows)', { papelId })
+    return { error: 'Papel não encontrado ou sem permissão.' }
+  }
 
   const { error: delErr } = await supabase
     .from('papel_permissoes')
@@ -227,12 +235,20 @@ export async function excluirPapelAction(papelId: string) {
     return { error: `Este papel está em uso por ${count} usuário(s). Reatribua antes de excluir.` }
   }
 
-  const { error: delErr } = await supabase
+  const { data: rows, error: delErr } = await supabase
     .from('papeis')
     .delete()
     .eq('id', papelId)
+    .select('id')
 
-  if (delErr) return { error: 'Erro ao excluir papel.' }
+  if (delErr) {
+    console.error('[excluirPapelAction] delete failed', { papelId, message: delErr.message })
+    return { error: 'Erro ao excluir papel.' }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[excluirPapelAction] papel não removido (zero rows)', { papelId })
+    return { error: 'Papel não encontrado ou sem permissão.' }
+  }
 
   revalidatePath('/admin/configuracoes/papeis')
   return { success: true }

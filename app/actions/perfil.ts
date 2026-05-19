@@ -14,12 +14,20 @@ export async function atualizarPerfilAction(formData: FormData) {
 
   if (!nome || nome.length < 3) return { error: 'Nome deve ter pelo menos 3 caracteres.' }
 
-  const { error } = await supabase
+  const { data: rows, error } = await supabase
     .from('responsaveis')
     .update({ nome, telefone })
     .eq('id', user.id)
+    .select('id')
 
-  if (error) return { error: 'Erro ao salvar alterações.' }
+  if (error) {
+    console.error('[atualizarPerfilAction] update failed', { userId: user.id, message: error.message })
+    return { error: 'Erro ao salvar alterações.' }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[atualizarPerfilAction] perfil não atualizado (zero rows)', { userId: user.id })
+    return { error: 'Não foi possível salvar.' }
+  }
 
   revalidatePath('/perfil')
   revalidatePath('/loja')

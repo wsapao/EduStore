@@ -128,13 +128,21 @@ export async function alterarPapelUsuarioAction(targetUserId: string, novoPapelI
     }
   }
 
-  const { error: updErr } = await supabase
+  const { data: rows, error: updErr } = await supabase
     .from('usuario_papel')
     .update({ papel_id: novoPapelId })
     .eq('user_id', targetUserId)
     .eq('escola_id', escolaId)
+    .select('user_id')
 
-  if (updErr) return { error: 'Erro ao alterar papel.' }
+  if (updErr) {
+    console.error('[alterarPapelAction] update failed', { targetUserId, novoPapelId, message: updErr.message })
+    return { error: 'Erro ao alterar papel.' }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[alterarPapelAction] papel não atualizado (zero rows)', { targetUserId, escolaId })
+    return { error: 'Vínculo não encontrado ou sem permissão.' }
+  }
 
   await auditLog({
     modulo: 'usuarios',
@@ -180,13 +188,21 @@ export async function toggleSuspensaoUsuarioAction(targetUserId: string, suspend
     ? { suspenso: true, suspenso_em: new Date().toISOString(), suspenso_por: user.id }
     : { suspenso: false, suspenso_em: null, suspenso_por: null }
 
-  const { error: updErr } = await supabase
+  const { data: rows, error: updErr } = await supabase
     .from('usuario_papel')
     .update(payload)
     .eq('user_id', targetUserId)
     .eq('escola_id', escolaId)
+    .select('user_id')
 
-  if (updErr) return { error: 'Erro ao alterar suspensão.' }
+  if (updErr) {
+    console.error('[toggleSuspensaoUsuarioAction] update failed', { targetUserId, suspender, message: updErr.message })
+    return { error: 'Erro ao alterar suspensão.' }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[toggleSuspensaoUsuarioAction] vínculo não atualizado (zero rows)', { targetUserId, escolaId })
+    return { error: 'Vínculo não encontrado ou sem permissão.' }
+  }
 
   await auditLog({
     modulo: 'usuarios',
@@ -228,13 +244,21 @@ export async function removerUsuarioAction(targetUserId: string) {
     }
   }
 
-  const { error: delErr } = await supabase
+  const { data: rows, error: delErr } = await supabase
     .from('usuario_papel')
     .delete()
     .eq('user_id', targetUserId)
     .eq('escola_id', escolaId)
+    .select('user_id')
 
-  if (delErr) return { error: 'Erro ao remover usuário.' }
+  if (delErr) {
+    console.error('[removerUsuarioAction] delete failed', { targetUserId, message: delErr.message })
+    return { error: 'Erro ao remover usuário.' }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[removerUsuarioAction] vínculo não removido (zero rows)', { targetUserId, escolaId })
+    return { error: 'Vínculo não encontrado ou sem permissão.' }
+  }
 
   await auditLog({ modulo: 'usuarios', acao: 'removeu', descricao: targetUserId })
 
