@@ -223,7 +223,16 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
       descricao: `Pedido ${pedido.numero} — ${responsavel.nome}`,
       referencia: pedido.id,
     })
-  } catch {
+  } catch (err) {
+    console.error('[finalizarPedidoAction] gateway falhou', {
+      pedidoId: pedido.id,
+      numero: pedido.numero,
+      metodo: input.metodo,
+      total: finalTotal,
+      message: err instanceof Error ? err.message : String(err),
+      name: err instanceof Error ? err.name : undefined,
+      stack: err instanceof Error ? err.stack : undefined,
+    })
     await restaurarEstoqueVariantes(supabase, input.items)
     return { success: false, error: 'Erro ao processar pagamento. Tente novamente.' }
   }

@@ -1,12 +1,22 @@
 'use client'
 
 import React from 'react'
+import { usePathname } from 'next/navigation'
 import { useCart } from './CartProvider'
+
+// Rotas onde o usuário já está finalizando ou consultando o pedido — o
+// CTA flutuante do carrinho atrapalha e confunde.
+const ROTAS_SEM_CARRINHO_FLUTUANTE = ['/checkout', '/pedido', '/pedidos']
 
 export function CartBar() {
   const { items, total, open, isOpen } = useCart()
+  const pathname = usePathname()
 
-  if (items.length === 0 || isOpen) return null
+  const escondidoNestaRota = ROTAS_SEM_CARRINHO_FLUTUANTE.some(
+    (prefixo) => pathname === prefixo || pathname.startsWith(`${prefixo}/`),
+  )
+
+  if (items.length === 0 || isOpen || escondidoNestaRota) return null
 
   return (
     <div className="fixed left-0 right-0 z-[150] px-[18px] pb-[16px] animate-slideCart"
