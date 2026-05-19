@@ -46,7 +46,7 @@ export async function atualizarIntegracoesAction(formData: FormData) {
   const escolaId = await getEscolaIdParaAdmin(supabase)
   if (!escolaId) return { error: 'Escola não encontrada para este usuário.' }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('escola_configuracoes')
     .update({
       activesoft_ativo: formData.get('activesoft_ativo') === 'on',
@@ -55,8 +55,18 @@ export async function atualizarIntegracoesAction(formData: FormData) {
       meta_pixel_id: pixel,
     })
     .eq('escola_id', escolaId)
+    .select('escola_id')
 
-  if (error) return { error: 'Erro ao salvar configurações de integrações.' }
+  if (error) {
+    console.error('[atualizarIntegracoesAction] update failed', {
+      escolaId, code: error.code, message: error.message, details: error.details, hint: error.hint,
+    })
+    return { error: 'Erro ao salvar configurações de integrações.' }
+  }
+  if (!updated || updated.length === 0) {
+    console.error('[atualizarIntegracoesAction] update affected zero rows', { escolaId })
+    return { error: 'Não foi possível salvar (sem permissão no banco).' }
+  }
 
   await auditLog({ modulo: 'integracoes', acao: 'atualizou_config' })
 

@@ -57,7 +57,7 @@ export async function atualizarPagamentosAction(formData: FormData) {
   const webhookSecret = (formData.get('asaas_webhook_secret') as string | null)?.trim() || null
   const pixChave = (formData.get('pix_chave_recebedora') as string | null)?.trim() || null
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('escola_configuracoes')
     .update({
       metodos_aceitos_padrao: metodos,
@@ -69,8 +69,18 @@ export async function atualizarPagamentosAction(formData: FormData) {
       pix_chave_recebedora: pixChave,
     })
     .eq('escola_id', escolaId)
+    .select('escola_id')
 
-  if (error) return { error: 'Erro ao salvar configurações de pagamento.' }
+  if (error) {
+    console.error('[atualizarPagamentosAction] update failed', {
+      escolaId, code: error.code, message: error.message, details: error.details, hint: error.hint,
+    })
+    return { error: 'Erro ao salvar configurações de pagamento.' }
+  }
+  if (!updated || updated.length === 0) {
+    console.error('[atualizarPagamentosAction] update affected zero rows', { escolaId })
+    return { error: 'Não foi possível salvar (sem permissão no banco).' }
+  }
 
   await auditLog({ modulo: 'pagamentos', acao: 'atualizou_config' })
 

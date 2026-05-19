@@ -74,7 +74,7 @@ export async function atualizarLojaOnlineAction(formData: FormData) {
   const escolaId = await getEscolaIdParaAdmin(supabase)
   if (!escolaId) return { error: 'Escola não encontrada para este usuário.' }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('escola_configuracoes')
     .update({
       modo_manutencao: formData.get('modo_manutencao') === 'on',
@@ -87,8 +87,18 @@ export async function atualizarLojaOnlineAction(formData: FormData) {
       texto_rodape: trimToNull(formData.get('texto_rodape')),
     })
     .eq('escola_id', escolaId)
+    .select('escola_id')
 
-  if (error) return { error: 'Erro ao salvar configurações da loja online.' }
+  if (error) {
+    console.error('[atualizarLojaOnlineAction] update failed', {
+      escolaId, code: error.code, message: error.message, details: error.details, hint: error.hint,
+    })
+    return { error: 'Erro ao salvar configurações da loja online.' }
+  }
+  if (!updated || updated.length === 0) {
+    console.error('[atualizarLojaOnlineAction] update affected zero rows', { escolaId })
+    return { error: 'Não foi possível salvar (sem permissão no banco).' }
+  }
 
   await auditLog({ modulo: 'loja-online', acao: 'atualizou_config' })
 

@@ -61,7 +61,7 @@ export async function atualizarCantinaAction(formData: FormData) {
 
   const saldoNegativo = formData.get('cantina_saldo_negativo') === 'on'
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('escola_configuracoes')
     .update({
       cantina_recarga_min: recargaMin,
@@ -72,8 +72,18 @@ export async function atualizarCantinaAction(formData: FormData) {
       cantina_saldo_negativo: saldoNegativo,
     })
     .eq('escola_id', escolaId)
+    .select('escola_id')
 
-  if (error) return { error: 'Erro ao salvar configurações da cantina.' }
+  if (error) {
+    console.error('[atualizarCantinaAction] update failed', {
+      escolaId, code: error.code, message: error.message, details: error.details, hint: error.hint,
+    })
+    return { error: 'Erro ao salvar configurações da cantina.' }
+  }
+  if (!updated || updated.length === 0) {
+    console.error('[atualizarCantinaAction] update affected zero rows', { escolaId })
+    return { error: 'Não foi possível salvar (sem permissão no banco).' }
+  }
 
   await auditLog({ modulo: 'cantina', acao: 'atualizou_config' })
 
