@@ -30,12 +30,20 @@ export async function confirmarPagamentoAction(pedidoId: string) {
   const now = new Date().toISOString()
 
   // Atualiza pedido
-  const { error: pedidoError } = await supabase
+  const { data: pedidoRows, error: pedidoError } = await supabase
     .from('pedidos')
     .update({ status: 'pago', data_pagamento: now })
     .eq('id', pedidoId)
+    .select('id')
 
-  if (pedidoError) return { success: false, error: pedidoError.message }
+  if (pedidoError) {
+    console.error('[confirmarPagamentoAction] update pedido failed', { pedidoId, message: pedidoError.message })
+    return { success: false, error: pedidoError.message }
+  }
+  if (!pedidoRows || pedidoRows.length === 0) {
+    console.error('[confirmarPagamentoAction] pedido não atualizado (zero rows)', { pedidoId })
+    return { success: false, error: 'Pedido não encontrado ou sem permissão.' }
+  }
 
   // Atualiza pagamento
   await supabase
@@ -96,12 +104,20 @@ export async function cancelarPedidoAction(pedidoId: string) {
     .select('variante_id')
     .eq('pedido_id', pedidoId)
 
-  const { error } = await supabase
+  const { data: pedidoRows, error } = await supabase
     .from('pedidos')
     .update({ status: 'cancelado' })
     .eq('id', pedidoId)
+    .select('id')
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    console.error('[cancelarPedidoAction] update pedido failed', { pedidoId, message: error.message })
+    return { success: false, error: error.message }
+  }
+  if (!pedidoRows || pedidoRows.length === 0) {
+    console.error('[cancelarPedidoAction] pedido não atualizado (zero rows)', { pedidoId })
+    return { success: false, error: 'Pedido não encontrado ou sem permissão.' }
+  }
 
   await supabase
     .from('pagamentos')
@@ -141,12 +157,20 @@ export async function validarIngressoAction(token: string, validadoPor: string) 
 export async function toggleProdutoAtivoAction(produtoId: string, ativo: boolean) {
   const { supabase } = await verificarAdmin()
 
-  const { error } = await supabase
+  const { data: rows, error } = await supabase
     .from('produtos')
     .update({ ativo: !ativo })
     .eq('id', produtoId)
+    .select('id')
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    console.error('[toggleProdutoAtivoAction] update failed', { produtoId, message: error.message })
+    return { success: false, error: error.message }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[toggleProdutoAtivoAction] produto não atualizado (zero rows)', { produtoId })
+    return { success: false, error: 'Produto não encontrado ou sem permissão.' }
+  }
 
   revalidatePath('/admin/produtos')
   revalidatePath('/loja')
@@ -212,8 +236,19 @@ export async function editarProdutoAction(produtoId: string, formData: FormData)
   const payload = parseProdutoForm(formData)
   if (imagem_url) payload.imagem_url = imagem_url
 
-  const { error } = await supabase.from('produtos').update(payload).eq('id', produtoId)
-  if (error) return { success: false, error: error.message }
+  const { data: rows, error } = await supabase
+    .from('produtos')
+    .update(payload)
+    .eq('id', produtoId)
+    .select('id')
+  if (error) {
+    console.error('[editarProdutoAction] update failed', { produtoId, message: error.message })
+    return { success: false, error: error.message }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[editarProdutoAction] produto não atualizado (zero rows)', { produtoId })
+    return { success: false, error: 'Produto não encontrado ou sem permissão.' }
+  }
 
   await syncProdutoVariantes(supabase, produtoId, parseVariantesForm(formData))
 
@@ -334,12 +369,20 @@ async function syncProdutoVariantes(
 export async function toggleEsgotadoAction(produtoId: string, esgotado: boolean) {
   const { supabase } = await verificarAdmin()
 
-  const { error } = await supabase
+  const { data: rows, error } = await supabase
     .from('produtos')
     .update({ esgotado: !esgotado })
     .eq('id', produtoId)
+    .select('id')
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    console.error('[toggleEsgotadoAction] update failed', { produtoId, message: error.message })
+    return { success: false, error: error.message }
+  }
+  if (!rows || rows.length === 0) {
+    console.error('[toggleEsgotadoAction] produto não atualizado (zero rows)', { produtoId })
+    return { success: false, error: 'Produto não encontrado ou sem permissão.' }
+  }
 
   revalidatePath('/admin/produtos')
   revalidatePath('/loja')
