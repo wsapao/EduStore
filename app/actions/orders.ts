@@ -8,6 +8,7 @@ import { getGateway } from '@/lib/pagamentos/gateway'
 import { enviarEmailPedido } from '@/lib/email/send'
 import { isLojaDisponivelAgora, normalizeLojaFuncionamento } from '@/lib/loja-online/config'
 import { sincronizarPixExpiradoPedido } from '@/lib/pagamentos/pix'
+import { auditLog } from '@/lib/auditoria/log'
 import type { MetodoPagamento } from '@/types/database'
 import type { DadosCartao } from '@/lib/pagamentos/types'
 
@@ -224,14 +225,23 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
       referencia: pedido.id,
     })
   } catch (err) {
-    console.error('[finalizarPedidoAction] gateway falhou', {
+    const detalhe = {
       pedidoId: pedido.id,
       numero: pedido.numero,
       metodo: input.metodo,
       total: finalTotal,
       message: err instanceof Error ? err.message : String(err),
       name: err instanceof Error ? err.name : undefined,
-      stack: err instanceof Error ? err.stack : undefined,
+      stack: err instanceof Error ? err.stack?.slice(0, 2000) : undefined,
+    }
+    console.error('[finalizarPedidoAction] gateway falhou', detalhe)
+    // Grava também na auditoria_log pra inspeção via SQL quando logs do Vercel
+    // não estão acessíveis.
+    await auditLog({
+      modulo: 'checkout',
+      acao: 'gateway_falhou',
+      descricao: detalhe.message,
+      metadata: detalhe,
     })
     await restaurarEstoqueVariantes(supabase, input.items)
     return { success: false, error: 'Erro ao processar pagamento. Tente novamente.' }
