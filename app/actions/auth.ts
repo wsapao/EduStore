@@ -151,51 +151,69 @@ export async function cadastroAction(formData: FormData) {
   }
 
   // ==========================================
-  // [INTEGRAÇÃO ONDA 3] Onboarding Mágico (Direto ActiveSoft)
+  // Onboarding: puxa os alunos do ActiveSoft e vincula ao responsável.
+  // Escrita via service role (admin): `alunos` não tem policy de INSERT para
+  // o usuário comum, e dedup é feito pela chave natural `activesoft_id`.
   // ==========================================
   try {
     const responsavelId = authData.user.id
+    const admin = createAdminClient()
 
     // Import dinâmico para não quebrar outras funções se o token faltar
     const { activesoft } = await import('@/lib/activesoft')
-    
+
     if (activesoft.isConfigured()) {
-      const alunosSiga = await activesoft.findAlunosByResponsavelCpf(cpf)
+      const alunosSiga = await activesoft.findAlunosOnboardingByResponsavelCpf(cpf)
 
-      if (alunosSiga && alunosSiga.length > 0) {
-        // TODO(onboarding-activesoft): este bloco ainda não funciona em prod.
-        // 1) `id: s.id.toString()` envia o numeric id do ActiveSoft pra coluna
-        //    uuid de `alunos.id` — vai falhar conversão.
-        // 2) `escola_id: null` viola NOT NULL — falta tabela de mapeamento
-        //    unidade ActiveSoft → escola UUID.
-        // Por enquanto o try/catch envolve tudo, então o cadastro segue mesmo
-        // com o upsert falhando — só os alunos não são vinculados automaticamente.
-        const { error: alunosError } = await supabase.from('alunos').upsert(
-          alunosSiga.map((s: any) => ({
-            id: s.id.toString(),
-            nome: s.nome,
-            serie: 'SigaWeb',
-            escola_id: null,
-            ativo: true
-          }))
-        )
+      if (alunosSiga.length > 0) {
+        // escola_id é resolvido pelo trigger handle_new_user ao criar o perfil.
+        const { data: resp } = await admin
+          .from('responsaveis')
+          .select('escola_id')
+          .eq('id', responsavelId)
+          .single()
 
-        if (!alunosError) {
-          // Vincula os alunos ao responsável recém-criado
-          await supabase.from('responsavel_aluno').upsert(
-            alunosSiga.map((s: any) => ({
-              responsavel_id: responsavelId,
-              aluno_id: s.id.toString(),
-              parentesco: 'Responsável'
-            }))
+        const escolaId = resp?.escola_id
+        if (!escolaId) throw new Error('Responsável sem escola_id — vínculo abortado.')
+
+        // Upsert por activesoft_id evita duplicar o aluno quando um segundo
+        // responsável (ex.: a mãe) também se cadastra.
+        const { data: alunosRows, error: alunosError } = await admin
+          .from('alunos')
+          .upsert(
+            alunosSiga.map(s => ({
+              activesoft_id: s.activesoft_id,
+              nome: s.nome,
+              serie: s.serie,
+              turma: s.turma,
+              escola_id: escolaId,
+              ativo: true,
+            })),
+            { onConflict: 'activesoft_id' }
           )
+          .select('id')
+
+        if (alunosError) throw alunosError
+
+        if (alunosRows && alunosRows.length > 0) {
+          const { error: vinculoError } = await admin
+            .from('responsavel_aluno')
+            .upsert(
+              alunosRows.map(a => ({
+                responsavel_id: responsavelId,
+                aluno_id: a.id,
+                parentesco: 'Responsável',
+              })),
+              { onConflict: 'responsavel_id,aluno_id' }
+            )
+          if (vinculoError) throw vinculoError
         }
       }
     } else {
-      console.warn('ACTIVESOFT_TOKEN não configurado na Loja. Onboarding Mágico ignorado.')
+      console.warn('ACTIVESOFT_TOKEN não configurado na Loja. Onboarding ignorado.')
     }
   } catch (err) {
-    console.error('Erro no onboarding mágico direto com ActiveSoft:', err)
+    console.error('Erro no onboarding ActiveSoft (cadastro segue sem vínculo):', err)
     // Não trava o cadastro se a integração falhar
   }
 

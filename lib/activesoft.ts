@@ -66,6 +66,15 @@ export type Aluno = {
   id_turmas?: number[];
 };
 
+/** Aluno já normalizado para o onboarding da Loja (série/turma resolvidas). */
+export type AlunoOnboarding = {
+  activesoft_id: number;
+  nome: string;
+  serie: string;
+  turma: string | null;
+  unidade_id: number | null;
+};
+
 export type AlunoSensivel = Aluno & {
   nome_civil?: string | null;
   rg?: string | null;
@@ -188,6 +197,13 @@ const norm = (s: string | undefined | null) =>
   String(s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const onlyDigits = (s: string | undefined | null) => String(s || '').replace(/\D/g, '');
 
+/** Extrai a letra da turma do nome ("4º ANO FUNDAMENTAL A" -> "A"). */
+function extrairTurmaLetra(nome?: string): string | null {
+  if (!nome) return null;
+  const ultimo = nome.trim().split(/\s+/).pop() || '';
+  return /^[A-Z]{1,2}$/i.test(ultimo) ? ultimo.toUpperCase() : null;
+}
+
 const TURNO_TO_HORARIO: Record<string, string> = {
   'manha': '07:30h às 11:30h',
   'manhã': '07:30h às 11:30h',
@@ -257,6 +273,41 @@ export const activesoft = {
       (a.filiacao_1_id && respIds.has(a.filiacao_1_id)) ||
       (a.filiacao_2_id && respIds.has(a.filiacao_2_id))
     );
+  },
+
+  /**
+   * Como findAlunosByResponsavelCpf, mas já resolve série e turma legíveis a
+   * partir das turmas — formato pronto para gravar na tabela `alunos` da Loja.
+   */
+  async findAlunosOnboardingByResponsavelCpf(cpf: string): Promise<AlunoOnboarding[]> {
+    const cpfDigits = onlyDigits(cpf);
+    const [resps, alunos, turmas] = await Promise.all([
+      this.listResponsaveis(),
+      this.listAlunos(),
+      this.listTurmas(),
+    ]);
+    const respIds = new Set(
+      resps.filter(r => onlyDigits(r.cpf_cnpj) === cpfDigits).map(r => r.id)
+    );
+    if (respIds.size === 0) return [];
+    const turmaById = new Map(turmas.map(t => [t.id, t]));
+    return alunos
+      .filter(a =>
+        (a.responsavel_id && respIds.has(a.responsavel_id)) ||
+        (a.responsavel_secundario_id && respIds.has(a.responsavel_secundario_id)) ||
+        (a.filiacao_1_id && respIds.has(a.filiacao_1_id)) ||
+        (a.filiacao_2_id && respIds.has(a.filiacao_2_id))
+      )
+      .map(a => {
+        const turma = (a.id_turmas || []).map(id => turmaById.get(id)).find(Boolean);
+        return {
+          activesoft_id: a.id,
+          nome: a.nome,
+          serie: turma?.serie_nome || 'Não informada',
+          turma: extrairTurmaLetra(turma?.nome),
+          unidade_id: a.unidade_id ?? null,
+        };
+      });
   },
 
   /** Frequência via catraca/portaria (acesso físico). Não é frequência escolar. */
