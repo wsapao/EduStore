@@ -121,6 +121,11 @@ export function AlunosClient({ alunos: initialAlunos, isOnboarding }: Props) {
   const ativos   = alunos.filter(a => a.ativo)
   const inativos = alunos.filter(a => !a.ativo)
 
+  // Cadastro manual é só fallback: o sistema puxa os alunos do ActiveSoft no
+  // cadastro. Só liberamos o "adicionar" quando o responsável não tem nenhum
+  // vínculo (ativo ou inativo).
+  const semVinculo = alunos.length === 0
+
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 0 100px' }}>
 
@@ -154,7 +159,7 @@ export function AlunosClient({ alunos: initialAlunos, isOnboarding }: Props) {
             </div>
           )}
         </div>
-        {!isOnboarding && mode === 'none' && (
+        {!isOnboarding && mode === 'none' && semVinculo && (
           <button
             onClick={abrirNovo}
             style={{
@@ -334,13 +339,21 @@ export function AlunosClient({ alunos: initialAlunos, isOnboarding }: Props) {
         {/* Empty state para alunos (se não estiver adicionando) */}
         {ativos.length === 0 && mode === 'none' && !isOnboarding && (
           <div style={{ marginBottom: 20 }}>
-            <EmptyState
-              icon="🎒"
-              title="Nenhum aluno cadastrado"
-              description="Adicione um aluno para acessar a loja e visualizar os itens disponíveis para a série dele."
-              actionLabel="➕ Adicionar aluno"
-              actionOnClick={abrirNovo}
-            />
+            {semVinculo ? (
+              <EmptyState
+                icon="🎒"
+                title="Nenhum aluno encontrado"
+                description="Não localizamos alunos vinculados ao seu CPF automaticamente. Cadastre manualmente para acessar a loja."
+                actionLabel="➕ Adicionar aluno"
+                actionOnClick={abrirNovo}
+              />
+            ) : (
+              <EmptyState
+                icon="🎒"
+                title="Nenhum aluno ativo"
+                description="Seus alunos estão desativados. Reative um abaixo para acessar a loja."
+              />
+            )}
           </div>
         )}
 
@@ -365,24 +378,6 @@ export function AlunosClient({ alunos: initialAlunos, isOnboarding }: Props) {
               ))}
             </div>
           </div>
-        )}
-
-        {/* Botão adicionar mais (abaixo da lista) */}
-        {mode === 'none' && ativos.length > 0 && (
-          <button
-            onClick={abrirNovo}
-            style={{
-              width: '100%', height: 48,
-              background: 'var(--surface-2)',
-              border: '1.5px dashed var(--border)',
-              borderRadius: 12, cursor: 'pointer',
-              fontSize: 13, fontWeight: 600, color: 'var(--text-3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              marginBottom: 20,
-            }}
-          >
-            <span style={{ fontSize: 18 }}>+</span> Adicionar outro filho
-          </button>
         )}
 
         {/* CTA ir para a loja após onboarding */}
