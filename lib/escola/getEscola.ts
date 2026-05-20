@@ -54,6 +54,9 @@ export async function getEscolaByUser(userId: string): Promise<Escola> {
  * Sobrescreve a variável --brand em tempo de renderização.
  */
 export function escolaThemeStyle(escola: Escola): string {
-  const brand = escola.cor_primaria || '#1a2f5a'
+  // O valor é injetado via dangerouslySetInnerHTML num <style>. Aceita só cor hex
+  // válida para impedir injeção de CSS/HTML (ex.: "</style><script>...").
+  const raw = (escola.cor_primaria ?? '').trim()
+  const brand = /^#[0-9a-fA-F]{3,8}$/.test(raw) ? raw : '#1a2f5a'
   return `:root { --brand: ${brand}; --brand-mid: ${brand}; }`
 }

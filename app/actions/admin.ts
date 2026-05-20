@@ -51,8 +51,9 @@ export async function confirmarPagamentoAction(pedidoId: string) {
     .update({ status: 'confirmado', webhook_confirmado_em: now })
     .eq('pedido_id', pedidoId)
 
-  // Gera ingressos para itens que possuem gera_ingresso = true
-  await supabase.rpc('gerar_ingressos_pedido', { p_pedido_id: pedidoId })
+  // Gera ingressos para itens que possuem gera_ingresso = true.
+  // RPC privilegiada (SECURITY DEFINER) — roda via service role.
+  await createAdminClient().rpc('gerar_ingressos_pedido', { p_pedido_id: pedidoId })
 
   revalidatePath('/admin')
   revalidatePath('/admin/pedidos')
@@ -124,13 +125,14 @@ export async function cancelarPedidoAction(pedidoId: string) {
     .update({ status: 'falhou' })
     .eq('pedido_id', pedidoId)
 
+  const adminClient = createAdminClient()
   for (const item of itens ?? []) {
     if (!item.variante_id) continue
-    await supabase.rpc('restaurar_estoque_variante', { p_variante_id: item.variante_id })
+    await adminClient.rpc('restaurar_estoque_variante', { p_variante_id: item.variante_id })
   }
 
   // Invalida ingressos emitidos associados ao pedido
-  await supabase.rpc('cancelar_ingressos_pedido', { p_pedido_id: pedidoId })
+  await adminClient.rpc('cancelar_ingressos_pedido', { p_pedido_id: pedidoId })
 
   revalidatePath('/admin')
   revalidatePath('/admin/pedidos')

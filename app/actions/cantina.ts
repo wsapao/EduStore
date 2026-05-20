@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hashPin, verifyPin } from '@/lib/cantina/pin'
+import { ratelimit } from '@/lib/ratelimit'
 import { getGateway } from '@/lib/pagamentos/gateway'
 import type { ResultadoPagamento } from '@/lib/pagamentos/types'
 
@@ -292,8 +293,41 @@ export async function confirmarCompraCantinaAction(
 
   if (!itens.length) return { error: 'Carrinho vazio.' }
 
-  const total = itens.reduce((s, i) => s + i.quantidade * i.preco_unitario, 0)
+  // Sanitiza quantidades e agrega por produto (não confia no cliente)
+  const quantidades = new Map<string, number>()
+  for (const i of itens) {
+    const qtd = Math.floor(Number(i.quantidade))
+    if (!i.produto_id || !Number.isFinite(qtd) || qtd <= 0) {
+      return { error: 'Item inválido no carrinho.' }
+    }
+    quantidades.set(i.produto_id, (quantidades.get(i.produto_id) ?? 0) + qtd)
+  }
+
   const adminClient = createAdminClient()
+
+  // Busca preços reais no servidor — ignora o preco_unitario enviado pelo cliente
+  const produtoIds = Array.from(quantidades.keys())
+  const { data: produtosDb } = await adminClient
+    .from('cantina_produtos')
+    .select('id, preco, ativo, disponivel_presencial')
+    .in('id', produtoIds)
+
+  const precoMap = new Map((produtosDb ?? []).map((p) => [p.id, p]))
+  if (precoMap.size !== produtoIds.length) {
+    return { error: 'Um ou mais produtos não foram encontrados.' }
+  }
+
+  const itensSeguros: Array<{ produto_id: string; quantidade: number; preco_unitario: number }> = []
+  let total = 0
+  for (const [produtoId, qtd] of quantidades) {
+    const p = precoMap.get(produtoId)!
+    if (!p.ativo || !p.disponivel_presencial) {
+      return { error: 'Produto indisponível para venda presencial.' }
+    }
+    const preco = Number(p.preco)
+    total += preco * qtd
+    itensSeguros.push({ produto_id: produtoId, quantidade: qtd, preco_unitario: preco })
+  }
 
   // Buscar carteira
   const { data: carteira } = await adminClient
@@ -304,9 +338,13 @@ export async function confirmarCompraCantinaAction(
 
   if (!carteira) return { error: 'Carteira não encontrada para este aluno.' }
 
-  // Validar PIN se configurado na carteira
+  // Validar PIN se configurado na carteira (com proteção contra brute force)
   if (carteira.senha_pin_hash) {
     if (!senhaDigitada) return { error: 'PIN necessário.', requiresPin: true }
+    const rl = await ratelimit.check(`cantina:pin:${carteira.id}`, 5, 300)
+    if (!rl.allowed) {
+      return { error: `Muitas tentativas de PIN. Tente novamente em ${rl.retryAfter}s.`, requiresPin: true }
+    }
     const pinValido = await verifyPin(senhaDigitada, carteira.senha_pin_hash)
     if (!pinValido) return { error: 'Senha incorreta.', requiresPin: true }
   }
@@ -316,7 +354,7 @@ export async function confirmarCompraCantinaAction(
     .rpc('debitar_saldo_cantina', {
       p_carteira_id: carteira.id,
       p_valor: total,
-      p_descricao: `Compra cantina — ${itens.length} item(s)`,
+      p_descricao: `Compra cantina — ${itensSeguros.length} item(s)`,
       p_operador_id: user.id,
     })
 
@@ -341,10 +379,10 @@ export async function confirmarCompraCantinaAction(
 
   if (errPedido) return { error: errPedido.message }
 
-  // Inserir itens
+  // Inserir itens (com preços validados no servidor)
   const { error: errItens } = await adminClient
     .from('cantina_pedido_itens')
-    .insert(itens.map(i => ({ ...i, pedido_id: pedido.id })))
+    .insert(itensSeguros.map(i => ({ ...i, pedido_id: pedido.id })))
 
   if (errItens) return { error: errItens.message }
 

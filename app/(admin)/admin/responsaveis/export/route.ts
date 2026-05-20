@@ -1,7 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 
 function escapeCsv(value: string | null | undefined) {
-  const normalized = value ?? ''
+  let normalized = value ?? ''
+  // Previne CSV/formula injection (Excel/Sheets executam células iniciadas por = + - @)
+  if (/^[=+\-@\t\r]/.test(normalized)) {
+    normalized = `'${normalized}`
+  }
   return `"${normalized.replace(/"/g, '""')}"`
 }
 

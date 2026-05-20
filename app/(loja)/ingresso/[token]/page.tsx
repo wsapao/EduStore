@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import QRCode from 'qrcode'
@@ -63,10 +63,10 @@ export default async function IngressoPage({
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!uuidRegex.test(token)) notFound()
 
-  const supabase = await createClient()
-
-  // Busca via função SECURITY DEFINER (não precisa de auth)
-  const { data } = await supabase
+  // O acesso já é protegido pelo layout (loja) que exige login. A leitura usa
+  // service role porque o EXECUTE de get_ingresso_by_token foi revogado de
+  // anon/authenticated (impede leitura de PII do aluno direto via REST).
+  const { data } = await createAdminClient()
     .rpc('get_ingresso_by_token', { p_token: token })
 
   if (!data) notFound()

@@ -26,9 +26,10 @@ export function getGateway(contexto: 'loja' | 'cantina' = 'loja'): GatewayPagame
   }
 
   if (process.env.NODE_ENV === 'production') {
-    console.warn(
+    // Fail-closed: nunca usar o mock (que sempre aprova) em produção.
+    throw new Error(
       'Gateway de pagamento não configurado em produção. ' +
-      'Usando gateway MOCK que sempre aprova.',
+      'Defina ASAAS_API_KEY (e ASAAS_CANTINA_API_KEY se aplicável).',
     )
   }
 

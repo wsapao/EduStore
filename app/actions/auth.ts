@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { ratelimit } from '@/lib/ratelimit'
 
 async function getClientIp() {
@@ -62,12 +63,14 @@ export async function loginAction(formData: FormData) {
     }
   }
 
-  // Busca email pelo CPF via RPC
-  const { data: email, error: rpcError } = await supabase
+  // Busca email pelo CPF via RPC (service role: o EXECUTE foi revogado de anon
+  // para impedir enumeração de e-mail por CPF via REST).
+  const { data: email, error: rpcError } = await createAdminClient()
     .rpc('get_email_by_cpf', { p_cpf: cpfLimpo })
 
   if (rpcError || !email) {
-    return { error: 'CPF não encontrado. Verifique ou crie uma conta.' }
+    // Mensagem genérica para não revelar quais CPFs possuem conta (enumeração).
+    return { error: 'CPF ou senha incorretos.' }
   }
 
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -111,8 +114,8 @@ export async function cadastroAction(formData: FormData) {
     return { error: 'A senha deve ter pelo menos 8 caracteres.' }
   }
 
-  // Verifica se CPF já existe
-  const { data: existente } = await supabase
+  // Verifica se CPF já existe (service role — EXECUTE revogado de anon/authenticated)
+  const { data: existente } = await createAdminClient()
     .rpc('get_email_by_cpf', { p_cpf: cpf })
 
   if (existente) {
@@ -224,7 +227,7 @@ export async function recuperarSenhaAction(formData: FormData) {
     return { success: true }
   }
 
-  const { data: email } = await supabase
+  const { data: email } = await createAdminClient()
     .rpc('get_email_by_cpf', { p_cpf: cpfLimpo })
 
   if (!email) {

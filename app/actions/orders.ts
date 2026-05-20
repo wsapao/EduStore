@@ -73,6 +73,20 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     }
   }
 
+  // Valida que todos os alunos do carrinho pertencem a este responsável
+  const alunoIds = Array.from(new Set(input.items.map(i => i.aluno_id).filter(Boolean)))
+  if (alunoIds.length > 0) {
+    const { data: vinculos } = await supabase
+      .from('responsavel_aluno')
+      .select('aluno_id')
+      .eq('responsavel_id', user.id)
+      .in('aluno_id', alunoIds)
+    const permitidos = new Set((vinculos ?? []).map(v => v.aluno_id))
+    if (alunoIds.some(id => !permitidos.has(id))) {
+      return { success: false, error: 'Um ou mais alunos selecionados não pertencem a você.' }
+    }
+  }
+
   // Busca preços reais e vouchers do DB (Segurança)
   const productIds = Array.from(new Set(input.items.map(i => i.produto_id)))
   const { data: dbProdutos } = await supabase.from('produtos').select('id, preco, preco_promocional, aceita_vouchers').in('id', productIds)
@@ -182,9 +196,13 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     return { success: false, error: 'Erro ao salvar itens do pedido: ' + itensErr.message }
   }
 
+  // RPCs privilegiadas (SECURITY DEFINER) rodam só via service role — o EXECUTE
+  // foi revogado de anon/authenticated para impedir chamada direta via REST.
+  const adminClient = createAdminClient()
+
   // Registra uso do voucher de forma atômica (evita race condition em checkout simultâneo)
   if (voucherIdParaSalvar) {
-    const { data: incrementado } = await supabase
+    const { data: incrementado } = await adminClient
       .rpc('incrementar_uso_voucher', { p_voucher_id: voucherIdParaSalvar })
 
     if (!incrementado) {
@@ -198,7 +216,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
 
   for (const item of itensComVariante) {
     if (!item.variante_id) continue
-    const { data: reservado, error: reservaError } = await supabase
+    const { data: reservado, error: reservaError } = await adminClient
       .rpc('reservar_estoque_variante', { p_variante_id: item.variante_id })
 
     if (reservaError || !reservado) {
@@ -292,7 +310,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
       // Não interrompe o fluxo — o webhook do Asaas vai tentar reconciliar depois.
     } else {
       // Gera ingressos caso existam produtos com gera_ingresso
-      await supabase.rpc('gerar_ingressos_pedido', { p_pedido_id: pedido.id })
+      await adminClient.rpc('gerar_ingressos_pedido', { p_pedido_id: pedido.id })
     }
   }
 
@@ -317,12 +335,13 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
 }
 
 async function restaurarEstoqueVariantes(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  _supabase: Awaited<ReturnType<typeof createClient>>,
   items: CartItemInput[]
 ) {
+  const adminClient = createAdminClient()
   for (const item of items) {
     if (!item.variante_id) continue
-    await supabase.rpc('restaurar_estoque_variante', { p_variante_id: item.variante_id })
+    await adminClient.rpc('restaurar_estoque_variante', { p_variante_id: item.variante_id })
   }
 }
 
