@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { Voucher } from '@/types/database'
 
 export async function validarVoucherAction(codigo: string, subtotalElegivel: number) {
@@ -11,8 +12,10 @@ export async function validarVoucherAction(codigo: string, subtotalElegivel: num
   const { data: responsavel } = await supabase.from('responsaveis').select('escola_id').eq('id', user.id).single()
   if (!responsavel) return { success: false, error: 'Responsável não encontrado.' }
 
-  // Busca o voucher
-  const { data: voucher, error } = await supabase
+  // Busca o voucher via service role: valida só o código exato informado,
+  // escopado à escola do responsável. O SELECT direto em vouchers foi revogado
+  // de authenticated para impedir enumeração de cupons.
+  const { data: voucher, error } = await createAdminClient()
     .from('vouchers')
     .select('*')
     .eq('codigo', codigo.trim().toUpperCase())

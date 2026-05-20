@@ -106,12 +106,17 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     return { ...item, preco_unitario: precoReal }
   })
 
+  // Leituras/RPCs privilegiadas rodam via service role. O SELECT de vouchers
+  // foi revogado de authenticated para impedir enumeração de códigos; aqui
+  // validamos só o código exato informado, escopado à escola do responsável.
+  const adminClient = createAdminClient()
+
   // Lógica do Voucher
   let voucherIdParaSalvar: string | null = null
   let descontoAplicado = 0
 
   if (input.voucher_codigo) {
-    const { data: voucher, error: voucherErr } = await supabase
+    const { data: voucher, error: voucherErr } = await adminClient
       .from('vouchers')
       .select('*')
       .eq('codigo', input.voucher_codigo.toUpperCase())
@@ -195,10 +200,6 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     await supabase.from('pedidos').delete().eq('id', pedido.id)
     return { success: false, error: 'Erro ao salvar itens do pedido: ' + itensErr.message }
   }
-
-  // RPCs privilegiadas (SECURITY DEFINER) rodam só via service role — o EXECUTE
-  // foi revogado de anon/authenticated para impedir chamada direta via REST.
-  const adminClient = createAdminClient()
 
   // Registra uso do voucher de forma atômica (evita race condition em checkout simultâneo)
   if (voucherIdParaSalvar) {
