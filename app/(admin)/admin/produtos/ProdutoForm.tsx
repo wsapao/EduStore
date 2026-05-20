@@ -459,27 +459,12 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias, seriesDi
           </div>
 
           {variantesState.length === 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{
-                padding:'14px 16px', borderRadius:12, border:'1.5px dashed var(--border)',
-                color:'var(--text-3)', fontSize:13, background:'var(--surface-2)',
-              }}>
-                Nenhuma variante cadastrada. Adicione tamanhos como P, M, G ou numerações.
-              </div>
-              <div style={{ maxWidth: 240 }}>
-                <Label>ESTOQUE DO PRODUTO</Label>
-                <input
-                  name="estoque"
-                  type="number"
-                  min="0"
-                  defaultValue={produto?.estoque ?? ''}
-                  placeholder="Deixe em branco para ilimitado"
-                  style={inputStyle}
-                />
-                <p style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
-                  Controle de estoque para produto sem variantes. Estoque 0 bloqueia a compra.
-                </p>
-              </div>
+            <div style={{
+              padding:'14px 16px', borderRadius:12, border:'1.5px dashed var(--border)',
+              color:'var(--text-3)', fontSize:13, background:'var(--surface-2)',
+            }}>
+              Nenhuma variante cadastrada. Adicione tamanhos como P, M, G ou numerações.
+              O estoque deste produto é controlado abaixo, na seção "Estoque".
             </div>
           )}
 
@@ -555,6 +540,27 @@ export function ProdutoForm({ produto, variantesDetalhadas, categorias, seriesDi
           </div>
         </div>
       </Section>}
+
+      {/* ── Seção: Estoque (produtos sem variantes) ── */}
+      {variantesPreenchidas.length === 0 && (
+        <Section title="Estoque">
+          <div style={{ maxWidth: 280 }}>
+            <Label>QUANTIDADE DISPONÍVEL</Label>
+            <input
+              name="estoque"
+              type="number"
+              min="0"
+              defaultValue={produto?.estoque ?? ''}
+              placeholder="Deixe em branco para ilimitado"
+              style={inputStyle}
+            />
+            <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, lineHeight: 1.5 }}>
+              Em branco = estoque ilimitado. <strong>0</strong> bloqueia a compra (produto esgotado).
+              Quando você cadastrar variantes, o estoque passa a ser controlado por tamanho.
+            </p>
+          </div>
+        </Section>
+      )}
 
       {/* ── Seção: Prazos e Evento ── */}
       <Section title="Prazos e evento">
