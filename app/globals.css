@@ -230,6 +230,28 @@ body {
     display: none !important;
   }
   .admin-shell-content {
-    padding-bottom: 112px !important;
+    padding: 16px 16px 112px !important;
+  }
+
+  /* Dashboard: força grids multi-coluna a empilharem em uma coluna no mobile.
+     Os componentes do dashboard usam grid-template-columns inline com frações
+     ("1.7fr 1fr", "repeat(4, 1fr)", etc) que não cabem em telas estreitas. */
+  .admin-dashboard section[style*="grid-template-columns"],
+  .admin-dashboard div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Cards/headlines do dashboard ficam grandes demais em mobile — reduz. */
+  .admin-dashboard h1 {
+    font-size: 28px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* Tabelas com minWidth grande ganham scroll horizontal próprio. */
+  .admin-shell-content table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
   }
 }

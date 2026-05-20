@@ -205,7 +205,7 @@ export default async function AdminDashboard({
   ]
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 80 }}>
+    <div className="animate-fade-in admin-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 80 }}>
       {/* HEADER HERO */}
       <section style={{
         position: 'relative', overflow: 'hidden', padding: '10px 0 20px',
