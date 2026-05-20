@@ -114,6 +114,14 @@ export async function cadastroAction(formData: FormData) {
     return { error: 'A senha deve ter pelo menos 8 caracteres.' }
   }
 
+  // Rate limit por IP — impede enumeração em massa de CPFs via cadastro
+  // (a mensagem de "CPF já existe" é útil p/ UX, mas não pode ser abusada em escala).
+  const ip = await getClientIp()
+  const { allowed, retryAfter } = await ratelimit.check(`cadastro:ip:${ip}`, 15, 3600)
+  if (!allowed) {
+    return { error: `Muitas tentativas de cadastro. Tente novamente em ${retryAfter}s.` }
+  }
+
   // Verifica se CPF já existe (service role — EXECUTE revogado de anon/authenticated)
   const { data: existente } = await createAdminClient()
     .rpc('get_email_by_cpf', { p_cpf: cpf })

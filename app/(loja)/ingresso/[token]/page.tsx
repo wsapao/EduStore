@@ -2,10 +2,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import QRCode from 'qrcode'
-import type { Produto, Aluno, Responsavel, StatusIngresso } from '@/types/database'
+import type { Produto, Aluno, StatusIngresso } from '@/types/database'
 import { IngressoActions } from './IngressoActions'
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
+// A RPC get_ingresso_by_token retorna só produto + aluno (sem PII do responsável).
 interface IngressoDetalhado {
   id: string
   token: string
@@ -15,7 +16,6 @@ interface IngressoDetalhado {
   created_at: string
   produto: Produto
   aluno: Aluno
-  responsavel: Responsavel
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
