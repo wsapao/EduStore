@@ -164,23 +164,50 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
   }
 
   // 1. Cria pedido
+  const pedidoInsert: Record<string, unknown> = {
+    responsavel_id: user.id,
+    escola_id: responsavel.escola_id,
+    status: 'pendente',
+    metodo_pagamento: input.metodo,
+    total: finalTotal,
+    termo_aceito: input.termo_aceito ?? false,
+    termo_aceito_em: input.termo_aceito ? new Date().toISOString() : null,
+  }
+
+  if (voucherIdParaSalvar) {
+    pedidoInsert.voucher_id = voucherIdParaSalvar
+  }
+  if (descontoAplicado > 0) {
+    pedidoInsert.desconto_aplicado = descontoAplicado
+  }
+
   const { data: pedido, error: pedidoErr } = await supabase
     .from('pedidos')
-    .insert({
-      responsavel_id: user.id,
-      escola_id: responsavel.escola_id,
-      status: 'pendente',
-      metodo_pagamento: input.metodo,
-      total: finalTotal,
-      voucher_id: voucherIdParaSalvar,
-      desconto_aplicado: descontoAplicado > 0 ? descontoAplicado : undefined,
-      termo_aceito: input.termo_aceito ?? false,
-      termo_aceito_em: input.termo_aceito ? new Date().toISOString() : null,
-    })
+    .insert(pedidoInsert)
     .select()
     .single()
 
   if (pedidoErr || !pedido) {
+    const detalhe = {
+      code: pedidoErr?.code,
+      message: pedidoErr?.message,
+      details: pedidoErr?.details,
+      hint: pedidoErr?.hint,
+      responsavelId: user.id,
+      escolaId: responsavel.escola_id,
+      metodo: input.metodo,
+      total: finalTotal,
+      itemCount: safeItems.length,
+      temVoucher: Boolean(voucherIdParaSalvar),
+      descontoAplicado,
+    }
+    console.error('[createOrderAction] falha ao criar pedido', detalhe)
+    await auditLog({
+      modulo: 'checkout',
+      acao: 'pedido_insert_falhou',
+      descricao: detalhe.message ?? 'Erro ao criar pedido.',
+      metadata: detalhe,
+    })
     return { success: false, error: 'Erro ao criar pedido.' }
   }
 
