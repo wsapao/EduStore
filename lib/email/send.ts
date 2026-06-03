@@ -4,10 +4,12 @@ import {
   emailPixExpirado,
   emailIngressoEmitido,
   emailResetSenhaAdmin,
+  emailAvisoTrocaEmail,
   type EmailPedidoParams,
   type EmailPixExpiradoParams,
   type EmailIngressoParams,
   type EmailResetSenhaAdminParams,
+  type EmailAvisoTrocaEmailParams,
 } from './templates'
 
 // ── Enviar confirmação de pedido ──────────────────────────────────────────────
@@ -83,5 +85,22 @@ export async function enviarEmailResetSenhaAdmin(
     await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
   } catch (err) {
     console.error('[Email] Erro ao enviar reset administrativo de senha:', err)
+  }
+}
+
+// ── Aviso de troca de e-mail de acesso ────────────────────────────────────────
+export async function enviarEmailAvisoTrocaEmail(
+  to: string,
+  params: EmailAvisoTrocaEmailParams,
+) {
+  const resend = getResend()
+  if (!resend) return
+
+  const { subject, html } = emailAvisoTrocaEmail(params)
+
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
+  } catch (err) {
+    console.error('[Email] Erro ao enviar aviso de troca de e-mail:', err)
   }
 }

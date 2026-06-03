@@ -226,6 +226,42 @@ export function emailResetSenhaAdmin(p: EmailResetSenhaAdminParams): { subject: 
   }
 }
 
+// ── Template: Aviso de troca de e-mail de acesso ─────────────────────────────
+export interface EmailAvisoTrocaEmailParams {
+  responsavelNome: string
+  emailAntigo: string
+  emailNovo: string
+}
+
+export function emailAvisoTrocaEmail(
+  p: EmailAvisoTrocaEmailParams,
+): { subject: string; html: string } {
+  const content = `
+    <h2 style="margin:0 0 4px;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-.02em;">
+      ✉️ Seu e-mail de acesso foi alterado
+    </h2>
+    <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
+      Olá, <strong>${p.responsavelNome}</strong>! O e-mail de acesso da sua conta na Loja Escolar foi atualizado pela administração da escola.
+    </p>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:13px;color:#334155;line-height:1.8;">
+      <div>E-mail anterior: <strong>${p.emailAntigo}</strong></div>
+      <div>Novo e-mail de acesso: <strong>${p.emailNovo}</strong></div>
+    </div>
+
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px 20px;margin-bottom:8px;">
+      <div style="font-size:13px;color:#9a3412;line-height:1.7;">
+        Se você não reconhece esta alteração, entre em contato imediatamente com a secretaria da escola.
+      </div>
+    </div>
+  `
+
+  return {
+    subject: 'Seu e-mail de acesso à Loja Escolar foi alterado',
+    html: base('E-mail de acesso alterado', content),
+  }
+}
+
 // ── Template: Ingresso emitido ────────────────────────────────────────────────
 export interface EmailIngressoParams {
   responsavelNome: string
