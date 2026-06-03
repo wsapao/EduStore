@@ -12,6 +12,7 @@ import {
   getAdminPillStyle,
   getAdminTone,
 } from '@/lib/admin-ui-tones'
+import { EditarResponsavelDialog } from './EditarResponsavelDialog'
 
 interface ResponsavelRow {
   id: string
@@ -350,6 +351,15 @@ export default async function AdminResponsaveisPage({
                     Enviar reset de senha
                   </button>
                 </form>
+                <EditarResponsavelDialog
+                  responsavel={{
+                    id: responsavel.id,
+                    nome: responsavel.nome,
+                    email: responsavel.email,
+                    cpf: responsavel.cpf,
+                    telefone: responsavel.telefone,
+                  }}
+                />
               </div>
             </div>
 
