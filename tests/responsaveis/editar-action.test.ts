@@ -6,12 +6,14 @@ vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn() }))
 vi.mock('@/lib/permissoes/getUserPermissions', () => ({ getUserPermissions: vi.fn() }))
 vi.mock('@/lib/auditoria/log', () => ({ auditLog: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('@/lib/email/send', () => ({ enviarEmailAvisoTrocaEmail: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('@/lib/escola/getEscolaIdParaAdmin', () => ({ getEscolaIdParaAdmin: vi.fn() }))
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserPermissions } from '@/lib/permissoes/getUserPermissions'
 import { auditLog } from '@/lib/auditoria/log'
 import { enviarEmailAvisoTrocaEmail } from '@/lib/email/send'
+import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
 import { editarResponsavelAction } from '@/app/actions/responsaveis'
 
 // Builder thenable: cada chamada terminal (single/maybeSingle) ou await consome
@@ -51,9 +53,9 @@ const ALVO = {
 function setupServerClient(user: any = ADMIN_USER, escolaId = 'esc-1') {
   const supabase = {
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
-    from: vi.fn(() => queueBuilder([{ data: { escola_id: escolaId } }])),
   }
   ;(createClient as any).mockResolvedValue(supabase)
+  ;(getEscolaIdParaAdmin as any).mockResolvedValue(escolaId)
   return supabase
 }
 
@@ -77,9 +79,9 @@ describe('editarResponsavelAction', () => {
     const updateUserById = vi.fn().mockResolvedValue({ error: null })
     // Cada admin.from() retorna um builder com 1 resultado (consumido por .single/.maybeSingle/await)
     const adminFromResults = [
-      { data: ALVO },     // 1ª chamada: select alvo .single()
-      { data: null },     // 2ª chamada: checagem de duplicidade .maybeSingle()
-      { error: null },    // 3ª chamada: update responsaveis (await .then)
+      { data: ALVO },                           // 1ª chamada: select alvo .single()
+      { data: null },                           // 2ª chamada: checagem de duplicidade .maybeSingle()
+      { data: [{ id: 'resp-9' }], error: null }, // 3ª chamada: update responsaveis .select('id')
     ]
     let adminFromCall = 0
     const admin = {
@@ -110,8 +112,8 @@ describe('editarResponsavelAction', () => {
     setupServerClient()
     const updateUserById = vi.fn()
     const adminFromResults = [
-      { data: ALVO },   // 1ª chamada: select alvo .single()
-      { error: null },  // 2ª chamada: update responsaveis (await .then)
+      { data: ALVO },                           // 1ª chamada: select alvo .single()
+      { data: [{ id: 'resp-9' }], error: null }, // 2ª chamada: update responsaveis .select('id')
     ]
     let adminFromCall = 0
     const admin = {
@@ -149,5 +151,41 @@ describe('editarResponsavelAction', () => {
 
     expect(res.success).toBe(false)
     expect(updateUserById).not.toHaveBeenCalled()
+  })
+
+  it('faz rollback na tabela quando updateUserById falha e não envia e-mail', async () => {
+    setupServerClient()
+    // Auth update falha
+    const updateUserById = vi.fn().mockResolvedValue({ error: { message: 'boom' } })
+    // admin.from() é chamado nesta ordem para troca de e-mail com Auth failure:
+    //   1. select alvo  2. dup check  3. update (retorna rows)  4. rollback update
+    const adminFromResults = [
+      { data: ALVO },                           // 1ª: select alvo .single()
+      { data: null },                           // 2ª: dup check .maybeSingle()
+      { data: [{ id: 'resp-9' }], error: null }, // 3ª: update .select('id')
+      { error: null },                          // 4ª: rollback update
+    ]
+    let adminFromCall = 0
+    const admin = {
+      from: vi.fn(() => queueBuilder([adminFromResults[adminFromCall++]])),
+      auth: { admin: { updateUserById } },
+    }
+    ;(createAdminClient as any).mockReturnValue(admin)
+
+    const res = await editarResponsavelAction(
+      makeForm({
+        responsavel_id: 'resp-9',
+        nome: 'Maria Silva',
+        email: 'certo@exemplo.com',
+        telefone: '11988887777',
+      }),
+    )
+
+    // (a) ação retorna erro
+    expect(res.success).toBe(false)
+    // (b) rollback foi tentado: admin.from foi chamado 4 vezes (inclui a 4ª = rollback)
+    expect(admin.from).toHaveBeenCalledTimes(4)
+    // (c) nenhum e-mail de aviso enviado
+    expect(enviarEmailAvisoTrocaEmail).not.toHaveBeenCalled()
   })
 })

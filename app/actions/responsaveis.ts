@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserPermissions } from '@/lib/permissoes/getUserPermissions'
 import { auditLog } from '@/lib/auditoria/log'
 import { enviarEmailAvisoTrocaEmail } from '@/lib/email/send'
+import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -36,12 +37,8 @@ export async function editarResponsavelAction(formData: FormData): Promise<Actio
   const email = emailRaw
 
   // escola do admin (isolamento multi-tenant)
-  const { data: adminResp } = await supabase
-    .from('responsaveis')
-    .select('escola_id')
-    .eq('id', user.id)
-    .single()
-  if (!adminResp?.escola_id) return { success: false, error: 'Admin sem escola vinculada.' }
+  const escolaIdAdmin = await getEscolaIdParaAdmin(supabase)
+  if (!escolaIdAdmin) return { success: false, error: 'Admin sem escola vinculada.' }
 
   const admin = createAdminClient()
 
@@ -52,7 +49,7 @@ export async function editarResponsavelAction(formData: FormData): Promise<Actio
     .single()
 
   if (!alvo) return { success: false, error: 'Responsável não encontrado.' }
-  if (alvo.escola_id !== adminResp.escola_id) return { success: false, error: 'Acesso negado.' }
+  if (alvo.escola_id !== escolaIdAdmin) return { success: false, error: 'Acesso negado.' }
   if (alvo.excluido_em) return { success: false, error: 'Não é possível editar uma conta removida.' }
 
   const emailAntigo = (alvo.email ?? '').toLowerCase()
@@ -68,11 +65,15 @@ export async function editarResponsavelAction(formData: FormData): Promise<Actio
     if (dup) return { success: false, error: 'Já existe um responsável com esse e-mail.' }
   }
 
-  const { error: updErr } = await admin
+  const { data: updRows, error: updErr } = await admin
     .from('responsaveis')
     .update({ nome, email, telefone })
     .eq('id', responsavelId)
+    .select('id')
   if (updErr) return { success: false, error: 'Falha ao atualizar os dados.' }
+  if (!updRows || updRows.length === 0) {
+    return { success: false, error: 'Responsável não encontrado ou não pôde ser atualizado.' }
+  }
 
   if (emailMudou) {
     const { error: authErr } = await admin.auth.admin.updateUserById(responsavelId, {
@@ -81,10 +82,16 @@ export async function editarResponsavelAction(formData: FormData): Promise<Actio
     })
     if (authErr) {
       // rollback do update na tabela para nunca divergir de auth.users
-      await admin
+      const { error: rollbackErr } = await admin
         .from('responsaveis')
         .update({ nome: alvo.nome, email: alvo.email, telefone: alvo.telefone })
         .eq('id', responsavelId)
+      if (rollbackErr) {
+        console.error(
+          '[editarResponsavelAction] ROLLBACK FALHOU — responsaveis e auth.users divergentes',
+          { responsavelId, rollbackErr: rollbackErr.message, authErr: authErr.message },
+        )
+      }
       return {
         success: false,
         error: 'Não foi possível atualizar o e-mail de login. Tente outro e-mail.',
