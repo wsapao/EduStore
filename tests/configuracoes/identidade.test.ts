@@ -64,7 +64,7 @@ describe('atualizarIdentidadeAction', () => {
   })
 
   it('atualiza a tabela escolas no caminho feliz', async () => {
-    const eq = vi.fn().mockResolvedValue({ error: null })
+    const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ id: 'esc-1' }], error: null }) }))
     const update = vi.fn(() => ({ eq }))
     ;(requirePermission as any).mockResolvedValue(undefined)
     ;(getEscolaIdParaAdmin as any).mockResolvedValue('esc-1')
@@ -92,7 +92,7 @@ describe('atualizarIdentidadeAction', () => {
   })
 
   it('retorna erro se update falhar', async () => {
-    const eq = vi.fn().mockResolvedValue({ error: { message: 'boom' } })
+    const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: null, error: { message: 'boom' } }) }))
     ;(requirePermission as any).mockResolvedValue(undefined)
     ;(getEscolaIdParaAdmin as any).mockResolvedValue('esc-1')
     ;(createClient as any).mockResolvedValue({ from: vi.fn(() => ({ update: () => ({ eq }) })) })
@@ -102,7 +102,7 @@ describe('atualizarIdentidadeAction', () => {
   })
 
   it('aceita cor_primaria vazia (sem alterar a existente)', async () => {
-    const eq = vi.fn().mockResolvedValue({ error: null })
+    const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ id: 'esc-1' }], error: null }) }))
     const update = vi.fn(() => ({ eq }))
     ;(requirePermission as any).mockResolvedValue(undefined)
     ;(getEscolaIdParaAdmin as any).mockResolvedValue('esc-1')
@@ -141,7 +141,7 @@ describe('atualizarEnderecoAction', () => {
   })
 
   it('salva endereço completo com CEP e UF normalizados', async () => {
-    const eq = vi.fn().mockResolvedValue({ error: null })
+    const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ id: 'esc-1' }], error: null }) }))
     const update = vi.fn(() => ({ eq }))
     ;(requirePermission as any).mockResolvedValue(undefined)
     ;(getEscolaIdParaAdmin as any).mockResolvedValue('esc-1')
@@ -168,7 +168,7 @@ describe('atualizarEnderecoAction', () => {
   })
 
   it('aceita endereço parcial (campos vazios viram null)', async () => {
-    const eq = vi.fn().mockResolvedValue({ error: null })
+    const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ id: 'esc-1' }], error: null }) }))
     const update = vi.fn(() => ({ eq }))
     ;(requirePermission as any).mockResolvedValue(undefined)
     ;(getEscolaIdParaAdmin as any).mockResolvedValue('esc-1')
@@ -216,7 +216,7 @@ describe('uploadAssetEscolaAction', () => {
   it('faz upload no bucket escola-assets e atualiza coluna correspondente', async () => {
     const upload = vi.fn().mockResolvedValue({ data: { path: 'esc-1/logo-123.png' }, error: null })
     const getPublicUrl = vi.fn().mockReturnValue({ data: { publicUrl: 'https://supabase/.../logo-123.png' } })
-    const eq = vi.fn().mockResolvedValue({ error: null })
+    const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ id: 'esc-1' }], error: null }) }))
     const update = vi.fn(() => ({ eq }))
 
     ;(requirePermission as any).mockResolvedValue(undefined)
@@ -235,7 +235,7 @@ describe('uploadAssetEscolaAction', () => {
   it('atualiza banner_url quando kind=banner', async () => {
     const upload = vi.fn().mockResolvedValue({ data: { path: 'esc-1/banner.jpg' }, error: null })
     const getPublicUrl = vi.fn().mockReturnValue({ data: { publicUrl: 'https://x/banner.jpg' } })
-    const eq = vi.fn().mockResolvedValue({ error: null })
+    const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ id: 'esc-1' }], error: null }) }))
     const update = vi.fn(() => ({ eq }))
 
     ;(requirePermission as any).mockResolvedValue(undefined)

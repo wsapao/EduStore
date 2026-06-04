@@ -23,7 +23,7 @@ function fd(obj: Record<string, string>) {
 function setupHappy() {
   ;(requirePermission as any).mockResolvedValue(undefined)
   ;(getEscolaIdParaAdmin as any).mockResolvedValue('esc-1')
-  const eq = vi.fn().mockResolvedValue({ error: null })
+  const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ escola_id: 'esc-1' }], error: null }) }))
   const update = vi.fn(() => ({ eq }))
   ;(createClient as any).mockResolvedValue({ from: vi.fn(() => ({ update })) })
   return { update, eq }
@@ -106,7 +106,7 @@ describe('atualizarCheckoutAction', () => {
   it('retorna erro quando update falha', async () => {
     ;(requirePermission as any).mockResolvedValue(undefined)
     ;(getEscolaIdParaAdmin as any).mockResolvedValue('esc-1')
-    const eq = vi.fn().mockResolvedValue({ error: { message: 'boom' } })
+    const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: null, error: { message: 'boom' } }) }))
     ;(createClient as any).mockResolvedValue({ from: vi.fn(() => ({ update: () => ({ eq }) })) })
     const r = await atualizarCheckoutAction(fd({ carrinho_expiracao_minutos: '60' }))
     expect(r.error).toMatch(/salvar|erro/i)

@@ -182,7 +182,7 @@ describe('atualizarPapelAction', () => {
     setupAuthOk()
     const lookupPapel = vi.fn().mockResolvedValue({ data: { id: 'p1', preset: false, chave_preset: null }, error: null })
     const lookupDup = vi.fn().mockResolvedValue({ data: null, error: null })
-    const updateEq = vi.fn().mockResolvedValue({ error: null })
+    const updateEq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ id: 'p1' }], error: null }) }))
     const updatePapel = vi.fn(() => ({ eq: updateEq }))
     const deleteEq = vi.fn().mockResolvedValue({ error: null })
     const insertPerms = vi.fn().mockResolvedValue({ error: null })
@@ -229,7 +229,7 @@ describe('atualizarPapelAction', () => {
     setupAuthOk()
     const lookupPapel = vi.fn().mockResolvedValue({ data: { id: 'p1', preset: true, chave_preset: 'admin' }, error: null })
     const lookupDup = vi.fn().mockResolvedValue({ data: null, error: null })
-    const updateEq = vi.fn().mockResolvedValue({ error: null })
+    const updateEq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ id: 'p1' }], error: null }) }))
     const updateFn = vi.fn(() => ({ eq: updateEq }))
     let papeisCount = 0
     ;(createClient as any).mockResolvedValue({
@@ -351,7 +351,7 @@ describe('excluirPapelAction', () => {
     setupAuthOk()
     const lookupPapel = vi.fn().mockResolvedValue({ data: { id: 'p1', preset: false }, error: null })
     const countUsos = vi.fn().mockResolvedValue({ count: 0, error: null })
-    const delEq = vi.fn().mockResolvedValue({ error: null })
+    const delEq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ id: 'p1' }], error: null }) }))
 
     ;(createClient as any).mockResolvedValue({
       from: vi.fn((table: string) => {

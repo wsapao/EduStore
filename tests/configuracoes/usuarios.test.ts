@@ -195,7 +195,7 @@ describe('alterarPapelUsuarioAction', () => {
       data: { id: 'p-novo', chave_preset: 'financeiro', escola_id: 'esc-1' },
       error: null,
     })
-    const eqUpdate = vi.fn().mockResolvedValue({ error: null })
+    const eqUpdate = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ user_id: 'ok' }], error: null }) }))
     const updateChain = vi.fn(() => ({ eq: () => ({ eq: eqUpdate }) }))
 
     ;(createClient as any).mockResolvedValue({
@@ -273,7 +273,7 @@ describe('toggleSuspensaoUsuarioAction', () => {
       data: { user_id: 'u-2', papel: { chave_preset: 'gerente' }, suspenso: false },
       error: null,
     })
-    const eqUpdate = vi.fn().mockResolvedValue({ error: null })
+    const eqUpdate = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ user_id: 'ok' }], error: null }) }))
     const updateChain = vi.fn(() => ({ eq: () => ({ eq: eqUpdate }) }))
     ;(createClient as any).mockResolvedValue({
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } } }) },
@@ -302,7 +302,7 @@ describe('toggleSuspensaoUsuarioAction', () => {
       data: { user_id: 'u-2', papel: { chave_preset: 'gerente' }, suspenso: true },
       error: null,
     })
-    const eqUpdate = vi.fn().mockResolvedValue({ error: null })
+    const eqUpdate = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ user_id: 'ok' }], error: null }) }))
     const updateChain = vi.fn(() => ({ eq: () => ({ eq: eqUpdate }) }))
     ;(createClient as any).mockResolvedValue({
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } } }) },
@@ -379,7 +379,7 @@ describe('removerUsuarioAction', () => {
       data: { user_id: 'u-2', papel: { chave_preset: 'gerente' } },
       error: null,
     })
-    const eqDelete = vi.fn().mockResolvedValue({ error: null })
+    const eqDelete = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ user_id: 'ok' }], error: null }) }))
     const deleteChain = vi.fn(() => ({ eq: () => ({ eq: eqDelete }) }))
     ;(createClient as any).mockResolvedValue({
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } } }) },

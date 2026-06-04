@@ -30,7 +30,7 @@ function fd(obj: Record<string, string | string[]>) {
 }
 
 function setupHappy() {
-  const eq = vi.fn().mockResolvedValue({ error: null })
+  const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: [{ escola_id: 'esc-1' }], error: null }) }))
   const update = vi.fn(() => ({ eq }))
 
   ;(requirePermission as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
@@ -182,7 +182,7 @@ describe('atualizarLojaOnlineAction', () => {
   })
 
   it('retorna erro quando update falha', async () => {
-    const eq = vi.fn().mockResolvedValue({ error: { message: 'boom' } })
+    const eq = vi.fn(() => ({ select: vi.fn().mockResolvedValue({ data: null, error: { message: 'boom' } }) }))
 
     ;(requirePermission as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
     ;(getEscolaIdParaAdmin as unknown as ReturnType<typeof vi.fn>).mockResolvedValue('esc-1')
