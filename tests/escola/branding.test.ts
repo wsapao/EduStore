@@ -16,16 +16,29 @@ describe('resolveEscolaIconUrls', () => {
     })
   })
 
-  it('prioriza o favicon dedicado para o icone pequeno quando existir', () => {
+  it('prioriza a logo da escola para o icone do navegador mesmo quando ha favicon antigo salvo', () => {
     expect(
       resolveEscolaIconUrls({
         logo_url: 'https://cdn.escola/logo.png',
         favicon_url: 'https://cdn.escola/favicon.png',
       }),
     ).toEqual({
-      icon: 'https://cdn.escola/favicon.png',
+      icon: 'https://cdn.escola/logo.png',
       apple: 'https://cdn.escola/logo.png',
       manifest: 'https://cdn.escola/logo.png',
+    })
+  })
+
+  it('usa favicon_url apenas como fallback quando nao houver logo', () => {
+    expect(
+      resolveEscolaIconUrls({
+        logo_url: null,
+        favicon_url: 'https://cdn.escola/favicon.png',
+      }),
+    ).toEqual({
+      icon: 'https://cdn.escola/favicon.png',
+      apple: 'https://cdn.escola/favicon.png',
+      manifest: 'https://cdn.escola/favicon.png',
     })
   })
 

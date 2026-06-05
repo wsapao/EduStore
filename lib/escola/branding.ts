@@ -30,7 +30,7 @@ export function resolveEscolaIconUrls(escola: Pick<EscolaBranding, 'logo_url' | 
   const faviconUrl = cleanAssetUrl(escola.favicon_url)
 
   return {
-    icon: faviconUrl ?? logoUrl ?? '/icon',
+    icon: logoUrl ?? faviconUrl ?? '/icon',
     apple: logoUrl ?? faviconUrl ?? '/apple-icon',
     manifest: logoUrl ?? faviconUrl ?? '/icon',
   }
