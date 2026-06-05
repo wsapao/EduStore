@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { editarResponsavelAction } from '@/app/actions/responsaveis'
+import { getEditarResponsavelDialogTheme } from './editarResponsavelDialogTheme'
 
 interface Props {
   responsavel: {
@@ -17,6 +18,7 @@ interface Props {
 export function EditarResponsavelDialog({ responsavel }: Props) {
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
+  const theme = getEditarResponsavelDialogTheme({ pending })
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -37,16 +39,7 @@ export function EditarResponsavelDialog({ responsavel }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        style={{
-          padding: '6px 12px',
-          fontSize: 12,
-          fontWeight: 700,
-          borderRadius: 8,
-          border: '1px solid #cbd5e1',
-          background: '#fff',
-          color: '#334155',
-          cursor: 'pointer',
-        }}
+        style={theme.triggerButton}
       >
         Editar
       </button>
@@ -55,86 +48,78 @@ export function EditarResponsavelDialog({ responsavel }: Props) {
         <div
           role="dialog"
           aria-modal="true"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15,23,42,.45)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
-            padding: 16,
-          }}
+          aria-labelledby="editar-responsavel-title"
+          aria-describedby="editar-responsavel-description"
+          style={theme.overlay}
           onClick={() => !pending && setOpen(false)}
         >
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#fff',
-              borderRadius: 16,
-              padding: 24,
-              width: '100%',
-              maxWidth: 420,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 14,
-            }}
+            style={theme.panel}
           >
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
-              Editar responsável
-            </h3>
+            <div style={theme.header}>
+              <span style={theme.eyebrow}>Cadastro</span>
+              <div>
+                <h3 id="editar-responsavel-title" style={theme.title}>
+                  Editar responsável
+                </h3>
+                <p id="editar-responsavel-description" style={theme.description}>
+                  Atualize nome, login e telefone mantendo o padrão visual do admin.
+                </p>
+              </div>
+            </div>
 
             <input type="hidden" name="responsavel_id" value={responsavel.id} />
 
-            <label style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>
-              Nome
+            <label style={theme.field}>
+              <span style={theme.fieldLabel}>Nome</span>
               <input
                 name="nome"
                 defaultValue={responsavel.nome}
                 required
-                style={inputStyle}
+                style={theme.input}
               />
             </label>
 
-            <label style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>
-              E-mail (login)
+            <label style={theme.field}>
+              <span style={theme.fieldLabel}>E-mail (login)</span>
               <input
                 name="email"
                 type="email"
                 defaultValue={responsavel.email}
                 required
-                style={inputStyle}
+                style={theme.input}
               />
             </label>
 
-            <label style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>
-              Telefone
+            <label style={theme.field}>
+              <span style={theme.fieldLabel}>Telefone</span>
               <input
                 name="telefone"
                 defaultValue={responsavel.telefone ?? ''}
-                style={inputStyle}
+                style={theme.input}
               />
             </label>
 
-            <label style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>
-              CPF (não editável)
-              <input value={responsavel.cpf} disabled style={{ ...inputStyle, background: '#f1f5f9' }} />
+            <label style={theme.field}>
+              <span style={theme.fieldLabel}>CPF (não editável)</span>
+              <input value={responsavel.cpf} disabled style={theme.readonlyInput} />
             </label>
 
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 6 }}>
+            <div style={theme.footer}>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 disabled={pending}
-                style={{ ...btnStyle, background: '#fff', color: '#334155', border: '1px solid #cbd5e1' }}
+                style={theme.secondaryButton}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={pending}
-                style={{ ...btnStyle, background: '#4f46e5', color: '#fff', border: 'none' }}
+                style={theme.primaryButton}
               >
                 {pending ? 'Salvando…' : 'Salvar'}
               </button>
@@ -144,24 +129,4 @@ export function EditarResponsavelDialog({ responsavel }: Props) {
       )}
     </>
   )
-}
-
-const inputStyle: React.CSSProperties = {
-  display: 'block',
-  width: '100%',
-  marginTop: 6,
-  padding: '10px 12px',
-  fontSize: 14,
-  fontWeight: 500,
-  borderRadius: 10,
-  border: '1px solid #cbd5e1',
-  color: '#0f172a',
-}
-
-const btnStyle: React.CSSProperties = {
-  padding: '10px 18px',
-  fontSize: 13,
-  fontWeight: 700,
-  borderRadius: 10,
-  cursor: 'pointer',
 }
