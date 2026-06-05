@@ -1,38 +1,37 @@
 import type { MetadataRoute } from 'next'
+import { getDefaultEscolaBranding, resolveEscolaIconUrls } from '@/lib/escola/branding'
 
-export default function manifest(): MetadataRoute.Manifest {
-  const escolaNome = process.env.NEXT_PUBLIC_ESCOLA_NOME ?? 'Loja Escolar'
-  const escolaCor  = process.env.NEXT_PUBLIC_ESCOLA_COR  ?? '#1a2f5a'
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const branding = await getDefaultEscolaBranding()
+  const icons = resolveEscolaIconUrls(branding)
+  const shortName = branding.nome.split(' ')[0] || 'Loja'
 
   return {
-    name: escolaNome,
-    short_name: escolaNome.split(' ')[0], // Ex: "Colégio" ou "Loja"
-    description: `Compre eventos, passeios e materiais de ${escolaNome} com facilidade.`,
+    name: branding.nome,
+    short_name: shortName,
+    description: `Compre eventos, passeios e materiais de ${branding.nome} com facilidade.`,
     start_url: '/loja',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
     background_color: '#f5f6fa',
-    theme_color: escolaCor,
+    theme_color: branding.cor_primaria,
     categories: ['education', 'shopping', 'productivity'],
     lang: 'pt-BR',
     icons: [
       {
-        src: '/icon',
+        src: icons.manifest,
         sizes: '512x512',
-        type: 'image/png',
         purpose: 'any',
       },
       {
-        src: '/icon',
+        src: icons.manifest,
         sizes: '512x512',
-        type: 'image/png',
         purpose: 'maskable',
       },
       {
-        src: '/apple-icon',
+        src: icons.apple,
         sizes: '180x180',
-        type: 'image/png',
       },
     ],
   }

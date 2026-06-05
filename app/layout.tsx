@@ -4,26 +4,31 @@ import { Toaster } from 'sonner'
 import './globals.css'
 import { CookieBanner } from '@/components/CookieBanner'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
+import { getDefaultEscolaBranding, resolveEscolaIconUrls } from '@/lib/escola/branding'
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta' })
 
-const escolaNome = process.env.NEXT_PUBLIC_ESCOLA_NOME ?? 'Loja Escolar'
 const escolaCor  = process.env.NEXT_PUBLIC_ESCOLA_COR  ?? '#1a2f5a'
 
-export const metadata: Metadata = {
-  title: escolaNome,
-  description: `Compre eventos, passeios e materiais de ${escolaNome} com facilidade.`,
-  applicationName: escolaNome,
-  manifest: '/manifest.webmanifest',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: escolaNome,
-  },
-  icons: {
-    icon: '/icon',
-    apple: '/apple-icon',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getDefaultEscolaBranding()
+  const icons = resolveEscolaIconUrls(branding)
+
+  return {
+    title: branding.nome,
+    description: `Compre eventos, passeios e materiais de ${branding.nome} com facilidade.`,
+    applicationName: branding.nome,
+    manifest: '/manifest.webmanifest',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: branding.nome,
+    },
+    icons: {
+      icon: icons.icon,
+      apple: icons.apple,
+    },
+  }
 }
 
 export const viewport: Viewport = {
