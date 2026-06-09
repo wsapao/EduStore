@@ -1,57 +1,51 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolveEscolaIconUrls } from '@/lib/escola/branding'
+import { pickEscolaIconImage, escolaIconVersion } from '@/lib/escola/branding'
 
-describe('resolveEscolaIconUrls', () => {
-  it('usa a logo da escola como icone do navegador quando favicon dedicado nao foi configurado', () => {
+describe('pickEscolaIconImage', () => {
+  it('usa a logo da escola quando disponivel', () => {
     expect(
-      resolveEscolaIconUrls({
-        logo_url: 'https://cdn.escola/logo.png',
-        favicon_url: null,
-      }),
-    ).toEqual({
-      icon: 'https://cdn.escola/logo.png',
-      apple: 'https://cdn.escola/logo.png',
-      manifest: 'https://cdn.escola/logo.png',
-    })
-  })
-
-  it('prioriza a logo da escola para o icone do navegador mesmo quando ha favicon antigo salvo', () => {
-    expect(
-      resolveEscolaIconUrls({
+      pickEscolaIconImage({
         logo_url: 'https://cdn.escola/logo.png',
         favicon_url: 'https://cdn.escola/favicon.png',
       }),
-    ).toEqual({
-      icon: 'https://cdn.escola/logo.png',
-      apple: 'https://cdn.escola/logo.png',
-      manifest: 'https://cdn.escola/logo.png',
-    })
+    ).toBe('https://cdn.escola/logo.png')
   })
 
-  it('usa favicon_url apenas como fallback quando nao houver logo', () => {
+  it('cai para o favicon dedicado quando nao ha logo', () => {
     expect(
-      resolveEscolaIconUrls({
+      pickEscolaIconImage({
         logo_url: null,
         favicon_url: 'https://cdn.escola/favicon.png',
       }),
-    ).toEqual({
-      icon: 'https://cdn.escola/favicon.png',
-      apple: 'https://cdn.escola/favicon.png',
-      manifest: 'https://cdn.escola/favicon.png',
-    })
+    ).toBe('https://cdn.escola/favicon.png')
   })
 
-  it('mantem os icones internos quando nao ha midia configurada', () => {
+  it('retorna null quando nao ha nenhuma midia', () => {
+    expect(pickEscolaIconImage({ logo_url: null, favicon_url: null })).toBeNull()
+  })
+
+  it('ignora strings em branco', () => {
     expect(
-      resolveEscolaIconUrls({
-        logo_url: null,
-        favicon_url: null,
-      }),
-    ).toEqual({
-      icon: '/icon',
-      apple: '/apple-icon',
-      manifest: '/icon',
-    })
+      pickEscolaIconImage({ logo_url: '   ', favicon_url: '\n' }),
+    ).toBeNull()
+  })
+})
+
+describe('escolaIconVersion', () => {
+  it('e estavel para a mesma imagem', () => {
+    const a = escolaIconVersion({ logo_url: 'https://cdn.escola/logo.png', favicon_url: null })
+    const b = escolaIconVersion({ logo_url: 'https://cdn.escola/logo.png', favicon_url: null })
+    expect(a).toBe(b)
+  })
+
+  it('muda quando a imagem muda (cache-busting)', () => {
+    const v1 = escolaIconVersion({ logo_url: 'https://cdn.escola/logo-1.png', favicon_url: null })
+    const v2 = escolaIconVersion({ logo_url: 'https://cdn.escola/logo-2.png', favicon_url: null })
+    expect(v1).not.toBe(v2)
+  })
+
+  it('produz um token nao vazio mesmo sem midia', () => {
+    expect(escolaIconVersion({ logo_url: null, favicon_url: null })).toMatch(/.+/)
   })
 })

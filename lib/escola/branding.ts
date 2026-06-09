@@ -7,12 +7,6 @@ export type EscolaBranding = {
   favicon_url: string | null
 }
 
-export type EscolaIconUrls = {
-  icon: string
-  apple: string
-  manifest: string
-}
-
 const FALLBACK_BRANDING: EscolaBranding = {
   nome: process.env.NEXT_PUBLIC_ESCOLA_NOME ?? 'Loja Escolar',
   cor_primaria: process.env.NEXT_PUBLIC_ESCOLA_COR ?? '#1a2f5a',
@@ -25,15 +19,31 @@ function cleanAssetUrl(value?: string | null) {
   return trimmed || null
 }
 
-export function resolveEscolaIconUrls(escola: Pick<EscolaBranding, 'logo_url' | 'favicon_url'>): EscolaIconUrls {
-  const logoUrl = cleanAssetUrl(escola.logo_url)
-  const faviconUrl = cleanAssetUrl(escola.favicon_url)
+/**
+ * Imagem-fonte para gerar o icone (favicon/apple/manifest) da escola.
+ * Prioriza a logo; cai para um favicon dedicado; null quando nada foi enviado
+ * (nesse caso o /icon renderiza a arte padrao da loja).
+ */
+export function pickEscolaIconImage(
+  escola: Pick<EscolaBranding, 'logo_url' | 'favicon_url'>,
+): string | null {
+  return cleanAssetUrl(escola.logo_url) ?? cleanAssetUrl(escola.favicon_url)
+}
 
-  return {
-    icon: logoUrl ?? faviconUrl ?? '/icon',
-    apple: logoUrl ?? faviconUrl ?? '/apple-icon',
-    manifest: logoUrl ?? faviconUrl ?? '/icon',
+/**
+ * Token curto e estavel derivado da imagem do icone. Usado como `?v=` nos
+ * links de icone para forcar o navegador a rebuscar o favicon quando a escola
+ * troca a logo (o cache de favicon e teimoso e ignora reloads normais).
+ */
+export function escolaIconVersion(
+  escola: Pick<EscolaBranding, 'logo_url' | 'favicon_url'>,
+): string {
+  const basis = pickEscolaIconImage(escola) ?? 'fallback'
+  let hash = 0
+  for (let i = 0; i < basis.length; i++) {
+    hash = (hash * 31 + basis.charCodeAt(i)) | 0
   }
+  return (hash >>> 0).toString(36)
 }
 
 export async function getDefaultEscolaBranding(): Promise<EscolaBranding> {
