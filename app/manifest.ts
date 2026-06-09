@@ -1,9 +1,9 @@
 import type { MetadataRoute } from 'next'
-import { getDefaultEscolaBranding, resolveEscolaIconUrls } from '@/lib/escola/branding'
+import { getDefaultEscolaBranding, escolaIconVersion } from '@/lib/escola/branding'
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const branding = await getDefaultEscolaBranding()
-  const icons = resolveEscolaIconUrls(branding)
+  const v = escolaIconVersion(branding)
   const shortName = branding.nome.split(' ')[0] || 'Loja'
 
   return {
@@ -20,18 +20,21 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     lang: 'pt-BR',
     icons: [
       {
-        src: icons.manifest,
+        src: `/icon?v=${v}`,
         sizes: '512x512',
+        type: 'image/png',
         purpose: 'any',
       },
       {
-        src: icons.manifest,
+        src: `/icon?v=${v}`,
         sizes: '512x512',
+        type: 'image/png',
         purpose: 'maskable',
       },
       {
-        src: icons.apple,
+        src: `/apple-icon?v=${v}`,
         sizes: '180x180',
+        type: 'image/png',
       },
     ],
   }

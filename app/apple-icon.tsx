@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og'
+import { getDefaultEscolaBranding, pickEscolaIconImage } from '@/lib/escola/branding'
 
 export const size = {
   width: 180,
@@ -7,7 +8,40 @@ export const size = {
 
 export const contentType = 'image/png'
 
-export default function AppleIcon() {
+export const dynamic = 'force-dynamic'
+
+export default async function AppleIcon() {
+  const branding = await getDefaultEscolaBranding()
+  const logo = pickEscolaIconImage(branding)
+
+  // Apple touch icons não devem ter transparência → fundo branco sólido.
+  if (logo) {
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#ffffff',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={logo}
+            alt=""
+            width={156}
+            height={156}
+            style={{ width: 156, height: 156, objectFit: 'contain' }}
+          />
+        </div>
+      ),
+      size,
+    )
+  }
+
   return new ImageResponse(
     (
       <div
@@ -36,6 +70,6 @@ export default function AppleIcon() {
         </div>
       </div>
     ),
-    size
+    size,
   )
 }

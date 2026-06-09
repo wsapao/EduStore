@@ -4,7 +4,7 @@ import { Toaster } from 'sonner'
 import './globals.css'
 import { CookieBanner } from '@/components/CookieBanner'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
-import { getDefaultEscolaBranding, resolveEscolaIconUrls } from '@/lib/escola/branding'
+import { getDefaultEscolaBranding, escolaIconVersion } from '@/lib/escola/branding'
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta' })
 
@@ -12,7 +12,9 @@ const escolaCor  = process.env.NEXT_PUBLIC_ESCOLA_COR  ?? '#1a2f5a'
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getDefaultEscolaBranding()
-  const icons = resolveEscolaIconUrls(branding)
+  // Aponta para as rotas internas que geram o ícone quadrado a partir da logo.
+  // O `?v=` muda quando a escola troca a logo, furando o cache de favicon.
+  const v = escolaIconVersion(branding)
 
   return {
     title: branding.nome,
@@ -25,8 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
       title: branding.nome,
     },
     icons: {
-      icon: icons.icon,
-      apple: icons.apple,
+      icon: `/icon?v=${v}`,
+      apple: `/apple-icon?v=${v}`,
     },
   }
 }
