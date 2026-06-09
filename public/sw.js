@@ -40,8 +40,8 @@ const ALL_CACHES = [SHELL_CACHE, STATIC_CACHE, IMAGE_CACHE]
 const PRECACHE_URLS = [
   '/operador',
   '/icon',
+  '/apple-icon',
   '/manifest.webmanifest',
-  '/favicon.ico',
 ]
 
 // TTL pra cache de imagens (7 dias).
@@ -137,7 +137,7 @@ self.addEventListener('fetch', (event) => {
     path.startsWith('/imagens/') ||
     path === '/icon' ||
     path.startsWith('/icon/') ||
-    path === '/favicon.ico' ||
+    path === '/apple-icon' ||
     path === '/manifest.webmanifest'
 
   if (!isAllowed) return
@@ -153,7 +153,7 @@ self.addEventListener('fetch', (event) => {
     path.startsWith('/_next/static/') ||
     path === '/icon' ||
     path.startsWith('/icon/') ||
-    path === '/favicon.ico' ||
+    path === '/apple-icon' ||
     path === '/manifest.webmanifest'
   ) {
     event.respondWith(staleWhileRevalidate(req, STATIC_CACHE))
