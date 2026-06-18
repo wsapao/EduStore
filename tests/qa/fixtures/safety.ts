@@ -36,7 +36,7 @@ export function assertSafeTarget({ baseURL, asaasEnv }: SafetyEnv): URL {
     )
   }
 
-  if (asaasEnv === 'production') {
+  if ((asaasEnv ?? '').trim().toLowerCase() === 'production') {
     throw new UnsafeTargetError(
       'ASAAS_ENVIRONMENT=production — recusando rodar QA com gateway de pagamento de produção.',
     )

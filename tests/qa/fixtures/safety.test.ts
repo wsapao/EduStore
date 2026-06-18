@@ -14,6 +14,13 @@ describe('assertSafeTarget', () => {
       .toThrow(UnsafeTargetError)
   })
 
+  it('recusa production independente de caixa/espaços (Production, " PRODUCTION ")', () => {
+    expect(() => assertSafeTarget({ baseURL: 'https://edu-store-abc.vercel.app', asaasEnv: 'Production' }))
+      .toThrow(UnsafeTargetError)
+    expect(() => assertSafeTarget({ baseURL: 'https://edu-store-abc.vercel.app', asaasEnv: ' PRODUCTION ' }))
+      .toThrow(UnsafeTargetError)
+  })
+
   it('recusa host que não é de staging', () => {
     expect(() => assertSafeTarget({ baseURL: 'https://www.xkola.com.br', asaasEnv: 'sandbox' }))
       .toThrow(UnsafeTargetError)

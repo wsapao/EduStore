@@ -6,6 +6,12 @@ O agente de QA só roda contra um **staging seguro**. Passos (executar com o usu
 - Criar uma branch do projeto `rstsomdurwksoqxbypty` (Supabase Branching / MCP `create_branch`).
 - Seed mínimo: 1 escola de teste + papéis (admin, operador) + 1 responsável de teste com CPF/senha conhecidos.
 
+> **Isolamento de dados = a Supabase Branch.** A trava de host (`*.vercel.app`/`QA_STAGING_HOST`)
+> e o Asaas sandbox protegem cobrança, mas quem garante que nenhum dado de produção é tocado
+> é apontar o preview para a **branch** (não o banco de produção). Se a produção também for
+> servida por uma URL `*.vercel.app`, fixe o staging via `QA_STAGING_HOST` e mantenha a produção
+> fora dela. A limpeza destrutiva (`cleanupQAData`) só roda com `QA_ALLOW_CLEANUP=1` explícito.
+
 ## 2. Deploy de preview na Vercel
 Variáveis de ambiente do preview:
 - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` → da branch Supabase.

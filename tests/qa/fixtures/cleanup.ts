@@ -24,8 +24,17 @@ const QA_NAME_TARGETS: Array<{ table: string; column: string }> = [
   { table: 'responsaveis', column: 'nome' },
 ]
 
-/** Remove linhas cujo `column` começa com QA-. Best-effort: ignora tabela inexistente. */
+/**
+ * Remove linhas cujo `column` começa com QA-. Best-effort: ignora tabela inexistente.
+ *
+ * DEFESA: é um DELETE destrutivo rodando com a service-role key. Só executa com opt-in
+ * explícito `QA_ALLOW_CLEANUP=1` — sem isso, é no-op (protege qualquer banco apontado
+ * por engano, inclusive produção, mesmo que a trava de host não pegue).
+ */
 export async function cleanupQAData(): Promise<void> {
+  if (process.env.QA_ALLOW_CLEANUP !== '1') {
+    return
+  }
   const db = qaAdminClient()
   for (const { table, column } of QA_NAME_TARGETS) {
     const { error } = await db.from(table).delete().like(column, `${QA_PREFIX}%`)
