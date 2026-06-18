@@ -18,10 +18,10 @@ describe('loja browse helpers', () => {
   })
 
   it('filtra as secoes quando uma categoria valida e informada', () => {
-    const groupedEntries = [
+    const groupedEntries: Array<[string, { id: string }[]]> = [
       ['uniforme', [{ id: 'u-1' }]],
       ['eventos', [{ id: 'e-1' }, { id: 'e-2' }]],
-    ] as const
+    ]
 
     expect(filterGroupedEntriesByCategory(groupedEntries, 'eventos')).toEqual([
       ['eventos', [{ id: 'e-1' }, { id: 'e-2' }]],
