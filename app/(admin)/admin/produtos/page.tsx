@@ -169,9 +169,18 @@ export default async function AdminProdutos({
                   width: 52, height: 52, borderRadius: 14,
                   background: 'var(--surface-2)', border: '1px solid var(--border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24, flexShrink: 0,
+                  fontSize: 24, flexShrink: 0, overflow: 'hidden',
                 }}>
-                  {produto.icon ?? CAT_ICONS[cat] ?? '📦'}
+                  {produto.imagem_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={produto.imagem_url}
+                      alt={produto.nome}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    produto.icon ?? CAT_ICONS[cat] ?? '📦'
+                  )}
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
