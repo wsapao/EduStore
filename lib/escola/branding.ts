@@ -31,6 +31,14 @@ export function pickEscolaIconImage(
 }
 
 /**
+ * Carimbo de revisao do icone. Incremente quando precisar forcar TODOS os
+ * navegadores a rebuscar o favicon mesmo sem a escola ter trocado a logo
+ * (ex.: cache de favicon teimoso servindo uma versao antiga). Entra no `?v=`,
+ * entao basta mudar este numero para furar o cache em um proximo deploy.
+ */
+const ICON_CACHE_BUST = 2
+
+/**
  * Token curto e estavel derivado da imagem do icone. Usado como `?v=` nos
  * links de icone para forcar o navegador a rebuscar o favicon quando a escola
  * troca a logo (o cache de favicon e teimoso e ignora reloads normais).
@@ -43,7 +51,7 @@ export function escolaIconVersion(
   for (let i = 0; i < basis.length; i++) {
     hash = (hash * 31 + basis.charCodeAt(i)) | 0
   }
-  return (hash >>> 0).toString(36)
+  return `${(hash >>> 0).toString(36)}-${ICON_CACHE_BUST}`
 }
 
 export async function getDefaultEscolaBranding(): Promise<EscolaBranding> {
