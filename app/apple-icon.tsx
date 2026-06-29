@@ -1,5 +1,4 @@
 import { ImageResponse } from 'next/og'
-import { getDefaultEscolaBranding, pickEscolaIconImage } from '@/lib/escola/branding'
 
 export const size = {
   width: 180,
@@ -8,40 +7,12 @@ export const size = {
 
 export const contentType = 'image/png'
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
 
-export default async function AppleIcon() {
-  const branding = await getDefaultEscolaBranding()
-  const logo = pickEscolaIconImage(branding)
-
-  // Apple touch icons não devem ter transparência → fundo branco sólido.
-  if (logo) {
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#ffffff',
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={logo}
-            alt=""
-            width={156}
-            height={156}
-            style={{ width: 156, height: 156, objectFit: 'contain' }}
-          />
-        </div>
-      ),
-      size,
-    )
-  }
-
+// Apple touch icon = marca "XK" da Xkola Store. Apple nao aceita transparencia
+// (cantos viram preto), entao usa fundo branco solido.
+export default function AppleIcon() {
+  const stroke = '#FF6B1A'
   return new ImageResponse(
     (
       <div
@@ -51,23 +22,16 @@ export default async function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(160deg,#1a2f5a 0%,#243b70 52%,#5b6af8 100%)',
+          background: '#ffffff',
         }}
       >
-        <div
-          style={{
-            width: 118,
-            height: 118,
-            borderRadius: 30,
-            background: 'rgba(255,255,255,.16)',
-            border: '4px solid rgba(255,255,255,.18)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div style={{ fontSize: 64, display: 'flex' }}>🏫</div>
-        </div>
+        <svg width="124" height="114" viewBox="0 0 120 110" fill="none">
+          <path d="M14 16 L52 94" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M52 16 L14 94" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M66 16 L66 94" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M66 55 L102 16" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M66 55 L102 94" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
     ),
     size,

@@ -1,5 +1,4 @@
 import { ImageResponse } from 'next/og'
-import { getDefaultEscolaBranding, pickEscolaIconImage } from '@/lib/escola/branding'
 
 export const size = {
   width: 512,
@@ -8,45 +7,27 @@ export const size = {
 
 export const contentType = 'image/png'
 
-// Sempre reflete a logo atual da escola (lê do banco). Sem isso o Next poderia
-// servir uma versão estática gerada no build.
-export const dynamic = 'force-dynamic'
+// Favicon = marca "XK" da Xkola Store (laranja). Estatico: nao depende do
+// banco. O logo da escola continua aparecendo dentro da loja (card de login),
+// mas a aba do navegador usa a marca do produto, que e legivel em 16px.
+export const dynamic = 'force-static'
 
-export default async function Icon() {
-  const branding = await getDefaultEscolaBranding()
-  const logo = pickEscolaIconImage(branding)
+// Desenho do "XK" em traços (mesmo formato da marca), em laranja solido para
+// renderizar de forma confiavel no gerador de imagem (Satori).
+function XkPaths() {
+  const stroke = '#FF6B1A'
+  return (
+    <svg width="380" height="348" viewBox="0 0 120 110" fill="none">
+      <path d="M14 16 L52 94" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M52 16 L14 94" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M66 16 L66 94" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M66 55 L102 16" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M66 55 L102 94" stroke={stroke} strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
-  // Com logo: quadrado branco com a logo da escola centralizada (contain).
-  // Fundo branco (e não a cor da escola) porque a maioria das logos é desenhada
-  // para fundo claro — cor escura poderia "engolir" logos escuras.
-  if (logo) {
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#ffffff',
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={logo}
-            alt=""
-            width={448}
-            height={448}
-            style={{ width: 448, height: 448, objectFit: 'contain' }}
-          />
-        </div>
-      ),
-      size,
-    )
-  }
-
-  // Fallback: arte padrão da loja quando nenhuma mídia foi configurada.
+export default function Icon() {
   return new ImageResponse(
     (
       <div
@@ -54,33 +35,12 @@ export default async function Icon() {
           width: '100%',
           height: '100%',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 14,
-          background: 'linear-gradient(145deg, #0c1e3d 0%, #0a1628 60%, #0d2040 100%)',
+          background: 'transparent',
         }}
       >
-        <svg width="200" height="200" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"
-            stroke="rgba(255,255,255,.95)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="rgba(255,255,255,.08)"
-          />
-          <line x1="3" y1="6" x2="21" y2="6" stroke="rgba(255,255,255,.95)" strokeWidth="1.5" strokeLinecap="round" />
-          <path d="M16 10a4 4 0 01-8 0" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <div style={{ fontSize: 52, fontWeight: 900, color: '#ffffff', letterSpacing: '-3px', lineHeight: 1, fontFamily: 'sans-serif' }}>
-            LOJA
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#f59e0b', letterSpacing: '6px', lineHeight: 1, fontFamily: 'sans-serif', textTransform: 'uppercase' }}>
-            ESCOLAR
-          </div>
-        </div>
+        <XkPaths />
       </div>
     ),
     size,

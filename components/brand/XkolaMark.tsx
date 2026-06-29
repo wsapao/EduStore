@@ -21,7 +21,7 @@ export function XkolaMark({ theme = 'light', size = 34, style }: XkolaMarkProps)
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/xkola-mark.png"
+      src="/xkola-mark.png?v=2"
       alt=""
       aria-hidden="true"
       width={size}

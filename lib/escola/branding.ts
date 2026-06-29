@@ -36,7 +36,7 @@ export function pickEscolaIconImage(
  * (ex.: cache de favicon teimoso servindo uma versao antiga). Entra no `?v=`,
  * entao basta mudar este numero para furar o cache em um proximo deploy.
  */
-const ICON_CACHE_BUST = 2
+const ICON_CACHE_BUST = 3
 
 /**
  * Token curto e estavel derivado da imagem do icone. Usado como `?v=` nos
