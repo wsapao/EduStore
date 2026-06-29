@@ -83,9 +83,9 @@ export function AdminSidebar({
     }}>
       {/* Logo */}
       <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 40, paddingLeft: 12 }}>
-        <XkolaMark theme={markTheme} width={38} height={28} />
+        <XkolaMark theme={markTheme} size={34} />
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 16, fontWeight: 900, color: theme.titleColor, letterSpacing: '-.02em', lineHeight: 1 }}>
+          <span style={{ fontSize: 16, fontWeight: 900, fontFamily: 'var(--font-bricolage), "Plus Jakarta Sans", sans-serif', color: theme.titleColor, letterSpacing: '-.02em', lineHeight: 1 }}>
             {LOJA_BRAND_NAME}
           </span>
           <span style={{ fontSize: 11, fontWeight: 700, color: theme.subtitleColor, letterSpacing: '.05em', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>

@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest'
 import { XkolaMark } from '@/components/brand/XkolaMark'
 
 describe('XkolaMark', () => {
-  it('renderiza sem recipiente arredondado ou fundo proprio', () => {
+  it('renderiza a marca da Xkola sem recipiente arredondado ou fundo proprio', () => {
     const markup = renderToStaticMarkup(createElement(XkolaMark))
 
-    expect(markup).toContain('<svg')
+    expect(markup).toContain('/xkola-mark.png')
     expect(markup).not.toContain('border-radius')
     expect(markup).not.toContain('background:')
   })

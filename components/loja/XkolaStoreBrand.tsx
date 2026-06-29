@@ -13,14 +13,13 @@ export function XkolaStoreBrand({
   compact = false,
 }: XkolaStoreBrandProps) {
   const isDark = theme === 'dark'
-  const markWidth = compact ? 38 : 46
-  const markHeight = compact ? 28 : 34
+  const markSize = compact ? 32 : 38
   const titleColor = isDark ? '#ffffff' : 'var(--text-1)'
   const subtitleColor = isDark ? 'rgba(255,255,255,.58)' : 'var(--text-3)'
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 8 : 10 }}>
-      <XkolaMark theme={theme} width={markWidth} height={markHeight} />
+      <XkolaMark theme={theme} size={markSize} />
 
       <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, minWidth: 0 }}>
         <div
@@ -40,7 +39,8 @@ export function XkolaStoreBrand({
         <div
           style={{
             fontSize: compact ? 9 : 10,
-            fontWeight: 600,
+            fontWeight: 700,
+            fontFamily: 'var(--font-bricolage), "Plus Jakarta Sans", sans-serif',
             color: subtitleColor,
             letterSpacing: '.03em',
             marginTop: 2,

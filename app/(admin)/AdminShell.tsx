@@ -62,8 +62,8 @@ export function AdminShell({
           }}
         >
           <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <XkolaMark theme={markTheme} width={34} height={25} />
-            <span style={{ fontSize: 15, fontWeight: 900, color: theme.titleColor }}>{LOJA_BRAND_NAME}</span>
+            <XkolaMark theme={markTheme} size={30} />
+            <span style={{ fontSize: 15, fontWeight: 900, fontFamily: 'var(--font-bricolage), "Plus Jakarta Sans", sans-serif', letterSpacing: '-.02em', color: theme.titleColor }}>{LOJA_BRAND_NAME}</span>
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Link
