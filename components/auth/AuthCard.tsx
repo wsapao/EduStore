@@ -1,4 +1,8 @@
 import React from 'react'
+import { XkolaMark } from '@/components/brand/XkolaMark'
+import { LOJA_BRAND_NAME } from '@/lib/loja/brand'
+
+const BRAND_FONT = 'var(--font-bricolage), "Plus Jakarta Sans", sans-serif'
 
 /* ── Card base ── */
 export function AuthCard({ children }: { children: React.ReactNode }) {
@@ -52,7 +56,7 @@ export function AuthCardTop({ title, subtitle, logoUrl }: { title: string; subti
           </svg>
         </div>
       </div>
-      <div style={{ color:'white', fontSize:20, fontWeight:800, letterSpacing:'-.02em', marginBottom:4 }}>{title}</div>
+      <div style={{ color:'white', fontSize:20, fontWeight:800, fontFamily:BRAND_FONT, letterSpacing:'-.02em', marginBottom:4 }}>{title}</div>
       <div style={{ color:'rgba(255,255,255,.55)', fontSize:13, fontWeight:500 }}>{subtitle}</div>
     </div>
   )
@@ -62,11 +66,22 @@ export function AuthCardTop({ title, subtitle, logoUrl }: { title: string; subti
 export function AuthCardFooter() {
   return (
     <div style={{
-      padding:'14px 32px', background:'var(--surface-2)',
+      padding:'16px 32px', background:'var(--surface-2)',
       borderTop:'1px solid var(--border)', textAlign:'center',
-      fontSize:11, color:'var(--text-3)', fontWeight:500,
+      display:'flex', flexDirection:'column', alignItems:'center', gap:10,
     }}>
-      🔒 Seus dados estão protegidos com criptografia SSL 256-bit
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>
+        <XkolaMark size={20} theme="light" />
+        <span style={{
+          fontFamily:BRAND_FONT, fontSize:13, fontWeight:700,
+          color:'var(--text-2)', letterSpacing:'-.01em',
+        }}>
+          by {LOJA_BRAND_NAME}
+        </span>
+      </div>
+      <div style={{ fontSize:11, color:'var(--text-3)', fontWeight:500 }}>
+        🔒 Seus dados estão protegidos com criptografia SSL 256-bit
+      </div>
     </div>
   )
 }
