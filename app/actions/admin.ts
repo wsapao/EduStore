@@ -551,6 +551,55 @@ export async function resetSenhaResponsavelAction(
   return { success: true, link, emailSent, email: responsavel.email }
 }
 
+// ── Definir senha do responsável direto pelo painel ──────────────────────────
+export type DefinirSenhaResult =
+  | { success: true; email: string }
+  | { success: false; error: string }
+
+export async function definirSenhaResponsavelAction(
+  formData: FormData,
+): Promise<DefinirSenhaResult> {
+  try {
+    await verificarAdmin()
+  } catch {
+    return { success: false, error: 'Acesso negado.' }
+  }
+
+  const responsavelId = (formData.get('responsavel_id') as string | null)?.trim()
+  const senha = (formData.get('senha') as string | null) ?? ''
+  if (!responsavelId) return { success: false, error: 'Responsável inválido.' }
+  if (senha.length < 6) {
+    return { success: false, error: 'A senha deve ter ao menos 6 caracteres.' }
+  }
+
+  const supabase = await createClient()
+  const { data: responsavel } = await supabase
+    .from('responsaveis')
+    .select('id, email')
+    .eq('id', responsavelId)
+    .single()
+
+  if (!responsavel?.email) {
+    return { success: false, error: 'Responsável sem e-mail cadastrado.' }
+  }
+
+  const adminClient = createAdminClient()
+  // email_confirm: true garante que o responsável consiga logar mesmo se o
+  // e-mail nunca tiver sido confirmado (caso comum nos cadastros importados).
+  const { error } = await adminClient.auth.admin.updateUserById(responsavelId, {
+    password: senha,
+    email_confirm: true,
+  })
+
+  if (error) {
+    return { success: false, error: error.message ?? 'Falha ao definir a senha.' }
+  }
+
+  revalidatePath('/admin/responsaveis')
+
+  return { success: true, email: responsavel.email }
+}
+
 // ── Categorias ────────────────────────────────────────────────────────────────
 export async function criarCategoriaAction(formData: FormData) {
   const { supabase, user } = await verificarAdmin()

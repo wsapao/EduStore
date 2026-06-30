@@ -13,6 +13,7 @@ import {
 } from '@/lib/admin-ui-tones'
 import { EditarResponsavelDialog } from './EditarResponsavelDialog'
 import { ResetSenhaButton } from './ResetSenhaButton'
+import { DefinirSenhaButton } from './DefinirSenhaButton'
 
 interface ResponsavelRow {
   id: string
@@ -338,6 +339,10 @@ export default async function AdminResponsaveisPage({
                 <FilterBadge tone="neutral">{responsavel.alunos.length} aluno(s)</FilterBadge>
                 {!responsavel.telefone && <FilterBadge tone="warning">Sem telefone</FilterBadge>}
                 <ResetSenhaButton
+                  responsavelId={responsavel.id}
+                  responsavelNome={responsavel.nome}
+                />
+                <DefinirSenhaButton
                   responsavelId={responsavel.id}
                   responsavelNome={responsavel.nome}
                 />
