@@ -75,16 +75,21 @@ export async function enviarEmailPixExpirado(
 export async function enviarEmailResetSenhaAdmin(
   to: string,
   params: EmailResetSenhaAdminParams
-) {
+): Promise<boolean> {
   const resend = getResend()
-  if (!resend) return
+  if (!resend) {
+    console.warn('[Email] RESEND_API_KEY não configurado — reset de senha não enviado por e-mail.')
+    return false
+  }
 
   const { subject, html } = emailResetSenhaAdmin(params)
 
   try {
     await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
+    return true
   } catch (err) {
     console.error('[Email] Erro ao enviar reset administrativo de senha:', err)
+    return false
   }
 }
 

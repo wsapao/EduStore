@@ -4,7 +4,6 @@ import Link from 'next/link'
 import type { Aluno } from '@/types/database'
 import {
   desvincularAlunoResponsavelAction,
-  resetSenhaResponsavelAction,
   vincularAlunoResponsavelAction,
 } from '@/app/actions/admin'
 import {
@@ -13,6 +12,7 @@ import {
   getAdminTone,
 } from '@/lib/admin-ui-tones'
 import { EditarResponsavelDialog } from './EditarResponsavelDialog'
+import { ResetSenhaButton } from './ResetSenhaButton'
 
 interface ResponsavelRow {
   id: string
@@ -337,20 +337,10 @@ export default async function AdminResponsaveisPage({
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <FilterBadge tone="neutral">{responsavel.alunos.length} aluno(s)</FilterBadge>
                 {!responsavel.telefone && <FilterBadge tone="warning">Sem telefone</FilterBadge>}
-                <form action={resetSenhaResponsavelAction}>
-                  <input type="hidden" name="responsavel_id" value={responsavel.id} />
-                  <button
-                    type="submit"
-                    style={getAdminButtonStyle('info', 'soft', {
-                      height: 40,
-                      padding: '0 16px',
-                      borderRadius: 12,
-                      fontSize: 12,
-                    })}
-                  >
-                    Enviar reset de senha
-                  </button>
-                </form>
+                <ResetSenhaButton
+                  responsavelId={responsavel.id}
+                  responsavelNome={responsavel.nome}
+                />
                 <EditarResponsavelDialog
                   responsavel={{
                     id: responsavel.id,

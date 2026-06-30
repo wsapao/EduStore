@@ -495,11 +495,21 @@ export async function desvincularAlunoResponsavelAction(formData: FormData) {
 }
 
 // ── Enviar reset de senha ao responsável ─────────────────────────────────────
-export async function resetSenhaResponsavelAction(formData: FormData) {
-  await verificarAdmin()
+export type ResetSenhaResult =
+  | { success: true; link: string; emailSent: boolean; email: string }
+  | { success: false; error: string }
+
+export async function resetSenhaResponsavelAction(
+  formData: FormData,
+): Promise<ResetSenhaResult> {
+  try {
+    await verificarAdmin()
+  } catch {
+    return { success: false, error: 'Acesso negado.' }
+  }
 
   const responsavelId = (formData.get('responsavel_id') as string | null)?.trim()
-  if (!responsavelId) return
+  if (!responsavelId) return { success: false, error: 'Responsável inválido.' }
 
   const supabase = await createClient()
   const { data: responsavel } = await supabase
@@ -508,7 +518,9 @@ export async function resetSenhaResponsavelAction(formData: FormData) {
     .eq('id', responsavelId)
     .single()
 
-  if (!responsavel?.email) return
+  if (!responsavel?.email) {
+    return { success: false, error: 'Responsável sem e-mail cadastrado.' }
+  }
 
   const adminClient = createAdminClient()
   const { data, error } = await adminClient.auth.admin.generateLink({
@@ -519,14 +531,24 @@ export async function resetSenhaResponsavelAction(formData: FormData) {
     },
   })
 
-  if (error || !data.properties?.action_link) return
+  const link = data?.properties?.action_link
+  if (error || !link) {
+    return {
+      success: false,
+      error: error?.message ?? 'Falha ao gerar o link de redefinição.',
+    }
+  }
 
-  await enviarEmailResetSenhaAdmin(responsavel.email, {
+  // Tenta entregar por e-mail, mas não depende disso: o link é devolvido ao
+  // admin para envio manual (ex.: WhatsApp) caso o e-mail não esteja configurado.
+  const emailSent = await enviarEmailResetSenhaAdmin(responsavel.email, {
     responsavelNome: responsavel.nome,
-    resetUrl: data.properties.action_link,
+    resetUrl: link,
   })
 
   revalidatePath('/admin/responsaveis')
+
+  return { success: true, link, emailSent, email: responsavel.email }
 }
 
 // ── Categorias ────────────────────────────────────────────────────────────────
