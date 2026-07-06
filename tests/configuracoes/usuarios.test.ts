@@ -38,65 +38,129 @@ function setupAuthOk(currentUserId = 'admin-1') {
   })
 }
 
+const CPF_OK = '529.982.247-25'
+const CPF_OK_LIMPO = '52998224725'
+
+function fdConvite(over: Partial<Record<string, string>> = {}) {
+  return fd({
+    nome: 'Filipe Correia',
+    email: 'novo@escola.com',
+    cpf: CPF_OK,
+    papel_id: 'p1',
+    ...over,
+  })
+}
+
+function mockUserClient({ papel = { id: 'p1' } as any } = {}) {
+  const insertVinculo = vi.fn().mockResolvedValue({ error: null })
+  ;(createClient as any).mockResolvedValue({
+    auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } } }) },
+    from: vi.fn((table: string) => {
+      if (table === 'papeis') {
+        return { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: papel, error: null }) }) }) }) }
+      }
+      if (table === 'usuario_papel') return { insert: insertVinculo }
+      throw new Error(table)
+    }),
+  })
+  return { insertVinculo }
+}
+
+function mockAdmin({
+  contaPorCpf = null as any,
+  contaPorEmail = null as any,
+  vinculo = null as any,
+  inviteResult = { data: { user: { id: 'novo-1' } }, error: null } as any,
+} = {}) {
+  const invite = vi.fn().mockResolvedValue(inviteResult)
+  const updateEq = vi.fn().mockResolvedValue({ error: null })
+  const update = vi.fn(() => ({ eq: updateEq }))
+  ;(createAdminClient as any).mockReturnValue({
+    auth: { admin: { inviteUserByEmail: invite } },
+    from: vi.fn((table: string) => {
+      if (table === 'responsaveis') {
+        return {
+          select: () => ({
+            eq: (col: string) => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: col === 'cpf' ? contaPorCpf : contaPorEmail,
+                error: null,
+              }),
+            }),
+          }),
+          update,
+        }
+      }
+      if (table === 'usuario_papel') {
+        return {
+          select: () => ({
+            eq: () => ({ eq: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: vinculo, error: null }) }) }),
+          }),
+        }
+      }
+      throw new Error(table)
+    }),
+  })
+  return { invite, update, updateEq }
+}
+
 describe('convidarUsuarioAction', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('exige permissão configuracoes.gerenciar_usuarios', async () => {
     ;(requirePermission as any).mockRejectedValue(new Error('denied'))
-    const r = await convidarUsuarioAction(fd({ email: 'a@b.com', papel_id: 'p1' }))
+    const r = await convidarUsuarioAction(fdConvite())
     expect(requirePermission).toHaveBeenCalledWith('configuracoes.gerenciar_usuarios')
     expect((r as any).error).toBeDefined()
   })
 
+  it('rejeita nome vazio', async () => {
+    setupAuthOk()
+    const r = await convidarUsuarioAction(fdConvite({ nome: '  ' }))
+    expect((r as any).error).toMatch(/nome/i)
+  })
+
   it('rejeita email inválido', async () => {
     setupAuthOk()
-    const r = await convidarUsuarioAction(fd({ email: 'invalido', papel_id: 'p1' }))
+    const r = await convidarUsuarioAction(fdConvite({ email: 'invalido' }))
     expect((r as any).error).toMatch(/e-?mail/i)
+  })
+
+  it('rejeita CPF inválido', async () => {
+    setupAuthOk()
+    const r = await convidarUsuarioAction(fdConvite({ cpf: '111.111.111-11' }))
+    expect((r as any).error).toMatch(/cpf/i)
+  })
+
+  it('rejeita CPF ausente', async () => {
+    setupAuthOk()
+    const r = await convidarUsuarioAction(fdConvite({ cpf: '' }))
+    expect((r as any).error).toMatch(/cpf/i)
   })
 
   it('rejeita papel_id vazio', async () => {
     setupAuthOk()
-    const r = await convidarUsuarioAction(fd({ email: 'a@b.com', papel_id: '' }))
+    const r = await convidarUsuarioAction(fdConvite({ papel_id: '' }))
     expect((r as any).error).toMatch(/papel/i)
   })
 
   it('rejeita papel que não pertence à escola', async () => {
     setupAuthOk()
-    const adminFromMock = vi.fn(() => ({
-      select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }) }),
-    }))
-    ;(createClient as any).mockResolvedValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } } }) },
-      from: adminFromMock,
-    })
-    const r = await convidarUsuarioAction(fd({ email: 'a@b.com', papel_id: 'p-fora' }))
+    mockUserClient({ papel: null })
+    const r = await convidarUsuarioAction(fdConvite({ papel_id: 'p-fora' }))
     expect((r as any).error).toMatch(/papel/i)
   })
 
-  it('caminho feliz: invita + cria usuario_papel', async () => {
+  it('caminho feliz: convida com nome+cpf nos metadados e cria usuario_papel', async () => {
     setupAuthOk()
-    const lookupPapel = vi.fn().mockResolvedValue({ data: { id: 'p1' }, error: null })
-    const insertVinculo = vi.fn().mockResolvedValue({ error: null })
+    const { insertVinculo } = mockUserClient()
+    const { invite } = mockAdmin()
 
-    ;(createClient as any).mockResolvedValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } } }) },
-      from: vi.fn((table: string) => {
-        if (table === 'papeis') {
-          return { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: lookupPapel }) }) }) }
-        }
-        if (table === 'usuario_papel') return { insert: insertVinculo }
-        throw new Error(table)
-      }),
-    })
+    const r = await convidarUsuarioAction(fdConvite())
 
-    const invite = vi.fn().mockResolvedValue({ data: { user: { id: 'novo-1' } }, error: null })
-    ;(createAdminClient as any).mockReturnValue({
-      auth: { admin: { inviteUserByEmail: invite } },
-    })
-
-    const r = await convidarUsuarioAction(fd({ email: 'novo@escola.com', papel_id: 'p1' }))
-
-    expect(invite).toHaveBeenCalledWith('novo@escola.com', expect.any(Object))
+    expect(invite).toHaveBeenCalledWith('novo@escola.com', expect.objectContaining({
+      data: { nome: 'Filipe Correia', cpf: CPF_OK_LIMPO },
+    }))
     expect(insertVinculo).toHaveBeenCalledWith({
       user_id: 'novo-1',
       escola_id: 'esc-1',
@@ -105,18 +169,74 @@ describe('convidarUsuarioAction', () => {
     expect(r).toEqual({ success: true })
   })
 
-  it('retorna erro se Supabase invite falhar', async () => {
+  it('CPF já cadastrado: vincula papel à conta existente sem convidar', async () => {
     setupAuthOk()
-    const lookupPapel = vi.fn().mockResolvedValue({ data: { id: 'p1' }, error: null })
-    ;(createClient as any).mockResolvedValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-1' } } }) },
-      from: vi.fn(() => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: lookupPapel }) }) }) })),
+    const { insertVinculo } = mockUserClient()
+    const { invite } = mockAdmin({ contaPorCpf: { id: 'u-existente', email: 'pai@escola.com' } })
+
+    const r = await convidarUsuarioAction(fdConvite())
+
+    expect(invite).not.toHaveBeenCalled()
+    expect(insertVinculo).toHaveBeenCalledWith({
+      user_id: 'u-existente',
+      escola_id: 'esc-1',
+      papel_id: 'p1',
     })
-    ;(createAdminClient as any).mockReturnValue({
-      auth: { admin: { inviteUserByEmail: vi.fn().mockResolvedValue({ data: null, error: { message: 'já existe' } }) } },
+    expect((r as any).success).toBe(true)
+    expect((r as any).info).toMatch(/conta existente|já usa/i)
+  })
+
+  it('e-mail já registrado no Auth: completa CPF vazio da conta e vincula papel', async () => {
+    setupAuthOk()
+    const { insertVinculo } = mockUserClient()
+    const { update, updateEq } = mockAdmin({
+      inviteResult: { data: null, error: { message: 'A user with this email address has already been registered' } },
+      contaPorEmail: { id: 'u-filipe', cpf: '', email: 'novo@escola.com' },
     })
-    const r = await convidarUsuarioAction(fd({ email: 'x@y.com', papel_id: 'p1' }))
-    expect((r as any).error).toMatch(/convidar|email|j[áa] existe/i)
+
+    const r = await convidarUsuarioAction(fdConvite())
+
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ cpf: CPF_OK_LIMPO }))
+    expect(updateEq).toHaveBeenCalledWith('id', 'u-filipe')
+    expect(insertVinculo).toHaveBeenCalledWith({
+      user_id: 'u-filipe',
+      escola_id: 'esc-1',
+      papel_id: 'p1',
+    })
+    expect((r as any).success).toBe(true)
+  })
+
+  it('e-mail registrado com OUTRO CPF: recusa para não sobrescrever', async () => {
+    setupAuthOk()
+    mockUserClient()
+    mockAdmin({
+      inviteResult: { data: null, error: { message: 'already been registered' } },
+      contaPorEmail: { id: 'u-x', cpf: '11144477735', email: 'novo@escola.com' },
+    })
+
+    const r = await convidarUsuarioAction(fdConvite())
+    expect((r as any).error).toMatch(/outro cpf/i)
+  })
+
+  it('conta existente que já faz parte da equipe: não duplica vínculo', async () => {
+    setupAuthOk()
+    const { insertVinculo } = mockUserClient()
+    mockAdmin({
+      contaPorCpf: { id: 'u-existente', email: 'pai@escola.com' },
+      vinculo: { user_id: 'u-existente' },
+    })
+
+    const r = await convidarUsuarioAction(fdConvite())
+    expect(insertVinculo).not.toHaveBeenCalled()
+    expect((r as any).success).toBe(true)
+  })
+
+  it('retorna erro se Supabase invite falhar por outro motivo', async () => {
+    setupAuthOk()
+    mockUserClient()
+    mockAdmin({ inviteResult: { data: null, error: { message: 'smtp indisponível' } } })
+    const r = await convidarUsuarioAction(fdConvite())
+    expect((r as any).error).toMatch(/smtp indisponível/i)
   })
 })
 

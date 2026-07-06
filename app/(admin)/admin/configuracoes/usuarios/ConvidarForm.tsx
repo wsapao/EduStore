@@ -19,14 +19,44 @@ export function ConvidarForm({ papeis }: { papeis: PapelOpt[] }) {
         setMsg({ tipo: 'erro', texto: r.error })
         return
       }
-      setMsg({ tipo: 'ok', texto: 'Convite enviado!' })
+      setMsg({ tipo: 'ok', texto: ('info' in r && r.info) || 'Convite enviado!' })
       // limpa o form via reload da listagem
       router.refresh()
     })
   }
 
+  function maskCPF(e: React.ChangeEvent<HTMLInputElement>) {
+    let v = e.target.value.replace(/\D/g, '').substring(0, 11)
+    v = v.replace(/(\d{3})(\d)/, '$1.$2')
+    v = v.replace(/(\d{3})(\d)/, '$1.$2')
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+    e.target.value = v
+  }
+
   return (
     <form action={onSubmit} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+      <Field label="Nome">
+        <input
+          name="nome"
+          type="text"
+          required
+          placeholder="Nome de quem será convidado"
+          style={{ ...inputStyle, minWidth: 200 }}
+        />
+      </Field>
+
+      <Field label="CPF">
+        <input
+          name="cpf"
+          type="text"
+          required
+          placeholder="000.000.000-00"
+          maxLength={14}
+          onChange={maskCPF}
+          style={{ ...inputStyle, minWidth: 140 }}
+        />
+      </Field>
+
       <Field label="E-mail">
         <input
           name="email"

@@ -37,7 +37,10 @@ export default function LoginForm({ logoUrl, nome }: { logoUrl?: string | null, 
     })
   }
 
+  // Máscara de CPF apenas enquanto o valor for numérico; se aparecer letra
+  // ou '@' (e-mail de equipe), deixa o texto como digitado.
   function maskCPF(e: React.ChangeEvent<HTMLInputElement>) {
+    if (/[a-zA-Z@]/.test(e.target.value)) return
     let v = e.target.value.replace(/\D/g, '').substring(0, 11)
     v = v.replace(/(\d{3})(\d)/, '$1.$2')
     v = v.replace(/(\d{3})(\d)/, '$1.$2')
@@ -73,13 +76,13 @@ export default function LoginForm({ logoUrl, nome }: { logoUrl?: string | null, 
       {/* ── PAINEL LOGIN ── */}
       {tab === 'login' && (
         <form onSubmit={handleLogin} style={{ padding:'28px 32px 32px' }}>
-          <Field label="CPF do responsável">
+          <Field label="CPF ou e-mail">
             <IconInput
               icon={<UserIcon />}
               name="cpf"
               type="text"
-              placeholder="000.000.000-00"
-              maxLength={14}
+              placeholder="000.000.000-00 ou email@exemplo.com"
+              maxLength={80}
               onChange={maskCPF}
               autoComplete="username"
               required
@@ -135,15 +138,15 @@ export default function LoginForm({ logoUrl, nome }: { logoUrl?: string | null, 
           ) : (
             <form onSubmit={handleRecuperar}>
               <p style={{ fontSize:14, color:'var(--text-3)', marginBottom:20, lineHeight:1.6 }}>
-                Informe seu CPF e enviaremos um link de recuperação para o e-mail cadastrado.
+                Informe seu CPF ou e-mail e enviaremos um link de recuperação para o e-mail cadastrado.
               </p>
-              <Field label="CPF do responsável">
+              <Field label="CPF ou e-mail">
                 <IconInput
                   icon={<UserIcon />}
                   name="cpf"
                   type="text"
-                  placeholder="000.000.000-00"
-                  maxLength={14}
+                  placeholder="000.000.000-00 ou email@exemplo.com"
+                  maxLength={80}
                   onChange={maskCPF}
                   required
                 />

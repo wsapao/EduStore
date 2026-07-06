@@ -6,6 +6,9 @@ import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ratelimit } from '@/lib/ratelimit'
+import { limparCPF, validarCPF } from '@/lib/cpf'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 async function getClientIp() {
   const h = await headers()
@@ -16,61 +19,55 @@ async function getClientIp() {
   )
 }
 
-// ── Helpers ──
-function limparCPF(cpf: string) {
-  return cpf.replace(/[^0-9]/g, '')
-}
-
-function validarCPF(cpf: string): boolean {
-  const c = limparCPF(cpf)
-  if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false
-  let soma = 0
-  for (let i = 0; i < 9; i++) soma += parseInt(c[i]) * (10 - i)
-  let resto = (soma * 10) % 11
-  if (resto === 10 || resto === 11) resto = 0
-  if (resto !== parseInt(c[9])) return false
-  soma = 0
-  for (let i = 0; i < 10; i++) soma += parseInt(c[i]) * (11 - i)
-  resto = (soma * 10) % 11
-  if (resto === 10 || resto === 11) resto = 0
-  return resto === parseInt(c[10])
-}
-
-// ── LOGIN com CPF ──
+// ── LOGIN com CPF ou e-mail ──
+// Responsáveis entram com CPF; membros de equipe convidados entram com e-mail
+// (nem todo membro de equipe tem cadastro em responsaveis). '@' decide o caminho.
 export async function loginAction(formData: FormData) {
   const supabase = await createClient()
 
-  const cpfRaw  = formData.get('cpf') as string
-  const senha   = formData.get('senha') as string
+  const identificador = ((formData.get('cpf') as string | null) ?? '').trim()
+  const senha = formData.get('senha') as string
 
-  if (!cpfRaw || !senha) {
+  if (!identificador || !senha) {
     return { error: 'Preencha todos os campos.' }
   }
 
-  const cpfLimpo = limparCPF(cpfRaw)
+  const isEmail = identificador.includes('@')
+  const chave = isEmail
+    ? `login:email:${identificador.toLowerCase()}`
+    : `login:cpf:${limparCPF(identificador)}`
 
-  // Rate limit: 5 tentativas por CPF/minuto + 20 por IP/minuto
+  // Rate limit: 5 tentativas por identificador/minuto + 20 por IP/minuto
   const ip = await getClientIp()
-  const [byCpf, byIp] = await Promise.all([
-    ratelimit.check(`login:cpf:${cpfLimpo}`, 5, 60),
+  const [byId, byIp] = await Promise.all([
+    ratelimit.check(chave, 5, 60),
     ratelimit.check(`login:ip:${ip}`, 20, 60),
   ])
 
-  if (!byCpf.allowed || !byIp.allowed) {
-    const retry = Math.max(byCpf.retryAfter, byIp.retryAfter)
+  if (!byId.allowed || !byIp.allowed) {
+    const retry = Math.max(byId.retryAfter, byIp.retryAfter)
     return {
       error: `Muitas tentativas. Tente novamente em ${retry}s.`,
     }
   }
 
-  // Busca email pelo CPF via RPC (service role: o EXECUTE foi revogado de anon
-  // para impedir enumeração de e-mail por CPF via REST).
-  const { data: email, error: rpcError } = await createAdminClient()
-    .rpc('get_email_by_cpf', { p_cpf: cpfLimpo })
+  let email: string
+  if (isEmail) {
+    email = identificador.toLowerCase()
+    if (!EMAIL_RE.test(email)) {
+      return { error: 'CPF/e-mail ou senha incorretos.' }
+    }
+  } else {
+    // Busca email pelo CPF via RPC (service role: o EXECUTE foi revogado de anon
+    // para impedir enumeração de e-mail por CPF via REST).
+    const { data: emailPorCpf, error: rpcError } = await createAdminClient()
+      .rpc('get_email_by_cpf', { p_cpf: limparCPF(identificador) })
 
-  if (rpcError || !email) {
-    // Mensagem genérica para não revelar quais CPFs possuem conta (enumeração).
-    return { error: 'CPF ou senha incorretos.' }
+    if (rpcError || !emailPorCpf) {
+      // Mensagem genérica para não revelar quais CPFs possuem conta (enumeração).
+      return { error: 'CPF/e-mail ou senha incorretos.' }
+    }
+    email = emailPorCpf
   }
 
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -79,7 +76,7 @@ export async function loginAction(formData: FormData) {
   })
 
   if (authError) {
-    return { error: 'CPF ou senha incorretos.' }
+    return { error: 'CPF/e-mail ou senha incorretos.' }
   }
 
   revalidatePath('/', 'layout')
@@ -233,32 +230,45 @@ export async function logoutAction() {
   redirect('/login')
 }
 
-// ── RECUPERAR SENHA ──
+// ── RECUPERAR SENHA (por CPF ou e-mail) ──
 export async function recuperarSenhaAction(formData: FormData) {
   const supabase = await createClient()
-  const cpfRaw = formData.get('cpf') as string
+  const identificador = ((formData.get('cpf') as string | null) ?? '').trim()
 
-  if (!cpfRaw) return { error: 'Informe seu CPF.' }
+  if (!identificador) return { error: 'Informe seu CPF ou e-mail.' }
 
-  const cpfLimpo = limparCPF(cpfRaw)
+  const isEmail = identificador.includes('@')
+  const chave = isEmail
+    ? `reset:email:${identificador.toLowerCase()}`
+    : `reset:cpf:${limparCPF(identificador)}`
 
-  // Rate limit: 3 pedidos de reset por CPF/hora + 10 por IP/hora
+  // Rate limit: 3 pedidos de reset por identificador/hora + 10 por IP/hora
   const ip = await getClientIp()
-  const [byCpf, byIp] = await Promise.all([
-    ratelimit.check(`reset:cpf:${cpfLimpo}`, 3, 3600),
+  const [byId, byIp] = await Promise.all([
+    ratelimit.check(chave, 3, 3600),
     ratelimit.check(`reset:ip:${ip}`, 10, 3600),
   ])
-  if (!byCpf.allowed || !byIp.allowed) {
+  if (!byId.allowed || !byIp.allowed) {
     // Mantém mensagem genérica de sucesso para não expor rate limit em enumeração
     return { success: true }
   }
 
-  const { data: email } = await createAdminClient()
-    .rpc('get_email_by_cpf', { p_cpf: cpfLimpo })
+  let email: string
+  if (isEmail) {
+    email = identificador.toLowerCase()
+    if (!EMAIL_RE.test(email)) {
+      // Genérico: não revela se o e-mail existe ou é válido
+      return { success: true }
+    }
+  } else {
+    const { data: emailPorCpf } = await createAdminClient()
+      .rpc('get_email_by_cpf', { p_cpf: limparCPF(identificador) })
 
-  if (!email) {
-    // Retorna mensagem genérica para não expor quais CPFs existem
-    return { success: true }
+    if (!emailPorCpf) {
+      // Retorna mensagem genérica para não expor quais CPFs existem
+      return { success: true }
+    }
+    email = emailPorCpf
   }
 
   await supabase.auth.resetPasswordForEmail(email, {
