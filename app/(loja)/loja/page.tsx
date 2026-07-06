@@ -23,6 +23,7 @@ import {
   normalizeLojaFuncionamento,
   pickProdutosDestaque,
 } from '@/lib/loja-online/config'
+import { produtoDisponivelParaSerie } from '@/lib/crm/series-core'
 import { createClient } from '@/lib/supabase/server'
 import type {
   Aluno,
@@ -125,7 +126,7 @@ export default async function LojaPage({
   }
 
   const produtosPorAluno = selectedAluno
-    ? produtos.filter((produto) => !produto.series || produto.series.length === 0 || produto.series.includes(selectedAluno.serie))
+    ? produtos.filter((produto) => produtoDisponivelParaSerie(produto.series, selectedAluno.serie))
     : produtos
 
   const produtosFiltradosPorBusca = normalizedQuery

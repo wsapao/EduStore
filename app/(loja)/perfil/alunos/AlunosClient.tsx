@@ -7,16 +7,6 @@ import { criarAlunoAction, editarAlunoAction, toggleAlunoAtivoAction } from '@/a
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { Aluno } from '@/types/database'
 
-// Séries disponíveis
-const SERIES = [
-  'Berçário I', 'Berçário II',
-  'Maternal I', 'Maternal II',
-  'Jardim I', 'Jardim II',
-  '1º ano EF', '2º ano EF', '3º ano EF', '4º ano EF', '5º ano EF',
-  '6º ano EF', '7º ano EF', '8º ano EF', '9º ano EF',
-  '1º ano EM', '2º ano EM', '3º ano EM',
-]
-
 const TURMAS = ['A', 'B', 'C', 'D', 'E', 'F']
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -34,12 +24,15 @@ const GRADIENTS = [
 
 interface Props {
   alunos: Aluno[]
+  // Séries reais da escola (getSeriesDisponiveis no server) — a nomenclatura
+  // precisa bater com a do ActiveSoft pro filtro de visibilidade da loja.
+  series: string[]
   isOnboarding: boolean
 }
 
 type FormMode = 'none' | 'novo' | 'editar'
 
-export function AlunosClient({ alunos: initialAlunos, isOnboarding }: Props) {
+export function AlunosClient({ alunos: initialAlunos, series, isOnboarding }: Props) {
   const router = useRouter()
   const [alunos] = useState(initialAlunos)
   const [mode, setMode] = useState<FormMode>(initialAlunos.length === 0 ? 'novo' : 'none')
@@ -117,6 +110,10 @@ export function AlunosClient({ alunos: initialAlunos, isOnboarding }: Props) {
       router.refresh()
     })
   }
+
+  // Ao editar, a série atual do aluno pode não estar na lista (ex.: fonte
+  // externa fora do ar) — mantém ela como opção pra não zerar o select.
+  const serieOptions = serie && !series.includes(serie) ? [serie, ...series] : series
 
   const ativos   = alunos.filter(a => a.ativo)
   const inativos = alunos.filter(a => !a.ativo)
@@ -264,7 +261,7 @@ export function AlunosClient({ alunos: initialAlunos, isOnboarding }: Props) {
                     }}
                   >
                     <option value="">Selecionar…</option>
-                    {SERIES.map(s => (
+                    {serieOptions.map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
