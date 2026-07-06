@@ -1,6 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
+import { toast } from 'sonner'
 import { excluirProdutoAction } from '@/app/actions/admin'
 import { getAdminButtonStyle } from '@/lib/admin-ui-tones'
 
@@ -10,7 +11,12 @@ export function ExcluirProdutoButton({ produtoId, nome }: { produtoId: string; n
   function onClick() {
     if (!confirm(`Excluir "${nome}" permanentemente?`)) return
     startTransition(async () => {
-      await excluirProdutoAction(produtoId)
+      const res = await excluirProdutoAction(produtoId)
+      if (res.success) {
+        toast.success(`"${nome}" excluído.`)
+      } else {
+        toast.error(res.error ?? 'Não foi possível excluir o produto.')
+      }
     })
   }
 

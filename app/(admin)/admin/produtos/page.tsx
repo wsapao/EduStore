@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { toggleProdutoAtivoAction, toggleEsgotadoAction, duplicarProdutoAction } from '@/app/actions/admin'
 import { ExcluirProdutoButton } from './ExcluirProdutoButton'
+import { DuplicarProdutoButton, ToggleAtivoButton, ToggleEsgotadoButton } from './ProdutoAcoesButtons'
 import { normalizarProduto } from '@/lib/produtos/normalizers'
 import type { Produto, CategoriaProduto, MetodoPagamento, ProdutoVariante } from '@/types/database'
 import { getAdminButtonStyle, getAdminPillStyle } from '@/lib/admin-ui-tones'
@@ -324,36 +324,20 @@ export default async function AdminProdutos({
                   }}>
                     ✏️ Editar
                   </Link>
-                  <form action={duplicarProdutoAction.bind(null, produto.id) as any} style={{ flex: 1 }}>
-                    <button type="submit" style={{
-                      ...getAdminButtonStyle('neutral', 'soft', { width: '100%', height: 42, borderRadius: 10 }),
-                    }}>
-                      📋 Duplicar
-                    </button>
-                  </form>
+                  <div style={{ flex: 1 }}>
+                    <DuplicarProdutoButton produtoId={produto.id} />
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <form action={toggleProdutoAtivoAction.bind(null, produto.id, isAtivo) as any} style={{ flex: 1 }}>
-                    <button type="submit" style={{
-                      ...(isAtivo
-                        ? getAdminButtonStyle('danger', 'soft', { width: '100%', height: 42, borderRadius: 10 })
-                        : getAdminButtonStyle('success', 'soft', { width: '100%', height: 42, borderRadius: 10 })),
-                    }}>
-                      {isAtivo ? '⏸ Desativar' : '▶ Ativar'}
-                    </button>
-                  </form>
+                  <div style={{ flex: 1 }}>
+                    <ToggleAtivoButton produtoId={produto.id} isAtivo={isAtivo} />
+                  </div>
 
                   {isAtivo && (
-                    <form action={toggleEsgotadoAction.bind(null, produto.id, isEsgotado) as any} style={{ flex: 1 }}>
-                      <button type="submit" style={{
-                        ...(isEsgotado
-                          ? getAdminButtonStyle('success', 'soft', { width: '100%', height: 42, borderRadius: 10 })
-                          : getAdminButtonStyle('warning', 'soft', { width: '100%', height: 42, borderRadius: 10 })),
-                      }}>
-                        {isEsgotado ? '↩ Reativar' : '🚫 Esgotar'}
-                      </button>
-                    </form>
+                    <div style={{ flex: 1 }}>
+                      <ToggleEsgotadoButton produtoId={produto.id} isEsgotado={isEsgotado} />
+                    </div>
                   )}
                 </div>
 
