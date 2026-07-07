@@ -11,6 +11,14 @@ import { EMAIL_TEMPLATE_META, type EmailTemplateTipo } from './templates-config'
  * Função pura — pode ser chamada do client (preview) e do server. Não importa
  * nada de `next/*` ou Supabase, então é seguro consumir em Client Components.
  *
+ * SEGURANÇA — contrato text/plain: os valores são substituídos SEM escape de
+ * HTML. O output só pode ser consumido como texto puro (Resend `text:`, JSX
+ * auto-escapado). NUNCA envie `corpo` como parte `html` nem injete via
+ * dangerouslySetInnerHTML — template do banco + nomes de responsável/aluno
+ * virariam vetor de injeção. Se um dia precisar de HTML, escape cada valor
+ * substituído com `escapeHtml` (lib/email/templates.ts) e escape/valide o
+ * corpo do template também.
+ *
  * Para resolver o template ativo (banco vs default), use `getTemplateEmail`
  * em `lib/email/get-template.ts` (server-only).
  */
