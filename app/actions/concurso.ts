@@ -5,6 +5,7 @@ import { getGateway } from '@/lib/pagamentos/gateway'
 import { limparCPF } from '@/lib/validacao/cpf'
 import { validarInscricao, type InscricaoInput } from '@/lib/concurso/validacao'
 import { CONCURSO, MODALIDADES, inscricoesAbertas } from '@/lib/concurso/config'
+import { auditLog } from '@/lib/auditoria/log'
 import type { ResultadoPix } from '@/lib/pagamentos/types'
 
 export interface PixInfo {
@@ -15,7 +16,7 @@ export interface PixInfo {
 
 export type CriarInscricaoResult =
   | { success: true; inscricao_id: string; numero: string; pix: PixInfo }
-  | { success: false; error: string }
+  | { success: false; error: string; inscricao_id?: string }
 
 export async function criarInscricaoConcurso(input: InscricaoInput): Promise<CriarInscricaoResult> {
   if (!inscricoesAbertas()) {
@@ -61,6 +62,12 @@ export async function criarInscricaoConcurso(input: InscricaoInput): Promise<Cri
 
   if (insertErr || !inscricao) {
     console.error('[concurso] Erro ao gravar inscrição:', insertErr?.message)
+    await auditLog({
+      modulo: 'concurso',
+      acao: 'concurso_inscricao_erro',
+      descricao: insertErr?.message ?? 'Erro ao gravar inscrição.',
+      metadata: { modalidade: input.modalidade, code: insertErr?.code, message: insertErr?.message },
+    })
     return { success: false, error: 'Não foi possível registrar a inscrição. Tente novamente.' }
   }
 
@@ -78,11 +85,22 @@ export async function criarInscricaoConcurso(input: InscricaoInput): Promise<Cri
     if (resultado.metodo !== 'pix') throw new Error('Gateway não retornou Pix.')
     pix = resultado
   } catch (err) {
-    console.error('[concurso] Erro ao criar cobrança Pix:', err)
-    return { success: false, error: 'Inscrição registrada, mas houve falha ao gerar o Pix. Tente novamente em instantes.' }
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[concurso] Erro ao criar cobrança Pix:', message)
+    await auditLog({
+      modulo: 'concurso',
+      acao: 'concurso_pix_erro',
+      descricao: message,
+      metadata: { inscricaoId: inscricao.id, numero: inscricao.numero, message },
+    })
+    return {
+      success: false,
+      error: 'Sua inscrição foi registrada, mas houve falha ao gerar o Pix. Tente novamente.',
+      inscricao_id: inscricao.id,
+    }
   }
 
-  await supabase
+  const { error: updateErr } = await supabase
     .from('inscricoes_concurso')
     .update({
       gateway_id: pix.gateway_id,
@@ -92,6 +110,11 @@ export async function criarInscricaoConcurso(input: InscricaoInput): Promise<Cri
       pix_expiracao: pix.expiracao,
     })
     .eq('id', inscricao.id)
+
+  if (updateErr) {
+    // Não interrompe — a cobrança existe; o webhook reconcilia via concurso:<id>.
+    console.error('[concurso] Falha ao persistir dados do Pix:', updateErr.message)
+  }
 
   return {
     success: true,
@@ -118,38 +141,64 @@ export async function gerarNovoPixInscricao(id: string): Promise<NovoPixResult> 
   const supabase = createAdminClient()
   const { data: insc, error } = await supabase
     .from('inscricoes_concurso')
-    .select('id, aluno_nome, modalidade, resp1_nome, resp1_email, resp1_cpf, status_pagamento, valor')
+    .select('id, aluno_nome, modalidade, resp1_nome, resp1_email, resp1_cpf, status_pagamento, valor, pix_expiracao')
     .eq('id', id)
     .maybeSingle<{ id: string; aluno_nome: string; modalidade: string; resp1_nome: string;
-      resp1_email: string; resp1_cpf: string; status_pagamento: string; valor: number }>()
+      resp1_email: string; resp1_cpf: string; status_pagamento: string; valor: number;
+      pix_expiracao: string | null }>()
 
   if (error || !insc) return { success: false, error: 'Inscrição não encontrada.' }
   if (insc.status_pagamento === 'pago') return { success: false, error: 'Esta inscrição já está paga.' }
+  if (new Date() > CONCURSO.pagamentoLimite) {
+    return { success: false, error: 'O prazo de pagamento da inscrição já encerrou.' }
+  }
+  // pix_expiracao NULL (linha órfã: gateway falhou na criação) passa — é o caminho de retry.
+  if (insc.pix_expiracao && new Date(insc.pix_expiracao) > new Date()) {
+    return { success: false, error: 'O Pix atual ainda está válido. Use o QR Code exibido.' }
+  }
 
   const modalidadeNome = MODALIDADES.find(m => m.slug === insc.modalidade)?.nome ?? insc.modalidade
+
+  let pix: ResultadoPix
   try {
-    const pix = await getGateway().criarPagamento({
+    const resultado = await getGateway().criarPagamento({
       metodo: 'pix',
       total: Number(insc.valor),
       responsavel: { nome: insc.resp1_nome, email: insc.resp1_email, cpf: insc.resp1_cpf },
       descricao: `Inscrição Concurso de Bolsas 2027 – ${modalidadeNome} – ${insc.aluno_nome}`,
       referencia: `concurso:${insc.id}`,
     })
-    if (pix.metodo !== 'pix') throw new Error('Gateway não retornou Pix.')
-    await supabase
-      .from('inscricoes_concurso')
-      .update({
-        status_pagamento: 'pendente',
-        gateway_id: pix.gateway_id,
-        pix_qr_code: pix.qr_code,
-        pix_qr_code_imagem: pix.qr_code_imagem,
-        pix_tx_id: pix.tx_id,
-        pix_expiracao: pix.expiracao,
-      })
-      .eq('id', insc.id)
-    return { success: true, pix: { qr_code: pix.qr_code, qr_code_imagem: pix.qr_code_imagem, expiracao: pix.expiracao } }
+    if (resultado.metodo !== 'pix') throw new Error('Gateway não retornou Pix.')
+    pix = resultado
   } catch (err) {
-    console.error('[concurso] Erro ao gerar novo Pix:', err)
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[concurso] Erro ao gerar novo Pix:', message)
+    await auditLog({
+      modulo: 'concurso',
+      acao: 'concurso_pix_erro',
+      descricao: message,
+      metadata: { inscricaoId: insc.id, message },
+    })
     return { success: false, error: 'Falha ao gerar novo Pix. Tente novamente.' }
   }
+
+  const { error: updateErr } = await supabase
+    .from('inscricoes_concurso')
+    .update({
+      status_pagamento: 'pendente',
+      gateway_id: pix.gateway_id,
+      pix_qr_code: pix.qr_code,
+      pix_qr_code_imagem: pix.qr_code_imagem,
+      pix_tx_id: pix.tx_id,
+      pix_expiracao: pix.expiracao,
+    })
+    .eq('id', insc.id)
+
+  if (updateErr) {
+    // Não interrompe — a cobrança existe e o usuário precisa conseguir pagar;
+    // o webhook reconcilia via concurso:<id>.
+    console.error('[concurso] Falha ao persistir novo Pix:', updateErr.message)
+  }
+
+  return { success: true, pix: { qr_code: pix.qr_code, qr_code_imagem: pix.qr_code_imagem, expiracao: pix.expiracao } }
 }
