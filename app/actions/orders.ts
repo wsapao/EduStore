@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { getGateway } from '@/lib/pagamentos/gateway'
-import { enviarEmailPedido } from '@/lib/email/send'
+import { enviarEmailCheckout } from '@/lib/email/checkout'
 import { isLojaDisponivelAgora, normalizeLojaFuncionamento } from '@/lib/loja-online/config'
 import { sincronizarPixExpiradoPedido } from '@/lib/pagamentos/pix'
 import { auditLog } from '@/lib/auditoria/log'
@@ -89,7 +89,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
 
   // Busca preços reais e vouchers do DB (Segurança)
   const productIds = Array.from(new Set(input.items.map(i => i.produto_id)))
-  const { data: dbProdutos } = await supabase.from('produtos').select('id, preco, preco_promocional, aceita_vouchers').in('id', productIds)
+  const { data: dbProdutos } = await supabase.from('produtos').select('id, nome, preco, preco_promocional, aceita_vouchers, imagem_url, gera_ingresso').in('id', productIds)
   const produtosMap = new Map((dbProdutos ?? []).map(p => [p.id, p]))
 
   // Validação do carrinho vs DB
@@ -342,21 +342,34 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     }
   }
 
-  // 6. Envia email de confirmação do pedido (em background — não bloqueia)
-  void enviarEmailPedido(responsavel.email, {
-    responsavelNome: responsavel.nome,
+  // 6. Envia email de confirmação do pedido (em background — não bloqueia).
+  // Cartão aprovado na hora recebe direto o e-mail de pagamento confirmado.
+  void enviarEmailCheckout({
+    client: supabase,
+    responsavel: { nome: responsavel.nome, email: responsavel.email },
+    escolaId: responsavel.escola_id,
+    pedidoId: pedido.id,
     numeroPedido: pedido.numero,
+    metodo: input.metodo,
+    parcelas: input.parcelas ?? 1,
+    subtotal: totalCalculado,
+    desconto: descontoAplicado,
     total: finalTotal,
-    metodoPagamento: input.metodo,
     itens: safeItems.map(i => ({
+      produto_id: i.produto_id,
+      aluno_id: i.aluno_id,
+      variante: i.variante ?? null,
+      preco_unitario: i.preco_unitario,
       nome: i.nome,
-      aluno: i.variante ? `Tamanho ${i.variante}` : '',
-      preco: i.preco_unitario,
     })),
-    pedidoUrl: pedido.id,
-    pixQrCode: resultado.metodo === 'pix' ? resultado.qr_code : null,
-    pixCopiaCola: resultado.metodo === 'pix' ? resultado.qr_code : null,
-    pixExpiracao: resultado.metodo === 'pix' ? resultado.expiracao : null,
+    produtos: produtosMap,
+    cartaoAprovado: resultado.metodo === 'cartao' && resultado.status === 'confirmado',
+    pix: resultado.metodo === 'pix'
+      ? { copiaCola: resultado.qr_code, expiracao: resultado.expiracao }
+      : undefined,
+    boleto: resultado.metodo === 'boleto'
+      ? { linhaDigitavel: resultado.linha_digitavel, vencimento: resultado.vencimento, url: resultado.url }
+      : undefined,
   })
 
   return { success: true, pedido_id: pedido.id }
