@@ -1,11 +1,13 @@
 import { getResend, EMAIL_FROM, SITE_URL } from './resend'
 import {
   emailConfirmacaoPedido,
+  emailPedidoPago,
   emailPixExpirado,
   emailIngressoEmitido,
   emailResetSenhaAdmin,
   emailAvisoTrocaEmail,
   type EmailPedidoParams,
+  type EmailPedidoPagoParams,
   type EmailPixExpiradoParams,
   type EmailIngressoParams,
   type EmailResetSenhaAdminParams,
@@ -13,6 +15,7 @@ import {
 } from './templates'
 
 // ── Enviar confirmação de pedido ──────────────────────────────────────────────
+// params.pedidoUrl já chega absoluta (montada pelo chamador).
 export async function enviarEmailPedido(
   to: string,
   params: EmailPedidoParams
@@ -20,16 +23,30 @@ export async function enviarEmailPedido(
   const resend = getResend()
   if (!resend) return // silenciosamente ignora se RESEND_API_KEY não configurado
 
-  const { subject, html } = emailConfirmacaoPedido({
-    ...params,
-    pedidoUrl: `${SITE_URL}/pedido/${params.pedidoUrl}`,
-  })
+  const { subject, html } = emailConfirmacaoPedido(params)
 
   try {
     await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
   } catch (err) {
     // Não quebra o fluxo por falha de email
     console.error('[Email] Erro ao enviar confirmação de pedido:', err)
+  }
+}
+
+// ── Enviar pagamento confirmado ───────────────────────────────────────────────
+export async function enviarEmailPedidoPago(
+  to: string,
+  params: EmailPedidoPagoParams
+) {
+  const resend = getResend()
+  if (!resend) return
+
+  const { subject, html } = emailPedidoPago(params)
+
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
+  } catch (err) {
+    console.error('[Email] Erro ao enviar pagamento confirmado:', err)
   }
 }
 
