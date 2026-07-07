@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getGateway } from '@/lib/pagamentos/gateway'
 import { limparCPF } from '@/lib/validacao/cpf'
 import { validarInscricao, type InscricaoInput } from '@/lib/concurso/validacao'
-import { CONCURSO, MODALIDADES, inscricoesAbertas } from '@/lib/concurso/config'
+import { CONCURSO, CONCURSO_REF_PREFIX, MODALIDADES, inscricoesAbertas } from '@/lib/concurso/config'
 import { auditLog } from '@/lib/auditoria/log'
 import type { ResultadoPix } from '@/lib/pagamentos/types'
 
@@ -81,7 +81,7 @@ export async function criarInscricaoConcurso(input: InscricaoInput): Promise<Cri
       total: CONCURSO.valorInscricao,
       responsavel: { nome: input.resp1_nome.trim(), email: input.resp1_email.trim(), cpf },
       descricao: `Inscrição Concurso de Bolsas 2027 – ${modalidadeNome} – ${input.aluno_nome.trim()}`,
-      referencia: `concurso:${inscricao.id}`,
+      referencia: `${CONCURSO_REF_PREFIX}${inscricao.id}`,
     })
     if (resultado.metodo !== 'pix') throw new Error('Gateway não retornou Pix.')
     pix = resultado
@@ -168,7 +168,7 @@ export async function gerarNovoPixInscricao(id: string): Promise<NovoPixResult> 
       total: Number(insc.valor),
       responsavel: { nome: insc.resp1_nome, email: insc.resp1_email, cpf: insc.resp1_cpf },
       descricao: `Inscrição Concurso de Bolsas 2027 – ${modalidadeNome} – ${insc.aluno_nome}`,
-      referencia: `concurso:${insc.id}`,
+      referencia: `${CONCURSO_REF_PREFIX}${insc.id}`,
     })
     if (resultado.metodo !== 'pix') throw new Error('Gateway não retornou Pix.')
     pix = resultado

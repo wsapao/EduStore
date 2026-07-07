@@ -10,6 +10,9 @@ export const MODALIDADES = [
 
 export type ModalidadeSlug = (typeof MODALIDADES)[number]['slug']
 
+/** Prefixo do externalReference das cobranças de inscrição no gateway. */
+export const CONCURSO_REF_PREFIX = 'concurso:'
+
 export const SERIES_2026 = [
   '1º ano EF', '2º ano EF', '3º ano EF', '4º ano EF', '5º ano EF',
   '6º ano EF', '7º ano EF', '8º ano EF',

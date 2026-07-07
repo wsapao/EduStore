@@ -11,6 +11,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { enviarEmailIngresso } from '@/lib/email/send'
 import { confirmarPagamentoConcurso, expirarPagamentoConcurso } from '@/lib/concurso/confirmarPagamento'
+import { CONCURSO_REF_PREFIX } from '@/lib/concurso/config'
 
 export const runtime = 'nodejs'
 
@@ -167,8 +168,8 @@ export async function POST(request: Request) {
   }
 
   // Concurso de bolsas — Pix vencido
-  if (event === 'PAYMENT_OVERDUE' && payment.externalReference?.startsWith('concurso:')) {
-    await expirarPagamentoConcurso(payment.externalReference.slice('concurso:'.length))
+  if (event === 'PAYMENT_OVERDUE' && payment.externalReference?.startsWith(CONCURSO_REF_PREFIX)) {
+    await expirarPagamentoConcurso(payment.externalReference.slice(CONCURSO_REF_PREFIX.length))
     return Response.json({ ok: true })
   }
 
@@ -199,9 +200,13 @@ export async function POST(request: Request) {
   }
 
   // Concurso de bolsas — confirmação de pagamento de inscrição
-  if (payment.externalReference?.startsWith('concurso:')) {
-    const inscricaoId = payment.externalReference.slice('concurso:'.length)
-    const { confirmado } = await confirmarPagamentoConcurso(inscricaoId, payment.netValue)
+  if (payment.externalReference?.startsWith(CONCURSO_REF_PREFIX)) {
+    const inscricaoId = payment.externalReference.slice(CONCURSO_REF_PREFIX.length)
+    const { confirmado, erro } = await confirmarPagamentoConcurso(inscricaoId, payment.netValue)
+    if (erro) {
+      // Retorna 500 para que o Asaas reenvie o webhook depois
+      return Response.json({ ok: false, error: 'Erro ao confirmar inscrição.' }, { status: 500 })
+    }
     console.log(`[webhook/asaas] Inscrição concurso ${inscricaoId} — confirmado=${confirmado}`)
     return Response.json({ ok: true })
   }
