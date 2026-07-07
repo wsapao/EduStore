@@ -1,4 +1,5 @@
 import { executarExpiracaoPixJob } from '@/lib/pagamentos/expirePixJob'
+import { expirarPixInscricoesConcurso } from '@/lib/concurso/expirePix'
 
 export const runtime = 'nodejs'
 
@@ -19,7 +20,8 @@ async function handle(request: Request) {
     }
 
     const resultado = await executarExpiracaoPixJob()
-    return Response.json({ ok: true, ...resultado })
+    const concurso = await expirarPixInscricoesConcurso()
+    return Response.json({ ok: true, ...resultado, concurso })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro inesperado.'
     return Response.json({ ok: false, error: message }, { status: 500 })
