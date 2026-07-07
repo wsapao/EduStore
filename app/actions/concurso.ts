@@ -67,6 +67,7 @@ export async function criarInscricaoConcurso(input: InscricaoInput): Promise<Cri
       acao: 'concurso_inscricao_erro',
       descricao: insertErr?.message ?? 'Erro ao gravar inscrição.',
       metadata: { modalidade: input.modalidade, code: insertErr?.code, message: insertErr?.message },
+      escolaId: CONCURSO.escolaId,
     })
     return { success: false, error: 'Não foi possível registrar a inscrição. Tente novamente.' }
   }
@@ -92,6 +93,7 @@ export async function criarInscricaoConcurso(input: InscricaoInput): Promise<Cri
       acao: 'concurso_pix_erro',
       descricao: message,
       metadata: { inscricaoId: inscricao.id, numero: inscricao.numero, message },
+      escolaId: CONCURSO.escolaId,
     })
     return {
       success: false,
@@ -178,6 +180,7 @@ export async function gerarNovoPixInscricao(id: string): Promise<NovoPixResult> 
       acao: 'concurso_pix_erro',
       descricao: message,
       metadata: { inscricaoId: insc.id, message },
+      escolaId: CONCURSO.escolaId,
     })
     return { success: false, error: 'Falha ao gerar novo Pix. Tente novamente.' }
   }

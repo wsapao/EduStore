@@ -90,7 +90,10 @@ describe('criarInscricaoConcurso', () => {
     const r = await criarInscricaoConcurso(INPUT)
     expect(r.success).toBe(false)
     expect(criarPagamento).not.toHaveBeenCalled()
-    expect(auditLog).toHaveBeenCalledWith(expect.objectContaining({ acao: 'concurso_inscricao_erro' }))
+    expect(auditLog).toHaveBeenCalledWith(expect.objectContaining({
+      acao: 'concurso_inscricao_erro',
+      escolaId: '5d4b0ca0-b55b-4c7b-a41f-08b83e3ec350',
+    }))
   })
 
   it('retorna inscricao_id quando o gateway falha (retry na MESMA inscrição)', async () => {
