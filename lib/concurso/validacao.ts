@@ -1,4 +1,5 @@
 import { validarCPF } from '@/lib/validacao/cpf'
+import { validarEmail } from '@/lib/validacao/email'
 import { MODALIDADES } from './config'
 
 export interface InscricaoInput {
@@ -14,18 +15,25 @@ export interface InscricaoInput {
 
 export type ResultadoValidacao = { ok: true } | { ok: false; erros: string[] }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+/** Data ISO (aaaa-mm-dd) que existe de fato no calendário (Date.parse rola 30/02 p/ março). */
+function dataValida(iso: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso ?? '')) return false
+  const d = new Date(`${iso}T00:00:00Z`)
+  if (isNaN(d.getTime())) return false
+  const [ano, mes, dia] = iso.split('-').map(Number)
+  return d.getUTCFullYear() === ano && d.getUTCMonth() + 1 === mes && d.getUTCDate() === dia
+}
 
 export function validarInscricao(i: InscricaoInput): ResultadoValidacao {
   const erros: string[] = []
   if (!i.aluno_nome?.trim()) erros.push('Informe o nome do estudante.')
-  if (!i.aluno_nascimento || isNaN(Date.parse(i.aluno_nascimento))) erros.push('Data de nascimento inválida.')
+  if (!dataValida(i.aluno_nascimento)) erros.push('Data de nascimento inválida.')
   if (!i.serie_2026?.trim()) erros.push('Informe a série em 2026.')
   if (!MODALIDADES.some(m => m.slug === i.modalidade)) erros.push('Modalidade inválida.')
   if (!i.instituicao_atual?.trim()) erros.push('Informe a instituição de ensino atual.')
   if (!i.resp1_nome?.trim()) erros.push('Informe o nome do responsável.')
   if (!validarCPF(i.resp1_cpf ?? '')) erros.push('CPF do responsável inválido.')
-  if (!EMAIL_RE.test(i.resp1_email ?? '')) erros.push('E-mail do responsável inválido.')
+  if (!validarEmail(i.resp1_email ?? '')) erros.push('E-mail do responsável inválido.')
   if (!i.consentimento) erros.push('É necessário aceitar o tratamento dos dados (LGPD).')
   return erros.length ? { ok: false, erros } : { ok: true }
 }

@@ -35,4 +35,22 @@ describe('validarInscricao', () => {
     const r = validarInscricao({ ...valida, consentimento: false })
     expect(r.ok).toBe(false)
   })
+  it('rejeita datas de calendário inexistentes (30 de fevereiro)', () => {
+    const r = validarInscricao({ ...valida, aluno_nascimento: '2015-02-30' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.erros).toContain('Data de nascimento inválida.')
+  })
+  it('rejeita 31 de abril', () => {
+    const r = validarInscricao({ ...valida, aluno_nascimento: '2015-04-31' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.erros).toContain('Data de nascimento inválida.')
+  })
+  it('rejeita formato fora do padrão ISO (dd/mm/aaaa)', () => {
+    const r = validarInscricao({ ...valida, aluno_nascimento: '10/03/2015' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.erros).toContain('Data de nascimento inválida.')
+  })
+  it('aceita 29 de fevereiro em ano bissexto', () => {
+    expect(validarInscricao({ ...valida, aluno_nascimento: '2016-02-29' })).toEqual({ ok: true })
+  })
 })

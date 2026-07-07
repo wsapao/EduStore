@@ -7,8 +7,7 @@ import { getUserPermissions } from '@/lib/permissoes/getUserPermissions'
 import { auditLog } from '@/lib/auditoria/log'
 import { enviarEmailAvisoTrocaEmail } from '@/lib/email/send'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+import { EMAIL_RE } from '@/lib/validacao/email'
 
 type ActionResult = { success: boolean; error?: string }
 
