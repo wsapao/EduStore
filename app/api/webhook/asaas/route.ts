@@ -76,8 +76,10 @@ async function confirmarPagamento(pedidoId: string, netValue?: number): Promise<
   // 3. Gera ingressos (RPC que insere apenas para produtos com gera_ingresso = true)
   await supabase.rpc('gerar_ingressos_pedido', { p_pedido_id: pedidoId })
 
-  // 4. Envia emails de ingressos em background (não bloqueia a resposta ao webhook)
-  void enviarEmailsIngressos(supabase, pedidoId)
+  // 4. Envia emails de ingressos antes de responder — em serverless, a função
+  // pode ser congelada após a resposta e um envio em background nunca sair.
+  // Falha de e-mail não derruba o webhook (try/catch interno).
+  await enviarEmailsIngressos(supabase, pedidoId)
 }
 
 async function enviarEmailsIngressos(
