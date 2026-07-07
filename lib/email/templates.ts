@@ -3,6 +3,21 @@ function fmtBRL(v: number) {
   return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+/**
+ * Escapa dado de usuário antes de interpolar em HTML. Todo valor vindo de
+ * fora (nomes, números de pedido, URLs etc.) DEVE passar por aqui — os
+ * templates abaixo montam o corpo por template literal, sem sanitização
+ * do lado do cliente de e-mail.
+ */
+export function escapeHtml(value: unknown): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // ── Layout base ───────────────────────────────────────────────────────────────
 function base(title: string, content: string) {
   return `<!DOCTYPE html>
@@ -10,7 +25,7 @@ function base(title: string, content: string) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+  <title>${escapeHtml(title)}</title>
 </head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 16px;">
@@ -75,8 +90,8 @@ export function emailConfirmacaoPedido(p: EmailPedidoParams): { subject: string;
   const itensList = p.itens.map(i => `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
-        <div style="font-size:13px;font-weight:600;color:#0f172a;">${i.nome}</div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px;">Aluno: ${i.aluno}</div>
+        <div style="font-size:13px;font-weight:600;color:#0f172a;">${escapeHtml(i.nome)}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">Aluno: ${escapeHtml(i.aluno)}</div>
       </td>
       <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;text-align:right;font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;">
         ${fmtBRL(i.preco)}
@@ -89,7 +104,7 @@ export function emailConfirmacaoPedido(p: EmailPedidoParams): { subject: string;
       ${p.pixExpiracao ? `<div style="font-size:11px;color:#16a34a;margin-bottom:12px;">⏰ Expira em: ${new Date(p.pixExpiracao).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}</div>` : ''}
       ${p.pixCopiaCola ? `
         <div style="background:#fff;border:1px solid #d1d5db;border-radius:8px;padding:10px 14px;font-family:monospace;font-size:11px;color:#374151;word-break:break-all;text-align:left;margin-bottom:12px;">
-          ${p.pixCopiaCola}
+          ${escapeHtml(p.pixCopiaCola)}
         </div>
         <div style="font-size:11px;color:#6b7280;">Copie o código acima e cole no seu banco para pagar.</div>
       ` : ''}
@@ -100,18 +115,18 @@ export function emailConfirmacaoPedido(p: EmailPedidoParams): { subject: string;
       🛍️ Pedido recebido!
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;">
-      Olá, <strong>${p.responsavelNome}</strong>! Seu pedido foi registrado com sucesso.
+      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! Seu pedido foi registrado com sucesso.
     </p>
 
     <!-- Info do pedido -->
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:12px;color:#64748b;font-weight:600;">PEDIDO</span>
-        <span style="font-size:12px;font-weight:700;color:#0f172a;font-family:monospace;">${p.numeroPedido}</span>
+        <span style="font-size:12px;font-weight:700;color:#0f172a;font-family:monospace;">${escapeHtml(p.numeroPedido)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;">
         <span style="font-size:12px;color:#64748b;font-weight:600;">PAGAMENTO</span>
-        <span style="font-size:12px;font-weight:700;color:#0f172a;">${metodo}</span>
+        <span style="font-size:12px;font-weight:700;color:#0f172a;">${escapeHtml(metodo)}</span>
       </div>
     </div>
 
@@ -128,7 +143,7 @@ export function emailConfirmacaoPedido(p: EmailPedidoParams): { subject: string;
 
     <!-- CTA -->
     <div style="margin-top:28px;text-align:center;">
-      <a href="${p.pedidoUrl}"
+      <a href="${escapeHtml(p.pedidoUrl)}"
         style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;letter-spacing:-.01em;">
         Ver meu pedido
       </a>
@@ -154,14 +169,14 @@ export function emailPixExpirado(p: EmailPixExpiradoParams): { subject: string; 
       ⏰ Seu PIX expirou
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${p.responsavelNome}</strong>! O PIX do pedido <strong>${p.numeroPedido}</strong> venceu.
+      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! O PIX do pedido <strong>${escapeHtml(p.numeroPedido)}</strong> venceu.
       Seu pedido continua disponível para você gerar um novo código.
     </p>
 
     <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:12px;color:#9a3412;font-weight:600;">PEDIDO</span>
-        <span style="font-size:12px;font-weight:700;color:#7c2d12;font-family:monospace;">${p.numeroPedido}</span>
+        <span style="font-size:12px;font-weight:700;color:#7c2d12;font-family:monospace;">${escapeHtml(p.numeroPedido)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;">
         <span style="font-size:12px;color:#9a3412;font-weight:600;">TOTAL</span>
@@ -174,7 +189,7 @@ export function emailPixExpirado(p: EmailPixExpiradoParams): { subject: string; 
     </div>
 
     <div style="text-align:center;">
-      <a href="${p.pedidoUrl}"
+      <a href="${escapeHtml(p.pedidoUrl)}"
         style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
         Gerar novo PIX
       </a>
@@ -198,7 +213,7 @@ export function emailResetSenhaAdmin(p: EmailResetSenhaAdminParams): { subject: 
       🔐 Redefinição de senha
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${p.responsavelNome}</strong>! A secretaria da escola solicitou o envio de um link para você criar uma nova senha de acesso à Loja Escolar.
+      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! A secretaria da escola solicitou o envio de um link para você criar uma nova senha de acesso à Loja Escolar.
     </p>
 
     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
@@ -208,7 +223,7 @@ export function emailResetSenhaAdmin(p: EmailResetSenhaAdminParams): { subject: 
     </div>
 
     <div style="text-align:center;margin-top:8px;">
-      <a href="${p.resetUrl}"
+      <a href="${escapeHtml(p.resetUrl)}"
         style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
         Criar nova senha
       </a>
@@ -216,7 +231,7 @@ export function emailResetSenhaAdmin(p: EmailResetSenhaAdminParams): { subject: 
 
     <div style="margin-top:24px;font-size:12px;color:#94a3b8;line-height:1.7;">
       Se o botão não abrir, copie e cole este endereço no navegador:<br>
-      <span style="color:#475569;word-break:break-all;">${p.resetUrl}</span>
+      <span style="color:#475569;word-break:break-all;">${escapeHtml(p.resetUrl)}</span>
     </div>
   `
 
@@ -241,12 +256,12 @@ export function emailAvisoTrocaEmail(
       ✉️ Seu e-mail de acesso foi alterado
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${p.responsavelNome}</strong>! O e-mail de acesso da sua conta na Loja Escolar foi atualizado pela administração da escola.
+      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! O e-mail de acesso da sua conta na Loja Escolar foi atualizado pela administração da escola.
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:13px;color:#334155;line-height:1.8;">
-      <div>E-mail anterior: <strong>${p.emailAntigo}</strong></div>
-      <div>Novo e-mail de acesso: <strong>${p.emailNovo}</strong></div>
+      <div>E-mail anterior: <strong>${escapeHtml(p.emailAntigo)}</strong></div>
+      <div>Novo e-mail de acesso: <strong>${escapeHtml(p.emailNovo)}</strong></div>
     </div>
 
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px 20px;margin-bottom:8px;">
@@ -277,8 +292,8 @@ export interface EmailIngressoParams {
 export function emailIngressoEmitido(p: EmailIngressoParams): { subject: string; html: string } {
   const detalhes = [
     p.dataEvento ? `📅 ${new Date(p.dataEvento).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}` : null,
-    p.horaEvento ? `🕐 ${p.horaEvento.slice(0, 5)}h` : null,
-    p.localEvento ? `📍 ${p.localEvento}` : null,
+    p.horaEvento ? `🕐 ${escapeHtml(p.horaEvento.slice(0, 5))}h` : null,
+    p.localEvento ? `📍 ${escapeHtml(p.localEvento)}` : null,
   ].filter(Boolean)
 
   const content = `
@@ -286,15 +301,15 @@ export function emailIngressoEmitido(p: EmailIngressoParams): { subject: string;
       🎟️ Ingresso emitido!
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;">
-      O pagamento do pedido <strong>${p.numeroPedido}</strong> foi confirmado.<br>
-      O ingresso de <strong>${p.alunoNome}</strong> está disponível.
+      O pagamento do pedido <strong>${escapeHtml(p.numeroPedido)}</strong> foi confirmado.<br>
+      O ingresso de <strong>${escapeHtml(p.alunoNome)}</strong> está disponível.
     </p>
 
     <!-- Card do evento -->
     <div style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
       <div style="font-size:32px;margin-bottom:8px;">🎉</div>
-      <div style="font-size:18px;font-weight:900;color:#4c1d95;margin-bottom:4px;">${p.produtoNome}</div>
-      <div style="font-size:13px;color:#6d28d9;font-weight:600;">${p.alunoNome}</div>
+      <div style="font-size:18px;font-weight:900;color:#4c1d95;margin-bottom:4px;">${escapeHtml(p.produtoNome)}</div>
+      <div style="font-size:13px;color:#6d28d9;font-weight:600;">${escapeHtml(p.alunoNome)}</div>
     </div>
 
     ${detalhes.length > 0 ? `
@@ -311,7 +326,7 @@ export function emailIngressoEmitido(p: EmailIngressoParams): { subject: string;
 
     <!-- CTA -->
     <div style="text-align:center;">
-      <a href="${p.ingressoUrl}"
+      <a href="${escapeHtml(p.ingressoUrl)}"
         style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
         Ver ingresso digital →
       </a>
@@ -338,13 +353,13 @@ export function emailInscricaoConcurso(p: EmailInscricaoConcursoParams): { subje
       ✅ Inscrição confirmada!
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${p.responsavelNome}</strong>! Recebemos o pagamento da inscrição de
-      <strong>${p.alunoNome}</strong> no Concurso de Bolsas – Seletivas Esportivas 2027
-      (modalidade <strong>${p.modalidade}</strong>).
+      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! Recebemos o pagamento da inscrição de
+      <strong>${escapeHtml(p.alunoNome)}</strong> no Concurso de Bolsas – Seletivas Esportivas 2027
+      (modalidade <strong>${escapeHtml(p.modalidade)}</strong>).
     </p>
     <div style="background:#EDF3FF;border:1px solid #C0CEEA;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
       <div style="font-size:12px;color:#34436B;font-weight:600;">INSCRIÇÃO</div>
-      <div style="font-size:16px;font-weight:800;color:#34436B;font-family:monospace;">${p.numero}</div>
+      <div style="font-size:16px;font-weight:800;color:#34436B;font-family:monospace;">${escapeHtml(p.numero)}</div>
     </div>
     <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#7c2d12;line-height:1.7;">
       <strong>Próximos passos:</strong><br>
