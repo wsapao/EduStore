@@ -323,3 +323,39 @@ export function emailIngressoEmitido(p: EmailIngressoParams): { subject: string;
     html: base(`Ingresso — ${p.produtoNome}`, content),
   }
 }
+
+// ── Template: Inscrição no Concurso de Bolsas confirmada ─────────────────────
+export interface EmailInscricaoConcursoParams {
+  responsavelNome: string
+  alunoNome: string
+  numero: string
+  modalidade: string
+}
+
+export function emailInscricaoConcurso(p: EmailInscricaoConcursoParams): { subject: string; html: string } {
+  const content = `
+    <h2 style="margin:0 0 4px;font-size:22px;font-weight:900;color:#34436B;letter-spacing:-.02em;">
+      ✅ Inscrição confirmada!
+    </h2>
+    <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
+      Olá, <strong>${p.responsavelNome}</strong>! Recebemos o pagamento da inscrição de
+      <strong>${p.alunoNome}</strong> no Concurso de Bolsas – Seletivas Esportivas 2027
+      (modalidade <strong>${p.modalidade}</strong>).
+    </p>
+    <div style="background:#EDF3FF;border:1px solid #C0CEEA;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+      <div style="font-size:12px;color:#34436B;font-weight:600;">INSCRIÇÃO</div>
+      <div style="font-size:16px;font-weight:800;color:#34436B;font-family:monospace;">${p.numero}</div>
+    </div>
+    <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#7c2d12;line-height:1.7;">
+      <strong>Próximos passos:</strong><br>
+      • Prova pedagógica: <strong>30/08/2026 (domingo), 08h30–11h30</strong>, na sede do Educandário São Judas Tadeu.<br>
+      • Seletiva técnica: 09 a 19/09/2026 (calendário divulgado dia 31/08 nas redes oficiais).<br>
+      • No dia da seletiva, levar <strong>declaração de saúde</strong> (apto à prática esportiva) e o <strong>boletim escolar</strong> do ano vigente.
+    </div>
+    <p style="font-size:12px;color:#94a3b8;">Guarde este e-mail — o número da inscrição será solicitado no dia da prova.</p>
+  `
+  return {
+    subject: `Inscrição ${p.numero} confirmada — Concurso de Bolsas 2027`,
+    html: base(`Inscrição confirmada — ${p.numero}`, content),
+  }
+}

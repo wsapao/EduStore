@@ -5,11 +5,13 @@ import {
   emailIngressoEmitido,
   emailResetSenhaAdmin,
   emailAvisoTrocaEmail,
+  emailInscricaoConcurso,
   type EmailPedidoParams,
   type EmailPixExpiradoParams,
   type EmailIngressoParams,
   type EmailResetSenhaAdminParams,
   type EmailAvisoTrocaEmailParams,
+  type EmailInscricaoConcursoParams,
 } from './templates'
 
 // ── Enviar confirmação de pedido ──────────────────────────────────────────────
@@ -107,5 +109,22 @@ export async function enviarEmailAvisoTrocaEmail(
     await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
   } catch (err) {
     console.error('[Email] Erro ao enviar aviso de troca de e-mail:', err)
+  }
+}
+
+// ── Enviar confirmação de inscrição no Concurso de Bolsas ────────────────────
+export async function enviarEmailInscricaoConcurso(
+  to: string,
+  params: EmailInscricaoConcursoParams
+) {
+  const resend = getResend()
+  if (!resend) return
+
+  const { subject, html } = emailInscricaoConcurso(params)
+
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
+  } catch (err) {
+    console.error('[Email] Erro ao enviar confirmação de inscrição do concurso:', err)
   }
 }
