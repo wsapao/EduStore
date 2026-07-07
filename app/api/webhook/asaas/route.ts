@@ -10,6 +10,7 @@
  */
 import { createAdminClient } from '@/lib/supabase/admin'
 import { enviarEmailIngresso } from '@/lib/email/send'
+import { confirmarPagamentoConcurso, expirarPagamentoConcurso } from '@/lib/concurso/confirmarPagamento'
 
 export const runtime = 'nodejs'
 
@@ -165,6 +166,12 @@ export async function POST(request: Request) {
     return Response.json({ ok: true })
   }
 
+  // Concurso de bolsas — Pix vencido
+  if (event === 'PAYMENT_OVERDUE' && payment.externalReference?.startsWith('concurso:')) {
+    await expirarPagamentoConcurso(payment.externalReference.slice('concurso:'.length))
+    return Response.json({ ok: true })
+  }
+
   // 4. Processa apenas eventos de confirmação de pagamento
   const EVENTOS_CONFIRMACAO = [
     'PAYMENT_RECEIVED',
@@ -188,6 +195,14 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, error: rpcErr.message }, { status: 500 })
     }
     console.log(`[webhook/asaas] Recarga ${recargaId} confirmada via webhook.`)
+    return Response.json({ ok: true })
+  }
+
+  // Concurso de bolsas — confirmação de pagamento de inscrição
+  if (payment.externalReference?.startsWith('concurso:')) {
+    const inscricaoId = payment.externalReference.slice('concurso:'.length)
+    const { confirmado } = await confirmarPagamentoConcurso(inscricaoId, payment.netValue)
+    console.log(`[webhook/asaas] Inscrição concurso ${inscricaoId} — confirmado=${confirmado}`)
     return Response.json({ ok: true })
   }
 
