@@ -375,6 +375,8 @@ export function validarInscricao(i: InscricaoInput): ResultadoValidacao {
 
 ### Task 5: Server actions — criar inscrição + Pix, consultar status, novo Pix
 
+> **⚠️ ATUALIZAÇÃO (review pós-implementação):** o código abaixo foi endurecido em commit posterior — `gerarNovoPixInscricao` ganhou gates de `pagamentoLimite` e de Pix-ainda-válido (permitindo `pix_expiracao IS NULL` para retry de linhas órfãs); falha de gateway em `criarInscricaoConcurso` retorna `inscricao_id` para retry na MESMA linha; updates pós-gateway são checados/logados; `auditLog` em falhas. NÃO reverter para o texto original abaixo.
+
 **Files:**
 - Create: `app/actions/concurso.ts`
 - Test: `tests/concurso/actions.test.ts`
@@ -887,6 +889,8 @@ import { confirmarPagamentoConcurso, expirarPagamentoConcurso } from '@/lib/conc
 
 ### Task 8: Expiração automática (cron)
 
+> **⚠️ ATUALIZAÇÃO (review da Task 5):** além do filtro `pix_expiracao < now`, o job DEVE também expirar linhas órfãs — `status_pagamento='pendente' AND gateway_id IS NULL AND created_at < now() - interval '1 hour'` (inscrições cujo gateway falhou na criação e nunca ganharam Pix). Sem isso, órfãs ficam `pendente` para sempre e retêm dados pessoais (LGPD).
+
 **Files:**
 - Create: `lib/concurso/expirePix.ts`
 - Modify: `app/api/cron/expire-pix/route.ts`
@@ -1049,6 +1053,8 @@ export default function ConcursoLayout({ children }: { children: React.ReactNode
 ---
 
 ### Task 10: Página pública — formulário (wizard) + tela Pix
+
+> **⚠️ ATUALIZAÇÃO (review da Task 5):** quando `criarInscricaoConcurso` falha COM `inscricao_id` no resultado (gateway falhou após gravar), o botão "Tentar novamente" deve chamar `gerarNovoPixInscricao(inscricao_id)` — NÃO reenviar o formulário (evita inscrições duplicadas órfãs).
 
 **Files:**
 - Create: `app/concurso-bolsas-2027/inscricao/page.tsx` (server: checa janela, renderiza client)
