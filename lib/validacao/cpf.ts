@@ -4,6 +4,14 @@ export function limparCPF(cpf: string) {
   return cpf.replace(/[^0-9]/g, '')
 }
 
+// Máscara parcial p/ exibição em contextos administrativos (LGPD):
+// mantém apenas os 3 primeiros dígitos e os 2 verificadores.
+export function mascaraCpf(cpf: string): string {
+  const c = limparCPF(cpf)
+  if (c.length !== 11) return '***'
+  return `${c.slice(0, 3)}.***.***-${c.slice(9)}`
+}
+
 export function validarCPF(cpf: string): boolean {
   const c = limparCPF(cpf)
   if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false
