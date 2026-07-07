@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { EMAIL_TEMPLATE_META, type EmailTemplateTipo } from './templates-config'
 
@@ -8,15 +9,20 @@ import { EMAIL_TEMPLATE_META, type EmailTemplateTipo } from './templates-config'
  * Server-only (depende de `createClient` com cookies). NÃO importe de
  * Client Components — use `renderEmailTemplate` puro de `./render` no
  * client.
+ *
+ * Contextos sem cookies (webhook) devem passar `client` (admin client),
+ * senão o RLS esconde o registro e cai sempre no default.
  */
 export async function getTemplateEmail(
   escolaId: string,
   tipo: EmailTemplateTipo,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client?: SupabaseClient<any, any, any>,
 ): Promise<{ assunto: string; corpo: string; origem: 'banco' | 'padrao' }> {
   const meta = EMAIL_TEMPLATE_META[tipo]
 
   try {
-    const supabase = await createClient()
+    const supabase = client ?? (await createClient())
     const { data, error } = await supabase
       .from('email_templates')
       .select('assunto, corpo, ativo')

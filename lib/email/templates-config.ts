@@ -80,20 +80,7 @@ export const EMAIL_TEMPLATE_META: Record<EmailTemplateTipo, EmailTemplateMeta> =
       { chave: 'pix_expiracao', descricao: 'Data e hora limite para pagar o PIX.', exemplo: '14/05/2026 23:59' },
     ],
     defaultAssunto: 'Pedido {{numero_pedido}} confirmado — pague com PIX',
-    defaultCorpo: `Olá, {{nome_responsavel}}!
-
-Seu pedido {{numero_pedido}} foi registrado com sucesso.
-
-Total: {{total}}
-Pagamento: PIX
-Expira em: {{pix_expiracao}}
-
-Use o código abaixo no app do seu banco para pagar:
-{{pix_qr_code}}
-
-Acompanhe o pedido em: {{link_pedido}}
-
-Equipe {{nome_escola}}`,
+    defaultCorpo: `Olá, {{nome_responsavel}}! Recebemos seu pedido {{numero_pedido}}. Ele fica garantido assim que o PIX for pago — o código está logo abaixo.`,
   },
 
   confirmacao_pedido_cartao: {
@@ -108,18 +95,7 @@ Equipe {{nome_escola}}`,
       VAR_NOME_ESCOLA,
     ],
     defaultAssunto: 'Pedido {{numero_pedido}} recebido',
-    defaultCorpo: `Olá, {{nome_responsavel}}!
-
-Seu pedido {{numero_pedido}} foi registrado com sucesso.
-
-Total: {{total}}
-Pagamento: Cartão de Crédito
-
-Estamos processando o pagamento. Assim que confirmado, você recebe um novo e-mail.
-
-Acompanhe o pedido em: {{link_pedido}}
-
-Equipe {{nome_escola}}`,
+    defaultCorpo: `Olá, {{nome_responsavel}}! Recebemos seu pedido {{numero_pedido}} e o pagamento no cartão está em processamento. Você recebe outro e-mail assim que for aprovado.`,
   },
 
   confirmacao_pedido_boleto: {
@@ -136,19 +112,7 @@ Equipe {{nome_escola}}`,
       { chave: 'boleto_vencimento', descricao: 'Data de vencimento do boleto.', exemplo: '20/05/2026' },
     ],
     defaultAssunto: 'Pedido {{numero_pedido}} — boleto disponível',
-    defaultCorpo: `Olá, {{nome_responsavel}}!
-
-Seu pedido {{numero_pedido}} foi registrado.
-
-Total: {{total}}
-Pagamento: Boleto Bancário
-Vencimento: {{boleto_vencimento}}
-
-Baixe o boleto em: {{boleto_url}}
-
-Acompanhe o pedido em: {{link_pedido}}
-
-Equipe {{nome_escola}}`,
+    defaultCorpo: `Olá, {{nome_responsavel}}! Recebemos seu pedido {{numero_pedido}}. O boleto está logo abaixo — após o pagamento, a compensação pode levar até 2 dias úteis.`,
   },
 
   pedido_pago: {
@@ -163,14 +127,7 @@ Equipe {{nome_escola}}`,
       VAR_NOME_ESCOLA,
     ],
     defaultAssunto: 'Pagamento confirmado — pedido {{numero_pedido}}',
-    defaultCorpo: `Olá, {{nome_responsavel}}!
-
-O pagamento do pedido {{numero_pedido}} ({{total}}) foi confirmado. Obrigado!
-
-Em breve a escola libera os itens do pedido. Você pode acompanhar tudo em:
-{{link_pedido}}
-
-Equipe {{nome_escola}}`,
+    defaultCorpo: `Olá, {{nome_responsavel}}! O pagamento do pedido {{numero_pedido}} foi confirmado. Agora é com a escola: em breve os itens estarão disponíveis.`,
   },
 
   pedido_cancelado: {

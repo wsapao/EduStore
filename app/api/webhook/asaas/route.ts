@@ -9,7 +9,10 @@
  * Documentação: https://docs.asaas.com/reference/webhook-1
  */
 import { createAdminClient } from '@/lib/supabase/admin'
-import { enviarEmailIngresso } from '@/lib/email/send'
+import { enviarEmailIngresso, enviarEmailPedidoPago } from '@/lib/email/send'
+import { resolverTemplatePedido } from '@/lib/email/resolver-template'
+import { SITE_URL } from '@/lib/email/resend'
+import { agruparItensEmail, formatarAlunoLabel, fmtBRL, type ItemEmailUnitario } from '@/lib/email/pedido-helpers'
 
 export const runtime = 'nodejs'
 
@@ -76,6 +79,9 @@ async function confirmarPagamento(pedidoId: string, netValue?: number): Promise<
 
   // 4. Envia emails de ingressos em background (não bloqueia a resposta ao webhook)
   void enviarEmailsIngressos(supabase, pedidoId)
+
+  // 5. Envia e-mail de pagamento confirmado em background
+  void enviarEmailPedidoPagoWebhook(supabase, pedidoId)
 }
 
 async function enviarEmailsIngressos(
@@ -118,6 +124,82 @@ async function enviarEmailsIngressos(
     }
   } catch (err) {
     console.error('[webhook/asaas] Erro ao enviar emails de ingressos:', err)
+  }
+}
+
+async function enviarEmailPedidoPagoWebhook(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  pedidoId: string,
+): Promise<void> {
+  try {
+    const { data: pedido } = await supabase
+      .from('pedidos')
+      .select('id, numero, total, data_pagamento, escola_id, responsavel:responsaveis(nome, email)')
+      .eq('id', pedidoId)
+      .single()
+    if (!pedido?.responsavel?.email) return
+
+    const { data: pagamento } = await supabase
+      .from('pagamentos')
+      .select('metodo, parcelas')
+      .eq('pedido_id', pedidoId)
+      .maybeSingle()
+
+    const { data: itens } = await supabase
+      .from('itens_pedido')
+      .select('produto_id, aluno_id, variante, preco_unitario, produto:produtos(nome, imagem_url, gera_ingresso), aluno:alunos(nome, serie, turma)')
+      .eq('pedido_id', pedidoId)
+
+    let escolaNome: string | null = null
+    if (pedido.escola_id) {
+      const { data: escola } = await supabase
+        .from('escolas').select('nome').eq('id', pedido.escola_id).maybeSingle()
+      escolaNome = escola?.nome ?? null
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const unitarios: ItemEmailUnitario[] = (itens ?? []).map((i: any) => ({
+      produtoId: i.produto_id,
+      alunoId: i.aluno_id,
+      nome: i.produto?.nome ?? '',
+      imagemUrl: i.produto?.imagem_url ?? null,
+      alunoLabel: i.aluno ? formatarAlunoLabel(i.aluno.nome, i.aluno.serie, i.aluno.turma) : '',
+      variante: i.variante ? `Tamanho ${i.variante}` : null,
+      precoUnitario: i.preco_unitario,
+    }))
+
+    const pedidoUrl = `${SITE_URL}/pedido/${pedido.id}`
+    const { assunto, aberturaHtml } = await resolverTemplatePedido({
+      escolaId: pedido.escola_id,
+      tipo: 'pedido_pago',
+      vars: {
+        nome_responsavel: pedido.responsavel.nome,
+        numero_pedido: pedido.numero,
+        total: fmtBRL(pedido.total),
+        link_pedido: pedidoUrl,
+        nome_escola: escolaNome ?? '',
+      },
+      client: supabase,
+    })
+
+    await enviarEmailPedidoPago(pedido.responsavel.email, {
+      assunto,
+      aberturaHtml,
+      responsavelNome: pedido.responsavel.nome,
+      numeroPedido: pedido.numero,
+      dataPagamento: pedido.data_pagamento ?? new Date().toISOString(),
+      metodoPagamento: pagamento?.metodo ?? 'pix',
+      parcelas: pagamento?.parcelas ?? 1,
+      total: pedido.total,
+      itens: agruparItensEmail(unitarios),
+      pedidoUrl,
+      escolaNome,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      temIngresso: (itens ?? []).some((i: any) => i.produto?.gera_ingresso === true),
+    })
+  } catch (err) {
+    console.error('[webhook/asaas] Erro ao enviar e-mail de pedido pago:', err)
   }
 }
 
