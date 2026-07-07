@@ -20,7 +20,16 @@ async function handle(request: Request) {
     }
 
     const resultado = await executarExpiracaoPixJob()
-    const concurso = await expirarPixInscricoesConcurso()
+
+    let concurso: Awaited<ReturnType<typeof expirarPixInscricoesConcurso>> | { erro: string }
+    try {
+      concurso = await expirarPixInscricoesConcurso()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado.'
+      console.error('[cron/expire-pix] Falha no job do concurso:', message)
+      concurso = { erro: message }
+    }
+
     return Response.json({ ok: true, ...resultado, concurso })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro inesperado.'
