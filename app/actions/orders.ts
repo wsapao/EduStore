@@ -715,7 +715,15 @@ export async function solicitarEstornoParcialAction(
     .select('id')
     .single()
 
-  if (errEstorno || !estorno) return { error: errEstorno?.message ?? 'Erro ao criar solicitação.' }
+  if (errEstorno || !estorno) {
+    // 23505 = violação do índice único parcial (uma solicitação pendente por pedido).
+    // Fecha a corrida do check-then-insert acima: duas requisições concorrentes passam
+    // na verificação e a segunda cai aqui em vez de criar uma solicitação duplicada.
+    if ((errEstorno as { code?: string } | null)?.code === '23505') {
+      return { error: 'Já existe uma solicitação de estorno pendente para este pedido.' }
+    }
+    return { error: errEstorno?.message ?? 'Erro ao criar solicitação.' }
+  }
 
   const { error: errItens } = await adminClient
     .from('pedido_estornos_itens')
