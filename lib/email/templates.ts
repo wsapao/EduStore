@@ -405,6 +405,138 @@ export function emailPedidoPago(p: EmailPedidoPagoParams): { subject: string; ht
   }
 }
 
+// ── Template: Pedido cancelado ────────────────────────────────────────────────
+export interface EmailPedidoCanceladoParams {
+  assunto: string
+  aberturaHtml: string
+  responsavelNome: string
+  numeroPedido: string
+  total: number
+  motivo: string
+  foiPago: boolean
+  pedidoUrl: string
+  escolaNome?: string | null
+}
+
+export function emailPedidoCancelado(p: EmailPedidoCanceladoParams): { subject: string; html: string } {
+  const badgeCancelado = `<div style="display:inline-block; font-family:${FONT_BODY}; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; padding:6px 12px; border-radius:999px;">Pedido cancelado</div>`
+
+  const blocoDevolucao = p.foiPago
+    ? `<tr><td class="pad" style="padding:20px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef9ec; border:1px solid #fbe3b3; border-radius:14px;">
+          <tr><td style="padding:14px 18px; font-family:${FONT_BODY}; font-size:13px; line-height:1.6; color:#5b6472;">
+            <span style="color:#b45309; font-weight:700;">Sobre o valor pago:</span> o pagamento deste pedido já tinha sido confirmado, então o valor de <strong style="color:#0a1628;">${fmtBRL(p.total)}</strong> será devolvido. A escola entrará em contato com os detalhes da devolução.
+          </td></tr>
+        </table>
+      </td></tr>`
+    : ''
+
+  const content = `
+    <tr>
+      <td class="pad" style="padding:36px 44px 0;">
+        ${badgeCancelado}
+        <h1 style="margin:18px 0 0; font-family:${FONT_DISPLAY}; font-size:26px; line-height:1.2; font-weight:800; color:#0a1628; letter-spacing:-.02em;">Seu pedido foi cancelado</h1>
+        <div style="padding-top:10px; font-family:${FONT_BODY}; font-size:13px; color:#8a93a1;">
+          Pedido <strong style="color:#0a1628; font-weight:700;">${escapeHtml(p.numeroPedido)}</strong>
+          &nbsp;·&nbsp; Total <strong style="color:#0a1628; font-weight:700;">${fmtBRL(p.total)}</strong>
+        </div>
+        <p style="margin:16px 0 0; font-family:${FONT_BODY}; font-size:14.5px; line-height:1.65; color:#46505f;">${p.aberturaHtml}</p>
+      </td>
+    </tr>
+    <tr>
+      <td class="pad" style="padding:24px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #eef1f5; border-radius:14px;">
+          <tr><td style="padding:14px 18px; font-family:${FONT_BODY}; font-size:13px; line-height:1.6; color:#5b6472;">
+            <span style="color:#0a1628; font-weight:700;">Motivo:</span> ${escapeHtml(p.motivo)}
+          </td></tr>
+        </table>
+      </td>
+    </tr>
+    ${blocoDevolucao}
+    <tr>
+      <td class="pad" align="center" style="padding:26px 44px 8px;">
+        ${botaoCta(p.pedidoUrl, 'Ver meu pedido')}
+        <div style="font-family:${FONT_BODY}; font-size:12.5px; color:#9aa3b1; padding-top:12px;">Se quiser comprar novamente, é só voltar à loja.</div>
+      </td>
+    </tr>`
+
+  return {
+    subject: p.assunto,
+    html: baseXkola({
+      titulo: `Pedido cancelado — ${p.numeroPedido}`,
+      preheader: `O pedido ${p.numeroPedido} foi cancelado.`,
+      content,
+      rodape: rodapePedido(p.escolaNome, `Este e-mail se refere ao pedido ${escapeHtml(p.numeroPedido)}.`),
+    }),
+  }
+}
+
+// ── Template: Recarga de cantina aprovada ─────────────────────────────────────
+export interface EmailRecargaAprovadaParams {
+  assunto: string
+  aberturaHtml: string
+  responsavelNome: string
+  alunoNome: string
+  valor: number
+  saldoAtual: number
+  metodo: string
+  dataConfirmacao: string
+  carteiraUrl: string
+  escolaNome?: string | null
+}
+
+export function emailRecargaAprovada(p: EmailRecargaAprovadaParams): { subject: string; html: string } {
+  const metodo = METODO_LABEL[p.metodo] ?? p.metodo
+
+  const content = `
+    <tr>
+      <td class="pad" align="center" style="padding:38px 44px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+          <td width="64" height="64" align="center" valign="middle" bgcolor="#ecfdf3" style="width:64px; height:64px; background:#ecfdf3; border:1px solid #bbe7c9; border-radius:50%; font-family:${FONT_BODY}; font-size:30px; font-weight:700; color:#15803d; line-height:1;">&#10003;</td>
+        </tr></table>
+        <h1 style="margin:18px 0 0; font-family:${FONT_DISPLAY}; font-size:26px; line-height:1.2; font-weight:800; color:#0a1628; letter-spacing:-.02em;">Recarga aprovada!</h1>
+        <p style="margin:12px 0 0; font-family:${FONT_BODY}; font-size:14.5px; line-height:1.65; color:#46505f;">${p.aberturaHtml}</p>
+      </td>
+    </tr>
+    <tr>
+      <td class="pad" style="padding:28px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #eef1f5; border-radius:14px;">
+          <tr>
+            <td style="padding:16px 20px 0; font-family:${FONT_BODY}; font-size:13px; color:#8a93a1;">Valor recarregado</td>
+            <td align="right" style="padding:16px 20px 0; font-family:${FONT_DISPLAY}; font-size:17px; font-weight:800; color:#15803d;">+ ${fmtBRL(p.valor)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 20px 0; font-family:${FONT_BODY}; font-size:13px; color:#8a93a1;">Cartão da cantina de</td>
+            <td align="right" style="padding:8px 20px 0; font-family:${FONT_BODY}; font-size:13.5px; font-weight:700; color:#0a1628;">${escapeHtml(p.alunoNome)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 20px 0; font-family:${FONT_BODY}; font-size:13px; color:#8a93a1;">Forma de pagamento</td>
+            <td align="right" style="padding:8px 20px 0; font-family:${FONT_BODY}; font-size:13.5px; font-weight:700; color:#0a1628;">${escapeHtml(metodo)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 20px 0; font-family:${FONT_BODY}; font-size:13px; color:#8a93a1;">Aprovada em</td>
+            <td align="right" style="padding:8px 20px 0; font-family:${FONT_BODY}; font-size:13.5px; font-weight:700; color:#0a1628;">${fmtDataHora(p.dataConfirmacao)}</td>
+          </tr>
+          <tr>
+            <td style="padding:14px 20px 16px; font-family:${FONT_DISPLAY}; font-size:15px; font-weight:800; color:#0a1628; border-top:1px solid #eef1f5;">Saldo atual</td>
+            <td align="right" style="padding:14px 20px 16px; font-family:${FONT_DISPLAY}; font-size:19px; font-weight:800; color:#0a1628; border-top:1px solid #eef1f5;">${fmtBRL(p.saldoAtual)}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr><td class="pad" align="center" style="padding:26px 44px 8px;">${botaoCta(p.carteiraUrl, 'Ver carteira da cantina')}</td></tr>`
+
+  return {
+    subject: p.assunto,
+    html: baseXkola({
+      titulo: `Recarga aprovada — ${p.alunoNome}`,
+      preheader: `Recarga de ${fmtBRL(p.valor)} aprovada. Saldo atual: ${fmtBRL(p.saldoAtual)}.`,
+      content,
+      rodape: rodapePedido(p.escolaNome, 'Guarde este e-mail como comprovante.'),
+    }),
+  }
+}
+
 export interface EmailPixExpiradoParams {
   responsavelNome: string
   numeroPedido: string
