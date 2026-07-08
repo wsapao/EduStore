@@ -308,7 +308,13 @@ function parseProdutoForm(formData: FormData, escolaId?: string) {
   const capacidadeRaw = formData.get('capacidade') as string
   const capacidade    = gera_ingresso && capacidadeRaw ? parseInt(capacidadeRaw) || null : null
 
-  const prazo_compra = formData.get('prazo_compra') as string || null
+  const prazo_compra_raw = formData.get('prazo_compra') as string || null
+  // datetime-local não carrega fuso: interpretamos como horário de Brasília
+  // (UTC-3, sem horário de verão no Brasil desde 2019) anexando o offset — senão
+  // o Postgres grava o valor como UTC e o countdown/urgência desvia 3h.
+  const prazo_compra = prazo_compra_raw
+    ? `${prazo_compra_raw.length === 16 ? `${prazo_compra_raw}:00` : prazo_compra_raw}-03:00`
+    : null
   const data_evento  = formData.get('data_evento')  as string || null
   const hora_evento  = formData.get('hora_evento')  as string || null
 
