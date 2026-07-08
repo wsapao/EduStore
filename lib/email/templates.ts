@@ -145,7 +145,7 @@ function botaoCta(url: string, rotulo: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" align="center">
     <tr>
       <td align="center" bgcolor="#ea580c" style="border-radius:14px; background:#ea580c; background-image:linear-gradient(135deg,#f59e0b,#ea580c); box-shadow:0 8px 20px rgba(234,88,12,.32);">
-        <a class="cta cta-link" href="${url}" target="_blank" style="display:inline-block; font-family:${FONT_BODY}; font-size:15px; font-weight:700; color:#ffffff; padding:15px 40px; border-radius:14px; letter-spacing:.01em;">${rotulo}&nbsp;&rarr;</a>
+        <a class="cta cta-link" href="${escapeHtml(url)}" target="_blank" style="display:inline-block; font-family:${FONT_BODY}; font-size:15px; font-weight:700; color:#ffffff; padding:15px 40px; border-radius:14px; letter-spacing:.01em;">${rotulo}&nbsp;&rarr;</a>
       </td>
     </tr>
   </table>`
@@ -153,7 +153,7 @@ function botaoCta(url: string, rotulo: string): string {
 
 function thumbItem(i: ItemEmailAgrupado): string {
   if (i.imagemUrl) {
-    return `<img src="${i.imagemUrl}" width="56" height="56" alt="" style="display:block; width:56px; height:56px; border-radius:12px; border:1px solid #efe6d6; object-fit:cover;">`
+    return `<img src="${escapeHtml(i.imagemUrl)}" width="56" height="56" alt="" style="display:block; width:56px; height:56px; border-radius:12px; border:1px solid #efe6d6; object-fit:cover;">`
   }
   const inicial = escapeHtml((i.nome.trim().charAt(0) || '•').toUpperCase())
   return `<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="56" height="56" align="center" valign="middle" bgcolor="#fef3e2" style="width:56px; height:56px; background:#fef3e2; border:1px solid #fbe3b3; border-radius:12px; font-family:${FONT_DISPLAY}; font-size:20px; font-weight:800; color:#ea580c;">${inicial}</td></tr></table>`
@@ -256,7 +256,7 @@ function blocoPagamento(p: EmailPedidoParams): string {
         </td></tr>`
       : ''
     const link = p.boletoUrl
-      ? `<tr><td style="padding:12px 20px 18px; font-family:${FONT_BODY}; font-size:13px;"><a href="${p.boletoUrl}" target="_blank" style="color:#c2410c; font-weight:700;">Baixar boleto (PDF) &rarr;</a></td></tr>`
+      ? `<tr><td style="padding:12px 20px 18px; font-family:${FONT_BODY}; font-size:13px;"><a href="${escapeHtml(p.boletoUrl)}" target="_blank" style="color:#c2410c; font-weight:700;">Baixar boleto (PDF) &rarr;</a></td></tr>`
       : `<tr><td style="padding:0 20px 18px;"></td></tr>`
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef9ec; border:1px solid #fbe3b3; border-radius:14px;">
       <tr><td style="padding:18px 20px 0;">
@@ -546,40 +546,48 @@ export interface EmailPixExpiradoParams {
 
 export function emailPixExpirado(p: EmailPixExpiradoParams): { subject: string; html: string } {
   const content = `
-    <h2 style="margin:0 0 4px;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-.02em;">
-      ⏰ Seu PIX expirou
-    </h2>
-    <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! O PIX do pedido <strong>${escapeHtml(p.numeroPedido)}</strong> venceu.
-      Seu pedido continua disponível para você gerar um novo código.
-    </p>
-
-    <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-        <span style="font-size:12px;color:#9a3412;font-weight:600;">PEDIDO</span>
-        <span style="font-size:12px;font-weight:700;color:#7c2d12;font-family:monospace;">${escapeHtml(p.numeroPedido)}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;">
-        <span style="font-size:12px;color:#9a3412;font-weight:600;">TOTAL</span>
-        <span style="font-size:14px;font-weight:800;color:#7c2d12;">${fmtBRL(p.total)}</span>
-      </div>
-    </div>
-
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:#1e40af;line-height:1.6;">
-      Abra o pedido para gerar um novo PIX e concluir a compra sem precisar montar o carrinho novamente.
-    </div>
-
-    <div style="text-align:center;">
-      <a href="${escapeHtml(p.pedidoUrl)}"
-        style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
-        Gerar novo PIX
-      </a>
-    </div>
-  `
+    <tr>
+      <td class="pad" style="padding:36px 44px 0;">
+        ${badge('PIX expirado')}
+        <h1 style="margin:18px 0 0; font-family:${FONT_DISPLAY}; font-size:26px; line-height:1.2; font-weight:800; color:#0a1628; letter-spacing:-.02em;">Seu PIX expirou</h1>
+        <p style="margin:16px 0 0; font-family:${FONT_BODY}; font-size:14.5px; line-height:1.65; color:#46505f;">
+          Olá, <strong style="color:#0a1628;">${escapeHtml(p.responsavelNome)}</strong>! O PIX do pedido <strong style="color:#0a1628;">${escapeHtml(p.numeroPedido)}</strong> venceu, mas o pedido continua disponível — é só gerar um novo código.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td class="pad" style="padding:24px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #eef1f5; border-radius:14px;">
+          <tr>
+            <td style="padding:16px 20px 0; font-family:${FONT_BODY}; font-size:13px; color:#8a93a1;">Pedido</td>
+            <td align="right" style="padding:16px 20px 0; font-family:${FONT_BODY}; font-size:13.5px; font-weight:700; color:#0a1628;">${escapeHtml(p.numeroPedido)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 20px 16px; font-family:${FONT_BODY}; font-size:13px; color:#8a93a1;">Total</td>
+            <td align="right" style="padding:8px 20px 16px; font-family:${FONT_DISPLAY}; font-size:17px; font-weight:800; color:#0a1628;">${fmtBRL(p.total)}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td class="pad" style="padding:20px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef9ec; border:1px solid #fbe3b3; border-radius:14px;">
+          <tr><td style="padding:14px 18px; font-family:${FONT_BODY}; font-size:13px; line-height:1.6; color:#5b6472;">
+            Abra o pedido para gerar um novo PIX e concluir a compra <strong style="color:#b45309;">sem montar o carrinho de novo</strong>.
+          </td></tr>
+        </table>
+      </td>
+    </tr>
+    <tr><td class="pad" align="center" style="padding:26px 44px 8px;">${botaoCta(p.pedidoUrl, 'Gerar novo PIX')}</td></tr>`
 
   return {
     subject: `PIX expirado no pedido ${p.numeroPedido}`,
-    html: base(`PIX expirado — ${p.numeroPedido}`, content),
+    html: baseXkola({
+      titulo: `PIX expirado — ${p.numeroPedido}`,
+      preheader: `O PIX do pedido ${p.numeroPedido} venceu — gere um novo código.`,
+      content,
+      rodape: `Este e-mail se refere ao pedido ${escapeHtml(p.numeroPedido)}. Dúvidas? Fale com a secretaria da escola.`,
+    }),
   }
 }
 
@@ -590,35 +598,42 @@ export interface EmailResetSenhaAdminParams {
 
 export function emailResetSenhaAdmin(p: EmailResetSenhaAdminParams): { subject: string; html: string } {
   const content = `
-    <h2 style="margin:0 0 4px;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-.02em;">
-      🔐 Redefinição de senha
-    </h2>
-    <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! A secretaria da escola solicitou o envio de um link para você criar uma nova senha de acesso à Loja Escolar.
-    </p>
-
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
-      <div style="font-size:13px;color:#1e3a8a;line-height:1.7;">
-        Use o botão abaixo para definir uma nova senha com segurança. Se você não solicitou isso, pode simplesmente ignorar este email.
-      </div>
-    </div>
-
-    <div style="text-align:center;margin-top:8px;">
-      <a href="${escapeHtml(p.resetUrl)}"
-        style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
-        Criar nova senha
-      </a>
-    </div>
-
-    <div style="margin-top:24px;font-size:12px;color:#94a3b8;line-height:1.7;">
-      Se o botão não abrir, copie e cole este endereço no navegador:<br>
-      <span style="color:#475569;word-break:break-all;">${escapeHtml(p.resetUrl)}</span>
-    </div>
-  `
+    <tr>
+      <td class="pad" style="padding:36px 44px 0;">
+        ${badge('Segurança')}
+        <h1 style="margin:18px 0 0; font-family:${FONT_DISPLAY}; font-size:26px; line-height:1.2; font-weight:800; color:#0a1628; letter-spacing:-.02em;">Redefinição de senha</h1>
+        <p style="margin:16px 0 0; font-family:${FONT_BODY}; font-size:14.5px; line-height:1.65; color:#46505f;">
+          Olá, <strong style="color:#0a1628;">${escapeHtml(p.responsavelNome)}</strong>! A secretaria da escola solicitou o envio de um link para você criar uma nova senha de acesso à Xkola Store.
+        </p>
+      </td>
+    </tr>
+    <tr><td class="pad" align="center" style="padding:28px 44px 4px;">${botaoCta(p.resetUrl, 'Criar nova senha')}</td></tr>
+    <tr>
+      <td class="pad" style="padding:24px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #eef1f5; border-radius:14px;">
+          <tr><td style="padding:14px 18px; font-family:${FONT_BODY}; font-size:13px; line-height:1.55; color:#5b6472;">
+            Se você não solicitou isso, pode ignorar este e-mail com segurança — nenhuma ação será tomada.
+          </td></tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td class="pad" style="padding:20px 44px 0;">
+        <div style="font-family:${FONT_BODY}; font-size:12px; color:#9aa3b1; line-height:1.5;">Se o botão não funcionar, copie e cole este endereço no navegador:</div>
+        <div style="font-family:${FONT_BODY}; font-size:12px; line-height:1.5; word-break:break-all; padding-top:6px;">
+          <a href="${escapeHtml(p.resetUrl)}" target="_blank" style="color:#c2410c;">${escapeHtml(p.resetUrl)}</a>
+        </div>
+      </td>
+    </tr>`
 
   return {
-    subject: 'Redefina sua senha da Loja Escolar',
-    html: base('Redefinição de senha', content),
+    subject: 'Redefina sua senha da Xkola Store',
+    html: baseXkola({
+      titulo: 'Redefinição de senha',
+      preheader: 'Crie uma nova senha de acesso à loja da sua escola.',
+      content,
+      rodape: 'Você recebeu este e-mail porque a secretaria da escola solicitou a redefinição da sua senha.',
+    }),
   }
 }
 
@@ -633,28 +648,47 @@ export function emailAvisoTrocaEmail(
   p: EmailAvisoTrocaEmailParams,
 ): { subject: string; html: string } {
   const content = `
-    <h2 style="margin:0 0 4px;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-.02em;">
-      ✉️ Seu e-mail de acesso foi alterado
-    </h2>
-    <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! O e-mail de acesso da sua conta na Loja Escolar foi atualizado pela administração da escola.
-    </p>
-
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:13px;color:#334155;line-height:1.8;">
-      <div>E-mail anterior: <strong>${escapeHtml(p.emailAntigo)}</strong></div>
-      <div>Novo e-mail de acesso: <strong>${escapeHtml(p.emailNovo)}</strong></div>
-    </div>
-
-    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px 20px;margin-bottom:8px;">
-      <div style="font-size:13px;color:#9a3412;line-height:1.7;">
-        Se você não reconhece esta alteração, entre em contato imediatamente com a secretaria da escola.
-      </div>
-    </div>
-  `
+    <tr>
+      <td class="pad" style="padding:36px 44px 0;">
+        ${badge('Segurança')}
+        <h1 style="margin:18px 0 0; font-family:${FONT_DISPLAY}; font-size:26px; line-height:1.2; font-weight:800; color:#0a1628; letter-spacing:-.02em;">Seu e-mail de acesso foi alterado</h1>
+        <p style="margin:16px 0 0; font-family:${FONT_BODY}; font-size:14.5px; line-height:1.65; color:#46505f;">
+          Olá, <strong style="color:#0a1628;">${escapeHtml(p.responsavelNome)}</strong>! O e-mail de acesso da sua conta na Xkola Store foi atualizado pela administração da escola.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td class="pad" style="padding:24px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #eef1f5; border-radius:14px;">
+          <tr>
+            <td style="padding:16px 20px 0; font-family:${FONT_BODY}; font-size:13px; color:#8a93a1;">E-mail anterior</td>
+            <td align="right" style="padding:16px 20px 0; font-family:${FONT_BODY}; font-size:13.5px; font-weight:700; color:#0a1628;">${escapeHtml(p.emailAntigo)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 20px 16px; font-family:${FONT_BODY}; font-size:13px; color:#8a93a1;">Novo e-mail de acesso</td>
+            <td align="right" style="padding:8px 20px 16px; font-family:${FONT_BODY}; font-size:13.5px; font-weight:700; color:#0a1628;">${escapeHtml(p.emailNovo)}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td class="pad" style="padding:20px 44px 8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef9ec; border:1px solid #fbe3b3; border-radius:14px;">
+          <tr><td style="padding:14px 18px; font-family:${FONT_BODY}; font-size:13px; line-height:1.6; color:#5b6472;">
+            <span style="color:#b45309; font-weight:700;">Não reconhece esta alteração?</span> Entre em contato imediatamente com a secretaria da escola.
+          </td></tr>
+        </table>
+      </td>
+    </tr>`
 
   return {
-    subject: 'Seu e-mail de acesso à Loja Escolar foi alterado',
-    html: base('E-mail de acesso alterado', content),
+    subject: 'Seu e-mail de acesso à Xkola Store foi alterado',
+    html: baseXkola({
+      titulo: 'E-mail de acesso alterado',
+      preheader: 'O e-mail de acesso da sua conta foi atualizado.',
+      content,
+      rodape: 'Aviso de segurança da sua conta na Xkola Store.',
+    }),
   }
 }
 
@@ -672,51 +706,63 @@ export interface EmailIngressoParams {
 
 export function emailIngressoEmitido(p: EmailIngressoParams): { subject: string; html: string } {
   const detalhes = [
-    p.dataEvento ? `📅 ${new Date(p.dataEvento).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}` : null,
-    p.horaEvento ? `🕐 ${escapeHtml(p.horaEvento.slice(0, 5))}h` : null,
-    p.localEvento ? `📍 ${escapeHtml(p.localEvento)}` : null,
+    p.dataEvento ? `&#128197; ${new Date(p.dataEvento).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}` : null,
+    p.horaEvento ? `&#128336; ${escapeHtml(p.horaEvento.slice(0, 5))}h` : null,
+    p.localEvento ? `&#128205; ${escapeHtml(p.localEvento)}` : null,
   ].filter(Boolean)
 
+  const blocoDetalhes = detalhes.length > 0
+    ? `<tr>
+        <td class="pad" style="padding:20px 44px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #eef1f5; border-radius:14px;">
+            <tr><td style="padding:14px 18px; font-family:${FONT_BODY}; font-size:13px; line-height:1.9; color:#46505f;">
+              ${detalhes.join('<br>')}
+            </td></tr>
+          </table>
+        </td>
+      </tr>`
+    : ''
+
   const content = `
-    <h2 style="margin:0 0 4px;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-.02em;">
-      🎟️ Ingresso emitido!
-    </h2>
-    <p style="margin:0 0 24px;font-size:14px;color:#64748b;">
-      O pagamento do pedido <strong>${escapeHtml(p.numeroPedido)}</strong> foi confirmado.<br>
-      O ingresso de <strong>${escapeHtml(p.alunoNome)}</strong> está disponível.
-    </p>
-
-    <!-- Card do evento -->
-    <div style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
-      <div style="font-size:32px;margin-bottom:8px;">🎉</div>
-      <div style="font-size:18px;font-weight:900;color:#4c1d95;margin-bottom:4px;">${escapeHtml(p.produtoNome)}</div>
-      <div style="font-size:13px;color:#6d28d9;font-weight:600;">${escapeHtml(p.alunoNome)}</div>
-    </div>
-
-    ${detalhes.length > 0 ? `
-    <!-- Detalhes -->
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
-      ${detalhes.map(d => `<div style="font-size:13px;color:#374151;margin-bottom:6px;">${d}</div>`).join('')}
-    </div>
-    ` : ''}
-
-    <!-- Instrução -->
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:#1e40af;line-height:1.6;">
-      📱 <strong>Na entrada do evento:</strong> apresente o QR Code do ingresso ao funcionário para validação.
-    </div>
-
-    <!-- CTA -->
-    <div style="text-align:center;">
-      <a href="${escapeHtml(p.ingressoUrl)}"
-        style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
-        Ver ingresso digital →
-      </a>
-    </div>
-  `
+    <tr>
+      <td class="pad" style="padding:36px 44px 0;">
+        ${badge('Ingresso emitido')}
+        <h1 style="margin:18px 0 0; font-family:${FONT_DISPLAY}; font-size:26px; line-height:1.2; font-weight:800; color:#0a1628; letter-spacing:-.02em;">Ingresso emitido!</h1>
+        <p style="margin:16px 0 0; font-family:${FONT_BODY}; font-size:14.5px; line-height:1.65; color:#46505f;">
+          O pagamento do pedido <strong style="color:#0a1628;">${escapeHtml(p.numeroPedido)}</strong> foi confirmado e o ingresso de <strong style="color:#0a1628;">${escapeHtml(p.alunoNome)}</strong> está disponível.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td class="pad" style="padding:24px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef3e2; border:1px solid #fbe3b3; border-radius:14px;">
+          <tr><td align="center" style="padding:24px 20px;">
+            <div style="font-family:${FONT_DISPLAY}; font-size:19px; font-weight:800; color:#7c2d12;">${escapeHtml(p.produtoNome)}</div>
+            <div style="font-family:${FONT_BODY}; font-size:13px; font-weight:600; color:#b45309; padding-top:6px;">${escapeHtml(p.alunoNome)}</div>
+          </td></tr>
+        </table>
+      </td>
+    </tr>
+    ${blocoDetalhes}
+    <tr>
+      <td class="pad" style="padding:20px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #eef1f5; border-radius:14px;">
+          <tr><td style="padding:14px 18px; font-family:${FONT_BODY}; font-size:13px; line-height:1.6; color:#5b6472;">
+            <span style="color:#0a1628; font-weight:700;">Na entrada do evento:</span> apresente o QR Code do ingresso ao funcionário para validação.
+          </td></tr>
+        </table>
+      </td>
+    </tr>
+    <tr><td class="pad" align="center" style="padding:26px 44px 8px;">${botaoCta(p.ingressoUrl, 'Ver ingresso digital')}</td></tr>`
 
   return {
     subject: `🎟️ Seu ingresso para ${p.produtoNome} está pronto!`,
-    html: base(`Ingresso — ${p.produtoNome}`, content),
+    html: baseXkola({
+      titulo: `Ingresso — ${p.produtoNome}`,
+      preheader: `O ingresso de ${p.alunoNome} para ${p.produtoNome} está disponível.`,
+      content,
+      rodape: `Este e-mail se refere ao pedido ${escapeHtml(p.numeroPedido)}. O ingresso digital fica sempre disponível no link acima.`,
+    }),
   }
 }
 
