@@ -51,15 +51,25 @@ async function confirmarPagamento(pedidoId: string, netValue?: number): Promise<
   const supabase = createAdminClient()
   const now = new Date().toISOString()
 
-  // 1. Atualiza pedido
-  const { error: pedidoErr } = await supabase
+  // 1. Atualiza pedido — só transiciona se ainda estava pendente. Verifica o
+  // rowcount: se nenhuma linha pendente foi afetada (pedido cancelado/reembolsado
+  // ou já pago), NÃO segue confirmando pagamento nem gerando ingressos.
+  const { data: pedidoRows, error: pedidoErr } = await supabase
     .from('pedidos')
     .update({ status: 'pago', data_pagamento: now })
     .eq('id', pedidoId)
     .eq('status', 'pendente') // idempotência: só atualiza se ainda pendente
+    .select('id')
 
   if (pedidoErr) {
     throw new Error(`Erro ao atualizar pedido ${pedidoId}: ${pedidoErr.message}`)
+  }
+
+  if (!pedidoRows || pedidoRows.length === 0) {
+    // Nenhum pedido pendente transicionado. Pode ser cancelado/reembolsado ou
+    // já confirmado em corrida anterior — não emite ingressos nem e-mails.
+    console.warn(`[webhook/asaas] Pedido ${pedidoId} não estava pendente; confirmação ignorada.`)
+    return
   }
 
   // 2. Atualiza pagamento — salva valor líquido informado pelo gateway
@@ -79,13 +89,11 @@ async function confirmarPagamento(pedidoId: string, netValue?: number): Promise<
   // 3. Gera ingressos (RPC que insere apenas para produtos com gera_ingresso = true)
   await supabase.rpc('gerar_ingressos_pedido', { p_pedido_id: pedidoId })
 
-  // 4. Envia emails de ingressos antes de responder — em serverless, a função
-  // pode ser congelada após a resposta e um envio em background nunca sair.
-  // Falha de e-mail não derruba o webhook (try/catch interno).
+  // 4 e 5. Envia e-mails aguardando a conclusão. Em serverless o processo pode
+  // congelar após a resposta e engolir promises pendentes (fire-and-forget), então
+  // aguardamos. As funções capturam os próprios erros — falha de e-mail não derruba
+  // a confirmação do pagamento.
   await enviarEmailsIngressos(supabase, pedidoId)
-
-  // 5. Envia e-mail de pagamento confirmado antes de responder (mesmo motivo:
-  // serverless congela após a resposta). Falha não derruba o webhook (try/catch interno).
   await enviarEmailPedidoPagoWebhook(supabase, pedidoId)
 }
 
@@ -244,12 +252,50 @@ export async function POST(request: Request) {
         p_gateway_id: payment.id,
       })
       if (rpcErr) {
-        console.error(`[webhook/asaas] Erro ao confirmar estorno ${payment.id}:`, rpcErr.message)
-        return Response.json({ ok: false, error: rpcErr.message }, { status: 500 })
+        // Erro de RPC (ex.: gateway_id órfão) é permanente: retornar 5xx faria o
+        // Asaas reenviar em loop e eventualmente suspender (interrupted) o webhook,
+        // parando todas as confirmações. Respondemos 200 e registramos para alerta.
+        console.error(`[webhook/asaas] Erro (não-transiente) ao confirmar estorno ${payment.id}:`, rpcErr.message)
+        return Response.json({ ok: true, handled: false, error: rpcErr.message })
       }
       console.log(`[webhook/asaas] Estorno ${payment.id} confirmado via webhook (${event}).`)
     }
     return Response.json({ ok: true })
+  }
+
+  // 4a. Reversão de pagamento em dinheiro (estorno de "recebido em dinheiro").
+  // NÃO é uma confirmação — desfaz o pagamento: pedido e pagamento voltam a
+  // pendente/aguardando para não deixar um pedido "pago" sem dinheiro real.
+  if (event === 'PAYMENT_RECEIVED_IN_CASH_UNDONE') {
+    if (payment.externalReference?.startsWith('recarga:')) {
+      // Recarga de cantina — sem tratamento de reversão de "em dinheiro" aqui.
+      return Response.json({ ok: true, ignored: true, event })
+    }
+    const supabase = createAdminClient()
+    const { data: pagamento } = await supabase
+      .from('pagamentos')
+      .select('id, pedido_id')
+      .eq('gateway_id', payment.id)
+      .maybeSingle()
+
+    if (!pagamento) {
+      console.warn(`[webhook/asaas] Reversão em dinheiro sem pagamento local gateway_id=${payment.id}.`)
+      return Response.json({ ok: true, warning: 'Pagamento não encontrado.' })
+    }
+
+    await supabase
+      .from('pagamentos')
+      .update({ status: 'aguardando', webhook_confirmado_em: null })
+      .eq('id', pagamento.id)
+
+    await supabase
+      .from('pedidos')
+      .update({ status: 'pendente', data_pagamento: null })
+      .eq('id', pagamento.pedido_id)
+      .eq('status', 'pago')
+
+    console.log(`[webhook/asaas] Pagamento em dinheiro revertido (${event}) para pedido ${pagamento.pedido_id}.`)
+    return Response.json({ ok: true, reverted: true })
   }
 
   // Concurso de bolsas — Pix vencido
@@ -258,11 +304,10 @@ export async function POST(request: Request) {
     return Response.json({ ok: true })
   }
 
-  // 4. Processa apenas eventos de confirmação de pagamento
+  // 4b. Processa apenas eventos de confirmação de pagamento
   const EVENTOS_CONFIRMACAO = [
     'PAYMENT_RECEIVED',
     'PAYMENT_CONFIRMED',
-    'PAYMENT_RECEIVED_IN_CASH_UNDONE',
   ]
 
   if (!EVENTOS_CONFIRMACAO.includes(event)) {
@@ -277,8 +322,10 @@ export async function POST(request: Request) {
       p_recarga_id: recargaId,
     })
     if (rpcErr) {
-      console.error(`[webhook/asaas] Erro ao confirmar recarga ${recargaId}:`, rpcErr.message)
-      return Response.json({ ok: false, error: rpcErr.message }, { status: 500 })
+      // Erro permanente de RPC (ex.: recarga inexistente): responder 200 para não
+      // provocar reenvio em loop e suspensão do webhook no Asaas. Registra p/ alerta.
+      console.error(`[webhook/asaas] Erro (não-transiente) ao confirmar recarga ${recargaId}:`, rpcErr.message)
+      return Response.json({ ok: true, handled: false, error: rpcErr.message })
     }
     console.log(`[webhook/asaas] Recarga ${recargaId} confirmada via webhook.`)
     return Response.json({ ok: true })

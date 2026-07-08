@@ -264,6 +264,10 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
       const [mesStr, anoStr] = input.dadosCartao.validade.split('/')
       const expiryYear = anoStr.length === 2 ? `20${anoStr}` : anoStr
 
+      const parcelasCartao = input.parcelas ?? 1
+      // Parcelamento: enviamos o total (`totalValue`) + `installmentCount` e
+      // deixamos o Asaas dividir, garantindo que a soma das parcelas feche com o
+      // total (com installmentValue arredondado, N×valor ≠ total gerava divergência).
       const payment = await asaasPost<AsaasPayment>('/payments', {
         customer: customerId,
         billingType: 'CREDIT_CARD',
@@ -271,10 +275,8 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
         dueDate,
         description: input.descricao,
         externalReference: input.referencia,
-        installmentCount: (input.parcelas ?? 1) > 1 ? input.parcelas : undefined,
-        installmentValue: (input.parcelas ?? 1) > 1
-          ? parseFloat((input.total / input.parcelas!).toFixed(2))
-          : undefined,
+        installmentCount: parcelasCartao > 1 ? parcelasCartao : undefined,
+        totalValue: parcelasCartao > 1 ? input.total : undefined,
         creditCard: {
           holderName: input.dadosCartao.nome,
           number: input.dadosCartao.numero.replace(/\s/g, ''),
@@ -303,10 +305,18 @@ export function createAsaasGateway(apiKey: string): GatewayPagamento {
 
       const status = mapStatus(payment.status)
 
+      // Preserva 'aguardando' (ex.: AWAITING_RISK_ANALYSIS). Só marca 'falhou'
+      // quando o gateway realmente rejeitou — assim não induzimos o usuário a
+      // refazer a compra de um cartão que ainda pode ser aprovado (cobrança dupla).
+      const statusCartao: 'confirmado' | 'aguardando' | 'falhou' =
+        status === 'confirmado' ? 'confirmado'
+        : status === 'aguardando' ? 'aguardando'
+        : 'falhou'
+
       return {
         metodo: 'cartao',
         gateway_id: payment.id,
-        status: status === 'confirmado' ? 'confirmado' : 'falhou',
+        status: statusCartao,
         parcelas: input.parcelas ?? 1,
         bandeira,
         ultimos_digitos: numero.slice(-4),

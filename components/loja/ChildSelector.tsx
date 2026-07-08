@@ -101,7 +101,7 @@ export function ChildSelector({ alunos }: Props) {
             fontSize: 16, fontWeight: 800, color: 'var(--text-1)',
             letterSpacing: '-.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
           }}>
-            {(selectedAluno?.nome || '').split(' ')[0]} {(selectedAluno?.nome || '').split(' ').slice(-1)[0]}
+            {(() => { const p = (selectedAluno?.nome || '').split(' ').filter(Boolean); return p.length > 1 ? `${p[0]} ${p[p.length - 1]}` : (p[0] || '') })()}
           </div>
           <div style={{
             fontSize: 13, fontWeight: 600, color: 'var(--text-3)', marginTop: 2,
@@ -157,7 +157,7 @@ export function ChildSelector({ alunos }: Props) {
                 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)' }}>
-                    {(aluno.nome || '').split(' ')[0]} {(aluno.nome || '').split(' ').slice(-1)[0]}
+                    {(() => { const p = (aluno.nome || '').split(' ').filter(Boolean); return p.length > 1 ? `${p[0]} ${p[p.length - 1]}` : (p[0] || '') })()}
                   </div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-3)' }}>
                     {aluno.serie}{aluno.turma ? ` · ${aluno.turma}` : ''}

@@ -35,17 +35,21 @@ function fmtBRL(v: number) {
 
 function usePixCountdown(expiracao: string | null) {
   const [secs, setSecs] = useState(0)
+  // `ready` evita o flash "PIX Expirado": no 1º render (e no SSR) secs=0, mas só
+  // consideramos expirado depois que o efeito calculou o tempo real de fato.
+  const [ready, setReady] = useState(false)
   useEffect(() => {
     if (!expiracao) return
     const target = new Date(expiracao).getTime()
     function tick() { setSecs(Math.max(0, Math.floor((target - Date.now()) / 1000))) }
     tick()
+    setReady(true)
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [expiracao])
   const mm = String(Math.floor(secs / 60)).padStart(2, '0')
   const ss = String(secs % 60).padStart(2, '0')
-  return { mm, ss, expired: secs === 0 && !!expiracao }
+  return { mm, ss, expired: ready && secs === 0 && !!expiracao }
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────

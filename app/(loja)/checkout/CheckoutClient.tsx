@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useTransition, useEffect, useRef } from 'react'
+import React, { useState, useTransition, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { usePostHog } from 'posthog-js/react'
@@ -24,6 +24,12 @@ function maskValidade(v: string) {
   return v.replace(/\D/g, '').slice(0, 4).replace(/(\d{2})(\d)/, '$1/$2')
 }
 
+// preco_promocional = 0 não é "grátis": trata 0 (ou ausente) como "sem promoção".
+function precoExibido(produto: { preco: number; preco_promocional?: number | null }) {
+  const promo = produto.preco_promocional
+  return (promo !== null && promo !== undefined && promo > 0) ? promo : produto.preco
+}
+
 const CAT_ICONS: Record<string, string> = {
   eventos: '🎉', passeios: '🚌', segunda_chamada: '📝',
   materiais: '📚', uniforme: '👕', outros: '📦',
@@ -38,10 +44,23 @@ export function CheckoutClient({ termoPadrao = null }: { termoPadrao?: string | 
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
 
-  const metodosDisponiveis = calcIntersection(items.map(i => i.produto.metodos_aceitos))
-  const [metodo, setMetodo] = useState<MetodoPagamento | null>(
-    metodosDisponiveis[0] ?? null
+  const metodosDisponiveis = useMemo(
+    () => calcIntersection(items.map(i => i.produto.metodos_aceitos)),
+    [items]
   )
+  const [metodo, setMetodo] = useState<MetodoPagamento | null>(null)
+
+  // Pré-seleciona a forma de pagamento padrão só depois de hidratar o carrinho —
+  // no 1º render items está vazio, então metodosDisponiveis[0] seria null.
+  const metodosKey = metodosDisponiveis.join(',')
+  useEffect(() => {
+    if (!hydrated) return
+    setMetodo(prev => {
+      if (prev && metodosDisponiveis.includes(prev)) return prev
+      return metodosDisponiveis[0] ?? null
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, metodosKey])
 
   const [cartao, setCartao] = useState<DadosCartao>({
     numero: '', nome: '', validade: '', cvv: '', parcelas: 1, cep: '',
@@ -124,13 +143,18 @@ export function CheckoutClient({ termoPadrao = null }: { termoPadrao?: string | 
     }
     setError('')
     startTransition(async () => {
+      // Total dos produtos exibido ao cliente (antes do cupom). O servidor
+      // compara com o preço real recalculado e recusa se divergir (C6).
+      const totalExibido = items.reduce(
+        (sum, i) => sum + precoExibido(i.produto), 0
+      )
       const result = await createOrderAction({
         items: items.map(i => ({
           produto_id: i.produto.id,
           aluno_id: i.aluno.id,
           variante_id: i.variante_id,
           variante: i.variante,
-          preco_unitario: i.produto.preco_promocional ?? i.produto.preco,
+          preco_unitario: precoExibido(i.produto),
           nome: i.produto.nome,
         })),
         metodo,
@@ -138,8 +162,17 @@ export function CheckoutClient({ termoPadrao = null }: { termoPadrao?: string | 
         dadosCartao: metodo === 'cartao' ? cartao : undefined,
         voucher_codigo: appliedVoucher?.voucher.codigo,
         termo_aceito: requiresTermo ? termosAceitos : undefined,
+        total_exibido: totalExibido,
       })
       if (!result.success) {
+        if ('precoAtualizado' in result && result.precoAtualizado) {
+          // Preço mudou entre montar o carrinho e finalizar. Não cobra
+          // silenciosamente — pede reconfirmação com o novo total.
+          setError(
+            `${result.error} Novo total: ${fmtBRL(result.totalReal)}. Volte à loja para atualizar o carrinho.`
+          )
+          return
+        }
         setError(result.error)
         return
       }
@@ -966,7 +999,12 @@ const bigInputStyle: React.CSSProperties = {
 
 // ── Util ───────────────────────────────────────────────────────────────────────
 
-function calcIntersection(arrays: MetodoPagamento[][]): MetodoPagamento[] {
+const TODOS_METODOS: MetodoPagamento[] = ['pix', 'cartao', 'boleto']
+
+function calcIntersection(arrays: (MetodoPagamento[] | null | undefined)[]): MetodoPagamento[] {
   if (arrays.length === 0) return []
-  return arrays.reduce((acc, cur) => acc.filter(m => cur.includes(m)))
+  // Item stale do localStorage pode não ter metodos_aceitos: trata ausente/vazio
+  // como "todos os métodos" para não quebrar o render (cur.includes em undefined).
+  const normalized = arrays.map(a => (Array.isArray(a) && a.length > 0 ? a : TODOS_METODOS))
+  return normalized.reduce((acc, cur) => acc.filter(m => cur.includes(m)))
 }
