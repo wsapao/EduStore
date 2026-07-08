@@ -172,7 +172,9 @@ export default async function ProdutoPage({
   if (!user) redirect('/login')
 
   const [{ data: produto }, { data: vinculos }] = await Promise.all([
-    supabase.from('produtos').select('*, variantes_rel:produto_variantes(*)').eq('id', id).single(),
+    // Só produto ativo é acessível pela página pública (alinha com a vitrine);
+    // inativo → data null → notFound() abaixo.
+    supabase.from('produtos').select('*, variantes_rel:produto_variantes(*)').eq('id', id).eq('ativo', true).single(),
     supabase
       .from('responsavel_aluno')
       .select('aluno:alunos(*)')

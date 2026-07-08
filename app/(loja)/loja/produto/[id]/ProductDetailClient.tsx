@@ -78,7 +78,31 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
     })
   }
 
-  const isUrgent = produto.prazo_compra && Math.ceil((new Date(produto.prazo_compra).getTime() - Date.now()) / 86400000) <= 4
+  // data_evento é date-only ('YYYY-MM-DD'): parse como data local para não exibir
+  // o dia anterior no fuso de Brasília (formatDate acima serve prazo_compra, que é
+  // timestamp completo e não sofre desse problema).
+  function formatDateOnly(iso: string) {
+    const [y, m, d] = iso.slice(0, 10).split('-').map(Number)
+    return new Date(y, m - 1, d).toLocaleDateString('pt-BR', {
+      day:'numeric', month:'long', year:'numeric'
+    })
+  }
+
+  const prazoMs = produto.prazo_compra ? new Date(produto.prazo_compra).getTime() : null
+  const isExpired = prazoMs !== null && prazoMs < Date.now()
+  // "Termina logo!" só faz sentido para prazo futuro dentro de 4 dias — nunca para prazo já vencido.
+  const isUrgent = prazoMs !== null && !isExpired && Math.ceil((prazoMs - Date.now()) / 86400000) <= 4
+
+  // Formas de pagamento reais do produto (antes eram PIX/Cartão fixos, ignorando
+  // metodos_aceitos → boleto nunca aparecia e prometíamos métodos indisponíveis).
+  const METODO_BADGES: Record<string, { label: string; bg: string; color: string }> = {
+    pix: { label: '⚡ PIX', bg: '#d1fae5', color: '#065f46' },
+    cartao: { label: '💳 Cartão', bg: '#dbeafe', color: '#1e40af' },
+    boleto: { label: '🧾 Boleto', bg: '#fef3c7', color: '#92400e' },
+  }
+  const metodosAceitos = (produto.metodos_aceitos && produto.metodos_aceitos.length > 0)
+    ? produto.metodos_aceitos
+    : ['pix', 'cartao']
 
   return (
     <div style={{ background: '#0a1220', minHeight: '100vh', paddingBottom: 100 }}>
@@ -154,7 +178,7 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
               <div style={{ background: '#f8f9fd', border: '1px solid rgba(0,0,0,.07)', borderRadius: 11, padding: '9px 11px' }}>
                 <div style={{ fontSize: 14, marginBottom: 3 }}>📅</div>
                 <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', marginBottom: 1 }}>Data do evento</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0a1628', lineHeight: 1.3 }}>{formatDate(produto.data_evento)}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#0a1628', lineHeight: 1.3 }}>{formatDateOnly(produto.data_evento)}</div>
               </div>
             )}
             {produto.prazo_compra && (
@@ -190,8 +214,13 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
               Formas de pagamento
             </div>
             <div style={{ display: 'flex', gap: 5 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: '#d1fae5', color: '#065f46' }}>⚡ PIX</div>
-              <div style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: '#dbeafe', color: '#1e40af' }}>💳 Cartão</div>
+              {metodosAceitos.map((m) => {
+                const badge = METODO_BADGES[m]
+                if (!badge) return null
+                return (
+                  <div key={m} style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: badge.bg, color: badge.color }}>{badge.label}</div>
+                )
+              })}
             </div>
           </div>
 

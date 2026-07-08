@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react'
 import { usePostHog } from 'posthog-js/react'
+import { createClient } from '@/lib/supabase/client'
 import type { Produto, Aluno } from '@/types/database'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -105,6 +106,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items))
     } catch {}
   }, [state.items])
+
+  // Limpa o carrinho ao sair da conta. Sem isso, os itens (que carregam Produto e
+  // Aluno de uma família) ficam no localStorage e "vazam" para o próximo login no
+  // mesmo navegador — ex.: tablet compartilhado, pai A sai e pai B entra.
+  useEffect(() => {
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        try { localStorage.removeItem(STORAGE_KEY) } catch {}
+        dispatch({ type: 'CLEAR' })
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   // Lock body scroll when cart is open
   useEffect(() => {
