@@ -105,10 +105,14 @@ export async function cancelarPedidoAction(pedidoId: string) {
     .select('variante_id')
     .eq('pedido_id', pedidoId)
 
+  // Guarda de status + idempotência: só cancela pedidos ainda pendentes/pagos e
+  // exige que UMA linha tenha de fato transicionado. Sem isso, cada clique
+  // re-executava restaurar_estoque_variante e inflava o estoque.
   const { data: pedidoRows, error } = await supabase
     .from('pedidos')
     .update({ status: 'cancelado' })
     .eq('id', pedidoId)
+    .in('status', ['pendente', 'pago'])
     .select('id')
 
   if (error) {
@@ -116,8 +120,9 @@ export async function cancelarPedidoAction(pedidoId: string) {
     return { success: false, error: error.message }
   }
   if (!pedidoRows || pedidoRows.length === 0) {
-    console.error('[cancelarPedidoAction] pedido não atualizado (zero rows)', { pedidoId })
-    return { success: false, error: 'Pedido não encontrado ou sem permissão.' }
+    // Já cancelado/reembolsado ou inexistente — não restaura estoque de novo.
+    console.warn('[cancelarPedidoAction] pedido não estava pendente/pago (zero rows)', { pedidoId })
+    return { success: false, error: 'Pedido não pode ser cancelado (já cancelado/reembolsado ou inexistente).' }
   }
 
   await supabase
@@ -890,6 +895,20 @@ export async function aprovarEstornoAction(
   const gatewayId = recarga?.gateway_id as string | null
   const metodo = recarga?.metodo as string | undefined
 
+  // Lock lógico: "reivindica" a solicitação com UPDATE condicional antes de
+  // chamar o Asaas. Só quem transiciona pendente→processando segue para o refund,
+  // evitando duplo estorno em duplo clique / corrida.
+  const { data: claimRows, error: claimErr } = await adminClient
+    .from('cantina_solicitacoes_estorno')
+    .update({ status: 'processando' } as any)
+    .eq('id', solicitacaoId)
+    .eq('status', 'pendente')
+    .select('id')
+  if (claimErr) return { error: claimErr.message }
+  if (!claimRows || claimRows.length === 0) {
+    return { error: 'Solicitação já está sendo processada ou não está mais pendente.' }
+  }
+
   // Estornar no Asaas PRIMEIRO (PIX/cartão). Boleto não tem estorno via API.
   if (gatewayId && metodo !== 'boleto') {
     try {
@@ -898,6 +917,12 @@ export async function aprovarEstornoAction(
       await gateway.estornarPagamento(gatewayId)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
+      // Devolve a solicitação para 'pendente' para permitir nova tentativa.
+      await adminClient
+        .from('cantina_solicitacoes_estorno')
+        .update({ status: 'pendente' } as any)
+        .eq('id', solicitacaoId)
+        .eq('status', 'processando')
       return { error: `Falha ao estornar no Asaas: ${msg}` }
     }
   }
