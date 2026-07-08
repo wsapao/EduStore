@@ -20,6 +20,15 @@ describe('resumoFinanceiro', () => {
     expect(r.porStatus).toEqual({ pago: 1, pendente: 1 })
     expect(r.porModalidade).toEqual({ futsal: 1, judo: 1 })
   })
+
+  it('retorna zeros e mapas vazios para lista vazia', () => {
+    const r = resumoFinanceiro([])
+    expect(r.totalBruto).toBe(0)
+    expect(r.totalLiquido).toBe(0)
+    expect(r.totalTaxa).toBe(0)
+    expect(r.porStatus).toEqual({})
+    expect(r.porModalidade).toEqual({})
+  })
 })
 
 describe('gerarCSV', () => {
@@ -33,5 +42,9 @@ describe('gerarCSV', () => {
   it('escapa ponto-e-vírgula e aspas', () => {
     const csv = gerarCSV([{ ...rows[0], aluno_nome: 'A;B "C"' }])
     expect(csv.split('\n')[1]).toContain('"A;B ""C"""')
+  })
+  it('escapa valor contendo \\r avulso (sem \\n)', () => {
+    const csv = gerarCSV([{ ...rows[0], aluno_nome: 'A\rB' }])
+    expect(csv.split('\n')[1]).toContain('"A\rB"')
   })
 })

@@ -53,7 +53,7 @@ const CSV_COLS: (keyof InscricaoRow)[] = [
 
 function esc(v: unknown): string {
   const s = v == null ? '' : String(v)
-  return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
 export function gerarCSV(rows: InscricaoRow[]): string {

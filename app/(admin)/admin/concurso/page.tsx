@@ -24,6 +24,8 @@ export default async function AdminConcursoPage() {
     .select('id, numero, aluno_nome, aluno_nascimento, serie_2026, modalidade, instituicao_atual, resp1_nome, resp1_cpf, resp1_email, resp1_telefone, status_pagamento, valor, valor_liquido, created_at, pago_em')
     .eq('escola_id', CONCURSO.escolaId)
     .order('created_at', { ascending: false })
+    // tripwire defensivo — volume esperado é de centenas (1 concurso/temporada); revisar se o padrão for reutilizado
+    .limit(2000)
 
   const rows = (data ?? []) as InscricaoListaRow[]
   const resumo = resumoFinanceiro(rows)
