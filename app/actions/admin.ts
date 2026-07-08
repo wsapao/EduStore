@@ -29,11 +29,13 @@ export async function confirmarPagamentoAction(pedidoId: string) {
 
   const now = new Date().toISOString()
 
-  // Atualiza pedido
+  // Atualiza pedido — só transiciona se ainda pendente (idempotência). Sem essa
+  // guarda, cada clique reconfirmava e re-emitia ingressos.
   const { data: pedidoRows, error: pedidoError } = await supabase
     .from('pedidos')
     .update({ status: 'pago', data_pagamento: now })
     .eq('id', pedidoId)
+    .eq('status', 'pendente')
     .select('id')
 
   if (pedidoError) {
@@ -41,8 +43,8 @@ export async function confirmarPagamentoAction(pedidoId: string) {
     return { success: false, error: pedidoError.message }
   }
   if (!pedidoRows || pedidoRows.length === 0) {
-    console.error('[confirmarPagamentoAction] pedido não atualizado (zero rows)', { pedidoId })
-    return { success: false, error: 'Pedido não encontrado ou sem permissão.' }
+    console.warn('[confirmarPagamentoAction] pedido não estava pendente (zero rows)', { pedidoId })
+    return { success: false, error: 'Pedido não está pendente (já confirmado, cancelado ou inexistente).' }
   }
 
   // Atualiza pagamento
@@ -60,8 +62,10 @@ export async function confirmarPagamentoAction(pedidoId: string) {
   revalidatePath(`/pedido/${pedidoId}`)
   revalidatePath('/pedidos')
 
-  // Envia email com ingressos emitidos (em background)
-  void (async () => {
+  // Envia email com ingressos emitidos. Aguardamos (await) porque em serverless o
+  // processo pode congelar após a resposta e perder promises soltas (fire-and-forget).
+  // Erros de e-mail são capturados aqui e não derrubam a confirmação do pagamento.
+  try {
     const { data: ingressos } = await supabase
       .from('ingressos')
       .select(`
@@ -91,7 +95,9 @@ export async function confirmarPagamentoAction(pedidoId: string) {
         numeroPedido: i.pedido?.pedido?.numero ?? '',
       })
     }
-  })()
+  } catch (err) {
+    console.error('[confirmarPagamentoAction] falha ao enviar e-mails de ingresso', err)
+  }
 
   return { success: true }
 }
@@ -995,6 +1001,21 @@ export async function aprovarEstornoParcialAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gatewayId = (pagamento as any)?.gateway_id as string | null
 
+  // Lock lógico contra estorno duplo (duplo clique/corrida): "reivindica" a
+  // solicitação transicionando pendente→aprovado ANTES de chamar o Asaas. Só quem
+  // conseguiu a transição (rowcount>0) segue para o refund. O CHECK da tabela só
+  // permite pendente/aprovado/negado, então não usamos um estado intermediário.
+  const { data: claimRows, error: claimErr } = await adminClient
+    .from('pedido_estornos')
+    .update({ status: 'aprovado', resolvido_em: new Date().toISOString() })
+    .eq('id', estornoId)
+    .eq('status', 'pendente')
+    .select('id')
+  if (claimErr) return { error: claimErr.message }
+  if (!claimRows || claimRows.length === 0) {
+    return { error: 'Solicitação já está sendo processada ou não está mais pendente.' }
+  }
+
   // Chamar Asaas se PIX ou cartão
   if (metodo !== 'boleto' && gatewayId) {
     try {
@@ -1004,6 +1025,13 @@ export async function aprovarEstornoParcialAction(
       await gateway.estornarParcial(gatewayId, Number((estorno as any).valor_total))
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
+      // Reverte a reivindicação para permitir nova tentativa (nenhum item foi
+      // marcado ainda; o Asaas não processou).
+      await adminClient
+        .from('pedido_estornos')
+        .update({ status: 'pendente', resolvido_em: null })
+        .eq('id', estornoId)
+        .eq('status', 'aprovado')
       return { error: `Falha no gateway: ${msg}` }
     }
   }
@@ -1032,13 +1060,7 @@ export async function aprovarEstornoParcialAction(
     }
   }
 
-  // Atualizar estorno → aprovado
-  const { error: errEstorno } = await adminClient
-    .from('pedido_estornos')
-    .update({ status: 'aprovado', resolvido_em: new Date().toISOString() })
-    .eq('id', estornoId)
-
-  if (errEstorno) return { error: errEstorno.message }
+  // O estorno já foi marcado 'aprovado' na reivindicação (lock acima).
 
   // Se todos os itens do pedido estão estornados → pedido reembolsado
   const { data: todosItens } = await adminClient
