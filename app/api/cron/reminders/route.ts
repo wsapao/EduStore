@@ -54,11 +54,23 @@ export async function GET(req: Request) {
 
     // Processa envios delegando para o EduCRM
     for (const produto of produtosAlvo) {
-      // 2. Verifica quem já comprou
-      const { data: itensComprados } = await adminClient
-        .from('item_pedido')
+      // 2. Verifica quem já comprou. Tabela correta é `itens_pedido` (a antiga
+      // `item_pedido` não existe → query falhava em silêncio e comprou_ids vinha
+      // vazio, disparando lembrete para todas as famílias, inclusive quem já comprou).
+      const { data: itensComprados, error: itensErr } = await adminClient
+        .from('itens_pedido')
         .select('aluno_id')
         .eq('produto_id', produto.id)
+
+      if (itensErr) {
+        // Não podemos assumir "ninguém comprou" (mandaria lembrete para todos):
+        // registra e pula este produto neste ciclo.
+        console.error('[cron/reminders] falha ao buscar compradores do produto', {
+          produtoId: produto.id,
+          message: itensErr.message,
+        })
+        continue
+      }
 
       const compradoresIds = (itensComprados || []).map(i => i.aluno_id)
 

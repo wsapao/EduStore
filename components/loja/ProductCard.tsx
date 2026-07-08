@@ -29,7 +29,10 @@ const DEFAULT_ICONS: Record<string, string> = {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })
+  // data_evento é date-only ('YYYY-MM-DD'): parse como data local, senão
+  // new Date('YYYY-MM-DD') vira meia-noite UTC e exibe o dia anterior em Brasília.
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })
 }
 
 function getUrgencia(prazo: string | null): { isUrgent: boolean; text: string } {
@@ -102,7 +105,8 @@ export function ProductCard({
         margin: layout === 'grid' ? '0' : '0 14px 10px',
         boxShadow: '0 2px 8px rgba(0,0,0,.06)',
         opacity: produto.esgotado ? 0.6 : 1,
-        pointerEvents: produto.esgotado ? 'none' : 'auto',
+        // Esgotado continua clicável (abre o detalhe: descrição, tamanhos, prazo);
+        // apenas o botão de compra fica bloqueado (handleAdd retorna cedo se esgotado).
         animation: `fadeUp 0.3s ease ${index * 0.04}s both`,
         cursor: 'pointer'
       }}
@@ -288,7 +292,7 @@ function getLowStockBadge({
   }
 
   if (vagasRestantes !== null && vagasRestantes !== undefined && vagasRestantes <= 10) {
-    return vagasRestantes === 0 ? 'Última vaga' : `${vagasRestantes} vagas`
+    return vagasRestantes === 0 ? 'Esgotado' : vagasRestantes === 1 ? 'Última vaga' : `${vagasRestantes} vagas`
   }
 
   return null

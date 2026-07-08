@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import type { Produto, Aluno, ProdutoVariante } from '@/types/database'
 import { useCart } from '@/components/loja/CartProvider'
+import { produtoDisponivelParaSerie } from '@/lib/crm/series-core'
 
 const CAT_THEMES: Record<string, { bg: string, text: string }> = {
   eventos:        { bg: 'linear-gradient(135deg,#a855f7,#7e22ce)', text: '#7e22ce' },
@@ -78,7 +79,31 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
     })
   }
 
-  const isUrgent = produto.prazo_compra && Math.ceil((new Date(produto.prazo_compra).getTime() - Date.now()) / 86400000) <= 4
+  // data_evento é date-only ('YYYY-MM-DD'): parse como data local para não exibir
+  // o dia anterior no fuso de Brasília (formatDate acima serve prazo_compra, que é
+  // timestamp completo e não sofre desse problema).
+  function formatDateOnly(iso: string) {
+    const [y, m, d] = iso.slice(0, 10).split('-').map(Number)
+    return new Date(y, m - 1, d).toLocaleDateString('pt-BR', {
+      day:'numeric', month:'long', year:'numeric'
+    })
+  }
+
+  const prazoMs = produto.prazo_compra ? new Date(produto.prazo_compra).getTime() : null
+  const isExpired = prazoMs !== null && prazoMs < Date.now()
+  // "Termina logo!" só faz sentido para prazo futuro dentro de 4 dias — nunca para prazo já vencido.
+  const isUrgent = prazoMs !== null && !isExpired && Math.ceil((prazoMs - Date.now()) / 86400000) <= 4
+
+  // Formas de pagamento reais do produto (antes eram PIX/Cartão fixos, ignorando
+  // metodos_aceitos → boleto nunca aparecia e prometíamos métodos indisponíveis).
+  const METODO_BADGES: Record<string, { label: string; bg: string; color: string }> = {
+    pix: { label: '⚡ PIX', bg: '#d1fae5', color: '#065f46' },
+    cartao: { label: '💳 Cartão', bg: '#dbeafe', color: '#1e40af' },
+    boleto: { label: '🧾 Boleto', bg: '#fef3c7', color: '#92400e' },
+  }
+  const metodosAceitos = (produto.metodos_aceitos && produto.metodos_aceitos.length > 0)
+    ? produto.metodos_aceitos
+    : ['pix', 'cartao']
 
   return (
     <div style={{ background: '#0a1220', minHeight: '100vh', paddingBottom: 100 }}>
@@ -154,7 +179,7 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
               <div style={{ background: '#f8f9fd', border: '1px solid rgba(0,0,0,.07)', borderRadius: 11, padding: '9px 11px' }}>
                 <div style={{ fontSize: 14, marginBottom: 3 }}>📅</div>
                 <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', marginBottom: 1 }}>Data do evento</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0a1628', lineHeight: 1.3 }}>{formatDate(produto.data_evento)}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#0a1628', lineHeight: 1.3 }}>{formatDateOnly(produto.data_evento)}</div>
               </div>
             )}
             {produto.prazo_compra && (
@@ -190,8 +215,13 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
               Formas de pagamento
             </div>
             <div style={{ display: 'flex', gap: 5 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: '#d1fae5', color: '#065f46' }}>⚡ PIX</div>
-              <div style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: '#dbeafe', color: '#1e40af' }}>💳 Cartão</div>
+              {metodosAceitos.map((m) => {
+                const badge = METODO_BADGES[m]
+                if (!badge) return null
+                return (
+                  <div key={m} style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: badge.bg, color: badge.color }}>{badge.label}</div>
+                )
+              })}
             </div>
           </div>
 
@@ -236,14 +266,20 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
                   const isSelected = aluno.id === selectedAlunoId
                   const initials = aluno.nome.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase()
                   const hexColor = aluno.cor ?? '#6366f1'
+                  // Produto segmentado só pode ser comprado para aluno da série
+                  // correspondente (o servidor também valida). Inelegível fica desabilitado.
+                  const elegivel = produtoDisponivelParaSerie(produto.series, aluno.serie ?? '')
                   return (
-                    <button 
-                      key={aluno.id} 
-                      onClick={() => setSelectedAlunoId(aluno.id)}
+                    <button
+                      key={aluno.id}
+                      onClick={() => elegivel && setSelectedAlunoId(aluno.id)}
+                      disabled={!elegivel}
+                      title={elegivel ? undefined : `Indisponível para a série ${aluno.serie ?? ''}`.trim()}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 7, padding: '7px 11px', borderRadius: 12, flexShrink: 0, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 7, padding: '7px 11px', borderRadius: 12, flexShrink: 0, cursor: elegivel ? 'pointer' : 'not-allowed',
                         border: isSelected ? `2px solid ${hexColor}` : '2px solid rgba(0,0,0,.08)',
                         background: isSelected ? `${hexColor}15` : 'white',
+                        opacity: elegivel ? 1 : 0.45,
                         textAlign: 'left'
                       }}
                     >

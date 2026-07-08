@@ -101,7 +101,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
               background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)',
               borderRadius: 99, padding: '3px 10px', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.6)'
             }}>
-              {selectedAluno.serie} · {selectedAluno.turma}
+              {selectedAluno.serie}{selectedAluno.turma ? ` · ${selectedAluno.turma}` : ''}
             </div>
             <button 
               onClick={() => setShowChildSelector(!showChildSelector)}

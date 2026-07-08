@@ -23,7 +23,18 @@ const VARIANTES_PRESETS = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function toDatetimeLocal(iso: string | null) {
   if (!iso) return ''
-  return iso.slice(0, 16) // "YYYY-MM-DDTHH:MM"
+  // O instante é armazenado em UTC; convertemos para o horário de Brasília para
+  // preencher o input datetime-local, casando com o que foi digitado ao salvar.
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso.slice(0, 16)
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(d)
+  const g = (t: string) => parts.find(p => p.type === t)?.value ?? ''
+  const hour = g('hour') === '24' ? '00' : g('hour') // alguns ambientes retornam "24" para meia-noite
+  return `${g('year')}-${g('month')}-${g('day')}T${hour}:${g('minute')}`
 }
 
 function toDateLocal(iso: string | null) {

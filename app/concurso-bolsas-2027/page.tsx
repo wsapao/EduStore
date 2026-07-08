@@ -57,35 +57,15 @@ export default function ConcursoBolsasPage() {
           borderBottom: '1px solid #eef1f6',
         }}
       >
-        {/*
-          Monograma-fallback da logo. Quando a escola enviar o arquivo oficial
-          para public/concurso/logo-esjt.png, substituir este bloco por:
-          <img src="/concurso/logo-esjt.png" alt="Educandário São Judas Tadeu" style={{ height: 46 }} />
-        */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 9,
-              background: ESJT.navy,
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              fontSize: 13,
-              flexShrink: 0,
-            }}
-          >
-            ESJT
-          </span>
-          <span style={{ fontWeight: 800, color: ESJT.navy, lineHeight: 1.1, fontSize: 14 }}>
-            Educandário
-            <br />
-            São Judas Tadeu
-          </span>
-        </div>
+        {/* Logo oficial (public/concurso/logo-esjt.png, otimizada do storage da escola) */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/concurso/logo-esjt.png"
+          alt="Educandário São Judas Tadeu"
+          width={52}
+          height={52}
+          style={{ height: 52, width: 52, flexShrink: 0 }}
+        />
 
         <nav
           style={{
