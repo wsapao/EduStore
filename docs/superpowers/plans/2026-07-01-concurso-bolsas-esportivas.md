@@ -1052,6 +1052,8 @@ export default function ConcursoLayout({ children }: { children: React.ReactNode
 
 ---
 
+> **Nota (Task 9 implementada):** o CTA "Inscreva-se" do header aponta para a ROTA `/concurso-bolsas-2027/inscricao` (não para âncora `#inscricao` como o texto original sugeria) — intencional, pois a inscrição é uma página própria (Task 10), não uma seção da landing.
+
 ### Task 10: Página pública — formulário (wizard) + tela Pix
 
 > **⚠️ ATUALIZAÇÃO (review da Task 5):** quando `criarInscricaoConcurso` falha COM `inscricao_id` no resultado (gateway falhou após gravar), o botão "Tentar novamente" deve chamar `gerarNovoPixInscricao(inscricao_id)` — NÃO reenviar o formulário (evita inscrições duplicadas órfãs).
