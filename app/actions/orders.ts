@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { getGateway } from '@/lib/pagamentos/gateway'
 import { arredondarCentavos } from '@/lib/pagamentos/money'
+import { produtoDisponivelParaSerie } from '@/lib/crm/series-core'
 import { enviarEmailCheckout } from '@/lib/email/checkout'
 import { isLojaDisponivelAgora, normalizeLojaFuncionamento } from '@/lib/loja-online/config'
 import { sincronizarPixExpiradoPedido } from '@/lib/pagamentos/pix'
@@ -83,15 +84,23 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
 
   // Valida que todos os alunos do carrinho pertencem a este responsável
   const alunoIds = Array.from(new Set(input.items.map(i => i.aluno_id).filter(Boolean)))
+  // Série de cada aluno (para validar restrição de série do produto no servidor).
+  const alunoSerieMap = new Map<string, string>()
   if (alunoIds.length > 0) {
     const { data: vinculos } = await supabase
       .from('responsavel_aluno')
-      .select('aluno_id')
+      .select('aluno_id, aluno:alunos(serie)')
       .eq('responsavel_id', user.id)
       .in('aluno_id', alunoIds)
     const permitidos = new Set((vinculos ?? []).map(v => v.aluno_id))
     if (alunoIds.some(id => !permitidos.has(id))) {
       return { success: false, error: 'Um ou mais alunos selecionados não pertencem a você.' }
+    }
+    for (const v of vinculos ?? []) {
+      // A relação to-one pode vir como objeto ou array conforme a inferência do supabase-js.
+      const rel = (v as { aluno?: { serie?: string | null } | { serie?: string | null }[] }).aluno
+      const alunoObj = Array.isArray(rel) ? rel[0] : rel
+      alunoSerieMap.set(v.aluno_id, alunoObj?.serie ?? '')
     }
   }
 
@@ -100,7 +109,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
   const productIds = Array.from(new Set(input.items.map(i => i.produto_id)))
   const { data: dbProdutos } = await supabase
     .from('produtos')
-    .select('id, nome, preco, preco_promocional, aceita_vouchers, imagem_url, gera_ingresso, ativo, esgotado, prazo_compra, estoque')
+    .select('id, nome, preco, preco_promocional, aceita_vouchers, imagem_url, gera_ingresso, ativo, esgotado, prazo_compra, estoque, series')
     .in('id', productIds)
   const produtosMap = new Map((dbProdutos ?? []).map(p => [p.id, p]))
 
@@ -128,6 +137,12 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     // Estoque a nível de produto (sem variante). Variantes são checadas depois.
     if (!item.variante_id && dbProd.estoque !== null && dbProd.estoque <= 0) {
       return { success: false, error: `O produto "${dbProd.nome}" está sem estoque. Remova-o do carrinho para continuar.` }
+    }
+    // Restrição de série: produto segmentado só pode ser comprado para aluno da
+    // série correspondente (comparação normalizada — "1º ano EM" ≡ "1ª Série EM").
+    // Rede de segurança do servidor: o seletor do cliente pode estar stale/burlado.
+    if (!produtoDisponivelParaSerie((dbProd as { series?: string[] | null }).series, alunoSerieMap.get(item.aluno_id) ?? '')) {
+      return { success: false, error: `O produto "${dbProd.nome}" não está disponível para a série do aluno selecionado.` }
     }
 
     // preco_promocional = 0 NÃO significa produto grátis: trata 0 como "sem

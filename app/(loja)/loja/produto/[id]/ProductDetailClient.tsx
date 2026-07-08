@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import type { Produto, Aluno, ProdutoVariante } from '@/types/database'
 import { useCart } from '@/components/loja/CartProvider'
+import { produtoDisponivelParaSerie } from '@/lib/crm/series-core'
 
 const CAT_THEMES: Record<string, { bg: string, text: string }> = {
   eventos:        { bg: 'linear-gradient(135deg,#a855f7,#7e22ce)', text: '#7e22ce' },
@@ -265,14 +266,20 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
                   const isSelected = aluno.id === selectedAlunoId
                   const initials = aluno.nome.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase()
                   const hexColor = aluno.cor ?? '#6366f1'
+                  // Produto segmentado só pode ser comprado para aluno da série
+                  // correspondente (o servidor também valida). Inelegível fica desabilitado.
+                  const elegivel = produtoDisponivelParaSerie(produto.series, aluno.serie ?? '')
                   return (
-                    <button 
-                      key={aluno.id} 
-                      onClick={() => setSelectedAlunoId(aluno.id)}
+                    <button
+                      key={aluno.id}
+                      onClick={() => elegivel && setSelectedAlunoId(aluno.id)}
+                      disabled={!elegivel}
+                      title={elegivel ? undefined : `Indisponível para a série ${aluno.serie ?? ''}`.trim()}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 7, padding: '7px 11px', borderRadius: 12, flexShrink: 0, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 7, padding: '7px 11px', borderRadius: 12, flexShrink: 0, cursor: elegivel ? 'pointer' : 'not-allowed',
                         border: isSelected ? `2px solid ${hexColor}` : '2px solid rgba(0,0,0,.08)',
                         background: isSelected ? `${hexColor}15` : 'white',
+                        opacity: elegivel ? 1 : 0.45,
                         textAlign: 'left'
                       }}
                     >
