@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { getGateway } from '@/lib/pagamentos/gateway'
+import { arredondarCentavos } from '@/lib/pagamentos/money'
 import { enviarEmailCheckout } from '@/lib/email/checkout'
 import { isLojaDisponivelAgora, normalizeLojaFuncionamento } from '@/lib/loja-online/config'
 import { sincronizarPixExpiradoPedido } from '@/lib/pagamentos/pix'
@@ -28,11 +29,18 @@ export interface CreateOrderInput {
   dadosCartao?: DadosCartao
   voucher_codigo?: string
   termo_aceito?: boolean
+  /**
+   * Total (dos produtos, antes de desconto de cupom) exibido ao cliente no
+   * momento do checkout. Usado apenas para detectar divergência de preço com o
+   * valor recalculado no servidor — não é usado para cobrar.
+   */
+  total_exibido?: number
 }
 
 export type CreateOrderResult =
   | { success: true; pedido_id: string }
   | { success: false; error: string }
+  | { success: false; error: string; precoAtualizado: true; totalReal: number }
 
 export async function createOrderAction(input: CreateOrderInput): Promise<CreateOrderResult> {
   const supabase = await createClient()
@@ -87,24 +95,66 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     }
   }
 
-  // Busca preços reais e vouchers do DB (Segurança)
+  // Busca preços reais e vouchers do DB (Segurança). Inclui os campos de
+  // disponibilidade para validar item stale (aba antiga/carrinho antigo).
   const productIds = Array.from(new Set(input.items.map(i => i.produto_id)))
-  const { data: dbProdutos } = await supabase.from('produtos').select('id, nome, preco, preco_promocional, aceita_vouchers, imagem_url, gera_ingresso').in('id', productIds)
+  const { data: dbProdutos } = await supabase
+    .from('produtos')
+    .select('id, nome, preco, preco_promocional, aceita_vouchers, imagem_url, gera_ingresso, ativo, esgotado, prazo_compra, estoque')
+    .in('id', productIds)
   const produtosMap = new Map((dbProdutos ?? []).map(p => [p.id, p]))
 
-  // Validação do carrinho vs DB
+  const agora = Date.now()
+
+  // Validação do carrinho vs DB. Retorna erro amigável (não lança exceção) para
+  // que o cliente saiba exatamente qual item remover.
   let subtotalElegivel = 0
   let totalCalculado = 0
-  const safeItems = input.items.map(item => {
+  const safeItems: (CartItemInput & { preco_unitario: number })[] = []
+  for (const item of input.items) {
     const dbProd = produtosMap.get(item.produto_id)
-    if (!dbProd) throw new Error('Produto não encontrado.')
-    
-    const precoReal = dbProd.preco_promocional ?? dbProd.preco
+    if (!dbProd) {
+      return { success: false, error: `O produto "${item.nome ?? 'selecionado'}" não está mais disponível. Remova-o do carrinho e tente novamente.` }
+    }
+    if (dbProd.ativo === false) {
+      return { success: false, error: `O produto "${dbProd.nome}" não está mais à venda. Remova-o do carrinho para continuar.` }
+    }
+    if (dbProd.esgotado === true) {
+      return { success: false, error: `O produto "${dbProd.nome}" está esgotado. Remova-o do carrinho para continuar.` }
+    }
+    if (dbProd.prazo_compra && new Date(dbProd.prazo_compra).getTime() < agora) {
+      return { success: false, error: `O prazo de compra do produto "${dbProd.nome}" já encerrou. Remova-o do carrinho para continuar.` }
+    }
+    // Estoque a nível de produto (sem variante). Variantes são checadas depois.
+    if (!item.variante_id && dbProd.estoque !== null && dbProd.estoque <= 0) {
+      return { success: false, error: `O produto "${dbProd.nome}" está sem estoque. Remova-o do carrinho para continuar.` }
+    }
+
+    // preco_promocional = 0 NÃO significa produto grátis: trata 0 como "sem
+    // promoção" (usa o preço cheio). Só usa a promoção quando > 0.
+    const promo = dbProd.preco_promocional
+    const precoReal = (promo !== null && promo !== undefined && promo > 0) ? promo : dbProd.preco
     totalCalculado += precoReal
     if (dbProd.aceita_vouchers) subtotalElegivel += precoReal
 
-    return { ...item, preco_unitario: precoReal }
-  })
+    safeItems.push({ ...item, preco_unitario: precoReal })
+  }
+
+  // C6: compara o total exibido ao cliente com o total real recalculado. Se
+  // divergir (preço mudou entre a montagem do carrinho e o checkout), aborta e
+  // pede reconfirmação — nunca cobra silenciosamente um valor diferente do exibido.
+  if (input.total_exibido !== undefined) {
+    const exibidoCentavos = Math.round(input.total_exibido * 100)
+    const realCentavos = Math.round(totalCalculado * 100)
+    if (exibidoCentavos !== realCentavos) {
+      return {
+        success: false,
+        precoAtualizado: true,
+        totalReal: Math.round(totalCalculado * 100) / 100,
+        error: 'O preço de um ou mais itens foi atualizado. Confira o novo total antes de confirmar.',
+      }
+    }
+  }
 
   // Leituras/RPCs privilegiadas rodam via service role. O SELECT de vouchers
   // foi revogado de authenticated para impedir enumeração de códigos; aqui
@@ -130,14 +180,16 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     if (voucher.compra_minima !== null && subtotalElegivel < voucher.compra_minima) return { success: false, error: 'O valor elegível não atinge a compra mínima do cupom.' }
 
     if (voucher.tipo_desconto === 'percentual') {
-      descontoAplicado = subtotalElegivel * (voucher.valor / 100)
+      // Arredonda o desconto para centavos: sem isso, um percentual gera valores
+      // com 3+ casas gravados no pedido e enviados ao Asaas (cobrado ≠ exibido).
+      descontoAplicado = arredondarCentavos(subtotalElegivel * (voucher.valor / 100))
     } else {
-      descontoAplicado = Math.min(voucher.valor, subtotalElegivel)
+      descontoAplicado = Math.min(arredondarCentavos(voucher.valor), subtotalElegivel)
     }
     voucherIdParaSalvar = voucher.id
   }
 
-  const finalTotal = Math.max(0, totalCalculado - descontoAplicado)
+  const finalTotal = arredondarCentavos(Math.max(0, totalCalculado - descontoAplicado))
   const itensComVariante = safeItems.filter((item) => item.variante_id)
 
   if (itensComVariante.length > 0) {
@@ -234,24 +286,37 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
       .rpc('incrementar_uso_voucher', { p_voucher_id: voucherIdParaSalvar })
 
     if (!incrementado) {
-      // Limite atingido em concorrência — desfaz pedido e estoque já reservado
+      // Limite atingido em concorrência — desfaz pedido/itens. Nenhuma variante
+      // foi reservada ainda (a reserva vem depois), então NÃO restaura estoque
+      // aqui (isso incrementaria estoque nunca decrementado → oversell).
       await supabase.from('itens_pedido').delete().eq('pedido_id', pedido.id)
       await supabase.from('pedidos').delete().eq('id', pedido.id)
-      await restaurarEstoqueVariantes(supabase, input.items)
       return { success: false, error: 'Cupom esgotado. Tente finalizar sem o cupom.' }
     }
   }
 
+  // Reserva estoque das variantes, rastreando o que foi de fato decrementado
+  // para desfazer só isso em caso de falha parcial (item N falha → restaura 1..N-1).
+  const variantesReservadas: string[] = []
   for (const item of itensComVariante) {
     if (!item.variante_id) continue
     const { data: reservado, error: reservaError } = await adminClient
       .rpc('reservar_estoque_variante', { p_variante_id: item.variante_id })
 
     if (reservaError || !reservado) {
+      // Desfaz as reservas já feitas antes de abortar.
+      for (const varianteId of variantesReservadas) {
+        await adminClient.rpc('restaurar_estoque_variante', { p_variante_id: varianteId })
+      }
+      // Devolve o uso do voucher consumido acima.
+      if (voucherIdParaSalvar) {
+        await decrementarUsoVoucher(adminClient, voucherIdParaSalvar)
+      }
       await supabase.from('itens_pedido').delete().eq('pedido_id', pedido.id)
       await supabase.from('pedidos').delete().eq('id', pedido.id)
       return { success: false, error: `O estoque da variante ${item.variante ?? ''} acabou enquanto você finalizava o pedido.`.trim() }
     }
+    variantesReservadas.push(item.variante_id)
   }
 
   // 3. Chama gateway de pagamento
@@ -289,7 +354,15 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
       descricao: detalhe.message,
       metadata: detalhe,
     })
-    await restaurarEstoqueVariantes(supabase, input.items)
+    // Reverte tudo que foi criado: estoque reservado, uso do voucher e o
+    // pedido/itens órfãos (senão acumulam pedidos 'pendentes' impagáveis e o
+    // cupom de uso único queima sem venda).
+    await restaurarEstoqueVariantes(supabase, safeItems)
+    if (voucherIdParaSalvar) {
+      await decrementarUsoVoucher(adminClient, voucherIdParaSalvar)
+    }
+    await supabase.from('itens_pedido').delete().eq('pedido_id', pedido.id)
+    await supabase.from('pedidos').delete().eq('id', pedido.id)
     return { success: false, error: 'Erro ao processar pagamento. Tente novamente.' }
   }
 
@@ -317,8 +390,46 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
 
   const { error: pagErr } = await supabase.from('pagamentos').insert(pagamentoData)
   if (pagErr) {
-    await restaurarEstoqueVariantes(supabase, input.items)
-    return { success: false, error: 'Erro ao registrar pagamento.' }
+    // A cobrança JÁ existe no gateway (cartão pode ter sido cobrado agora). Não
+    // podemos simplesmente devolver estoque e mandar o usuário refazer — isso
+    // arrisca cobrança dupla e deixa a cobrança órfã (webhook procura por
+    // gateway_id e não acharia). Garantimos a persistência do gateway_id para
+    // reconciliação: tenta um insert mínimo e, se falhar, registra na auditoria.
+    console.error('[finalizarPedidoAction] insert de pagamento falhou', {
+      pedidoId: pedido.id,
+      gatewayId: resultado.gateway_id,
+      code: pagErr.code,
+      message: pagErr.message,
+    })
+
+    const { error: pagMinErr } = await supabase.from('pagamentos').insert({
+      pedido_id: pedido.id,
+      metodo: input.metodo,
+      gateway_id: resultado.gateway_id,
+      total: finalTotal,
+      parcelas: input.parcelas ?? 1,
+      status: resultado.status,
+    })
+
+    await auditLog({
+      modulo: 'checkout',
+      acao: 'pagamento_insert_falhou',
+      descricao: pagErr.message,
+      metadata: {
+        pedidoId: pedido.id,
+        gatewayId: resultado.gateway_id,
+        metodo: input.metodo,
+        total: finalTotal,
+        reconciliacaoMinima: !pagMinErr,
+      },
+    })
+
+    // O pedido segue 'pendente' vinculado ao gateway_id; o webhook reconcilia.
+    // Não devolvemos estoque nem apagamos o pedido para não perder a cobrança.
+    return {
+      success: true,
+      pedido_id: pedido.id,
+    }
   }
 
   // 5. Se cartão aprovado, atualiza status do pedido
@@ -342,9 +453,10 @@ export async function createOrderAction(input: CreateOrderInput): Promise<Create
     }
   }
 
-  // 6. Envia email de confirmação do pedido (em background — não bloqueia).
-  // Cartão aprovado na hora recebe direto o e-mail de pagamento confirmado.
-  void enviarEmailCheckout({
+  // 6. Envia email de confirmação do pedido. Aguardamos (await) porque em
+  // serverless o processo pode congelar após a resposta e perder promises soltas.
+  // A função captura os próprios erros — falha de e-mail não derruba o checkout.
+  await enviarEmailCheckout({
     client: supabase,
     responsavel: { nome: responsavel.nome, email: responsavel.email },
     escolaId: responsavel.escola_id,
@@ -383,6 +495,25 @@ async function restaurarEstoqueVariantes(
   for (const item of items) {
     if (!item.variante_id) continue
     await adminClient.rpc('restaurar_estoque_variante', { p_variante_id: item.variante_id })
+  }
+}
+
+/**
+ * Devolve um uso do voucher (usado quando um checkout que já incrementou o
+ * contador é revertido). Usa a RPC atômica; falha silenciosa não deve derrubar
+ * o fluxo de reversão em andamento.
+ */
+async function decrementarUsoVoucher(
+  adminClient: ReturnType<typeof createAdminClient>,
+  voucherId: string,
+) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await adminClient.rpc('decrementar_uso_voucher' as any, { p_voucher_id: voucherId })
+  if (error) {
+    console.error('[decrementarUsoVoucher] falha ao devolver uso do voucher', {
+      voucherId,
+      message: error.message,
+    })
   }
 }
 
@@ -444,6 +575,21 @@ export async function renovarPixAction(pedidoId: string): Promise<RenovarPixResu
 
   if (resultado.metodo !== 'pix') {
     return { success: false, error: 'Resposta inesperada do gateway.' }
+  }
+
+  // Cancela a cobrança PIX antiga no Asaas para que o QR antigo deixe de ser
+  // pagável (evita pagamento duplo / pagamento "perdido" numa cobrança órfã que
+  // não está mais vinculada ao pedido após o gateway_id ser sobrescrito).
+  // Best-effort: não bloqueia a renovação se o cancelamento falhar.
+  if (pag.gateway_id && pag.gateway_id !== resultado.gateway_id) {
+    try {
+      await getGateway().cancelarPagamento(pag.gateway_id)
+    } catch (err) {
+      console.warn('[renovarPixAction] falha ao cancelar cobrança PIX antiga', {
+        gatewayIdAntigo: pag.gateway_id,
+        message: err instanceof Error ? err.message : String(err),
+      })
+    }
   }
 
   // Atualiza pagamento com novo PIX

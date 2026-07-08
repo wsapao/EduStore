@@ -48,7 +48,9 @@ export interface ResultadoPix {
 export interface ResultadoCartao {
   metodo: 'cartao'
   gateway_id: string
-  status: 'confirmado' | 'falhou'
+  // 'aguardando' cobre AWAITING_RISK_ANALYSIS (cartão em análise antifraude):
+  // a cobrança existe e pode ser aprovada pelo webhook — não induzir refazer.
+  status: 'confirmado' | 'falhou' | 'aguardando'
   parcelas: number
   bandeira?: string
   ultimos_digitos?: string
