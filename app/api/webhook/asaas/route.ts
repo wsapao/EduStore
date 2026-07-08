@@ -9,7 +9,7 @@
  * Documentação: https://docs.asaas.com/reference/webhook-1
  */
 import { createAdminClient } from '@/lib/supabase/admin'
-import { enviarEmailIngresso, enviarEmailPedidoPago } from '@/lib/email/send'
+import { enviarEmailIngresso, enviarEmailPedidoPago, enviarEmailRecargaAprovada } from '@/lib/email/send'
 import { resolverTemplatePedido } from '@/lib/email/resolver-template'
 import { SITE_URL } from '@/lib/email/resend'
 import { agruparItensEmail, formatarAlunoLabel, fmtBRL, type ItemEmailUnitario } from '@/lib/email/pedido-helpers'
@@ -208,6 +208,67 @@ async function enviarEmailPedidoPagoWebhook(
   }
 }
 
+async function enviarEmailRecargaAprovadaWebhook(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  recargaId: string,
+): Promise<void> {
+  try {
+    const { data: recarga } = await supabase
+      .from('cantina_recargas')
+      .select(`
+        id, valor, metodo,
+        carteira:cantina_carteiras!carteira_id(saldo, aluno_id, escola_id, aluno:alunos(nome)),
+        responsavel:responsaveis(nome, email)
+      `)
+      .eq('id', recargaId)
+      .single()
+
+    const carteira = Array.isArray(recarga?.carteira) ? recarga.carteira[0] : recarga?.carteira
+    const responsavel = Array.isArray(recarga?.responsavel) ? recarga.responsavel[0] : recarga?.responsavel
+    if (!recarga || !carteira || !responsavel?.email) return
+
+    const aluno = Array.isArray(carteira.aluno) ? carteira.aluno[0] : carteira.aluno
+    const alunoNome = aluno?.nome ?? ''
+
+    let escolaNome: string | null = null
+    if (carteira.escola_id) {
+      const { data: escola } = await supabase
+        .from('escolas').select('nome').eq('id', carteira.escola_id).maybeSingle()
+      escolaNome = escola?.nome ?? null
+    }
+
+    const carteiraUrl = `${SITE_URL}/cantina/${carteira.aluno_id}`
+    const { assunto, aberturaHtml } = await resolverTemplatePedido({
+      escolaId: carteira.escola_id ?? null,
+      tipo: 'recarga_cantina_aprovada',
+      vars: {
+        nome_responsavel: responsavel.nome,
+        nome_aluno: alunoNome,
+        valor: fmtBRL(recarga.valor),
+        saldo_atual: fmtBRL(carteira.saldo),
+        nome_escola: escolaNome ?? '',
+      },
+      client: supabase,
+    })
+
+    await enviarEmailRecargaAprovada(responsavel.email, {
+      assunto,
+      aberturaHtml,
+      responsavelNome: responsavel.nome,
+      alunoNome,
+      valor: recarga.valor,
+      saldoAtual: carteira.saldo,
+      metodo: recarga.metodo ?? 'pix',
+      dataConfirmacao: new Date().toISOString(),
+      carteiraUrl,
+      escolaNome,
+    })
+  } catch (err) {
+    console.error('[webhook/asaas] Erro ao enviar e-mail de recarga aprovada:', err)
+  }
+}
+
 // ── Handler principal ──────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
@@ -273,6 +334,14 @@ export async function POST(request: Request) {
   if (payment.externalReference?.startsWith('recarga:')) {
     const recargaId = payment.externalReference.slice('recarga:'.length)
     const supabase = createAdminClient()
+
+    // Status antes da RPC — evita e-mail duplicado em reenvios do Asaas
+    const { data: recargaAntes } = await supabase
+      .from('cantina_recargas' as never)
+      .select('status')
+      .eq('id', recargaId)
+      .maybeSingle<{ status: string }>()
+
     const { error: rpcErr } = await supabase.rpc('confirmar_recarga' as any, {
       p_recarga_id: recargaId,
     })
@@ -281,6 +350,11 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, error: rpcErr.message }, { status: 500 })
     }
     console.log(`[webhook/asaas] Recarga ${recargaId} confirmada via webhook.`)
+
+    // E-mail de recarga aprovada em background (só na 1ª confirmação)
+    if (recargaAntes?.status === 'aguardando') {
+      void enviarEmailRecargaAprovadaWebhook(supabase, recargaId)
+    }
     return Response.json({ ok: true })
   }
 
