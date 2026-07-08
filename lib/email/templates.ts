@@ -8,7 +8,7 @@ import {
 } from './pedido-helpers'
 
 // ── Layout base ───────────────────────────────────────────────────────────────
-function base(title: string, content: string) {
+function base(title: string, content: string, escolaNome?: string | null) {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -25,8 +25,8 @@ function base(title: string, content: string) {
         <tr>
           <td style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:28px 32px;text-align:center;">
             <div style="font-size:28px;margin-bottom:8px;">🏫</div>
-            <div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-.02em;">Loja Escolar</div>
-            <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;">Colégio Inovação</div>
+            <div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-.02em;">${escolaNome ? escapeHtml(escolaNome) : 'Loja da sua escola'}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;">Xkola Store</div>
           </td>
         </tr>
 
@@ -39,7 +39,7 @@ function base(title: string, content: string) {
         <tr>
           <td style="background:#f8fafc;padding:20px 32px;text-align:center;border-top:1px solid #e2e8f0;">
             <p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.6;">
-              Você recebeu este email porque realizou uma compra na Loja Escolar.<br>
+              Você recebeu este email porque realizou uma compra na loja da sua escola.<br>
               Em caso de dúvidas, entre em contato com a secretaria do colégio.
             </p>
           </td>
