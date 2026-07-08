@@ -104,6 +104,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { chave: 'configuracoes.gerenciar_papeis',      rotulo: 'Gerenciar papéis' },
     ],
   },
+  {
+    modulo: 'concurso', rotulo: 'Concurso de Bolsas',
+    permissoes: [
+      { chave: 'concurso.ver', rotulo: 'Ver inscrições do concurso' },
+    ],
+  },
 ]
 
 export const PERMISSION_KEYS: string[] = PERMISSION_GROUPS.flatMap(

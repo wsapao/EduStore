@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, ReceiptText, PackageSearch, GraduationCap, Store, MoreHorizontal,
-  Users, Camera, ClipboardList, TrendingUp, Coffee, Tags, Ticket, Settings,
+  Users, Camera, ClipboardList, TrendingUp, Coffee, Tags, Ticket, Settings, Trophy,
   ExternalLink, LogOut, X,
 } from 'lucide-react'
 import { ADMIN_MOBILE_NAV_CLASS_NAME } from '@/lib/admin-shell-layout'
@@ -24,6 +24,7 @@ const PRIMARY_LINKS: MobileLink[] = [
 ]
 
 const MORE_LINKS: MobileLink[] = [
+  { href: '/admin/concurso',            label: 'Concurso',        icon: Trophy,        perm: 'concurso.ver' },
   { href: '/admin/responsaveis',        label: 'Responsáveis',    icon: Users,         perm: 'responsaveis.ver' },
   { href: '/admin/checkin',             label: 'Check-in',        icon: Camera,        perm: 'checkin.usar' },
   { href: '/admin/relatorio',           label: 'Relatório',       icon: ClipboardList, perm: 'relatorios.ver' },

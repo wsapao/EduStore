@@ -15,6 +15,7 @@ import {
   Tags,
   Ticket,
   TrendingUp,
+  Trophy,
   ExternalLink,
   LogOut,
   Settings,
@@ -52,6 +53,7 @@ export function AdminSidebar({
   const mainLinks: LinkItem[] = [
     { href: '/admin',              label: 'Dashboard',       icon: LayoutDashboard, perm: null },
     { href: '/admin/pedidos',      label: 'Pedidos',         icon: ReceiptText,     perm: 'pedidos.ver' },
+    { href: '/admin/concurso',     label: 'Concurso',        icon: Trophy,          perm: 'concurso.ver' },
     { href: '/admin/produtos',     label: 'Produtos',        icon: PackageSearch,   perm: 'produtos.ver' },
     { href: '/admin/responsaveis', label: 'Responsáveis',    icon: Users,           perm: 'responsaveis.ver' },
     { href: '/admin/alunos',       label: 'Alunos',          icon: GraduationCap,   perm: 'alunos.ver' },
