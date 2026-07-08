@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   criarInscricaoConcurso,
@@ -130,12 +130,15 @@ function Campo({
 }) {
   return (
     <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
-      <label style={lbl}>
-        {label}
-        {obrigatorio ? ' *' : ''}
-        {hint ? <span style={{ color: ESJT.red, fontWeight: 500 }}> ({hint})</span> : null}
+      {/* Controle DENTRO do <label> → associação implícita p/ leitores de tela. */}
+      <label style={{ display: 'block' }}>
+        <span style={lbl}>
+          {label}
+          {obrigatorio ? ' *' : ''}
+          {hint ? <span style={{ color: ESJT.red, fontWeight: 500 }}> ({hint})</span> : null}
+        </span>
+        {children}
       </label>
-      {children}
     </div>
   )
 }
@@ -210,7 +213,12 @@ export function InscricaoClient() {
   const [expirado, setExpirado] = useState(false)
   const [resp2Aberto, setResp2Aberto] = useState(false)
   const [copiado, setCopiado] = useState(false)
+  const [copiaManual, setCopiaManual] = useState(false)
   const [msRestantes, setMsRestantes] = useState(0)
+
+  const pixInputRef = useRef<HTMLInputElement>(null)
+  const enviandoRef = useRef(false)   // trava síncrona contra duplo clique (antes do re-render)
+  const pollingRef = useRef(false)    // impede sobreposição de ticks do polling
 
   const set = useCallback(<K extends keyof InscricaoInput>(campo: K, valor: InscricaoInput[K]) => {
     setForm(f => ({ ...f, [campo]: valor }))
@@ -244,6 +252,8 @@ export function InscricaoClient() {
   // ── Submit / retry de Pix ──
 
   async function confirmar() {
+    if (enviandoRef.current) return // duplo clique antes do re-render não reenvia
+    enviandoRef.current = true
     setEnviando(true)
     setErro(null)
     try {
@@ -257,6 +267,7 @@ export function InscricaoClient() {
     } catch {
       setErro('Não foi possível enviar a inscrição. Verifique a conexão e tente novamente.')
     } finally {
+      enviandoRef.current = false
       setEnviando(false)
     }
   }
@@ -290,6 +301,9 @@ export function InscricaoClient() {
       if (res.success) {
         setResultado({ ...resultado, pix: res.pix })
         setExpirado(false)
+      } else if (res.error === 'Esta inscrição já está paga.') {
+        // Pagamento compensou depois da expiração local — não é erro, é sucesso.
+        setPago(true)
       } else {
         setErro(res.error)
       }
@@ -300,7 +314,8 @@ export function InscricaoClient() {
     }
   }
 
-  // ── Contador regressivo (1s) — expira também localmente ao chegar em 0 ──
+  // ── Contador regressivo (1s) — ao chegar em 0, checa o status uma última vez
+  //    (o pagamento pode ter compensado no limite) antes de marcar como expirado ──
 
   useEffect(() => {
     if (!resultado || pago || expirado) return
@@ -310,39 +325,77 @@ export function InscricaoClient() {
       const ms = calc()
       setMsRestantes(ms)
       if (ms <= 0) {
-        setExpirado(true)
         clearInterval(iv)
+        void (async () => {
+          try {
+            const res = await consultarStatusInscricao(resultado.inscricao_id)
+            if ('status' in res && res.status === 'pago') {
+              setPago(true)
+              return
+            }
+          } catch {
+            // rede instável — segue para o estado expirado
+          }
+          setExpirado(true)
+        })()
       }
     }, 1000)
     return () => clearInterval(iv)
   }, [resultado, pago, expirado])
 
-  // ── Polling do status (5s) ──
+  // ── Polling do status (5s) — tolerante a falhas transitórias, sem ticks sobrepostos ──
 
   useEffect(() => {
     if (!resultado || pago || expirado) return
     const iv = setInterval(async () => {
-      const res = await consultarStatusInscricao(resultado.inscricao_id)
-      if ('error' in res) return
-      if (res.status === 'pago') {
-        clearInterval(iv)
-        setPago(true)
-      } else if (res.status === 'expirado') {
-        clearInterval(iv)
-        setExpirado(true)
+      if (pollingRef.current) return
+      pollingRef.current = true
+      try {
+        const res = await consultarStatusInscricao(resultado.inscricao_id)
+        if ('error' in res) return
+        if (res.status === 'pago') {
+          clearInterval(iv)
+          setPago(true)
+        } else if (res.status === 'expirado') {
+          clearInterval(iv)
+          setExpirado(true)
+        }
+      } catch {
+        // falha transitória de rede — tenta no próximo tick
+      } finally {
+        pollingRef.current = false
       }
     }, 5000)
     return () => clearInterval(iv)
   }, [resultado, pago, expirado])
 
+  // ── Guarda de saída: evita perder o formulário preenchido ou o QR Code não pago ──
+
+  useEffect(() => {
+    if (pago) return
+    const sujo = form !== FORM_INICIAL || resultado !== null
+    if (!sujo) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = '' // navegadores legados exigem returnValue
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [form, resultado, pago])
+
   const copiarPix = useCallback(async () => {
     if (!resultado) return
     try {
+      if (!navigator.clipboard) throw new Error('clipboard indisponível')
       await navigator.clipboard.writeText(resultado.pix.qr_code)
       setCopiado(true)
+      setCopiaManual(false)
       setTimeout(() => setCopiado(false), 2000)
     } catch {
-      // clipboard indisponível (contexto não seguro / WebView antiga)
+      // clipboard indisponível (contexto não seguro / WebView antiga) → seleção manual
+      pixInputRef.current?.focus()
+      pixInputRef.current?.select()
+      setCopiaManual(true)
     }
   }, [resultado])
 
@@ -468,6 +521,7 @@ export function InscricaoClient() {
         <div style={{ fontSize: 11, color: ESJT.gray, marginBottom: 4 }}>Pix copia e cola</div>
         <div style={{ display: 'flex', gap: 6 }}>
           <input
+            ref={pixInputRef}
             readOnly
             value={resultado.pix.qr_code}
             onFocus={e => e.currentTarget.select()}
@@ -485,6 +539,11 @@ export function InscricaoClient() {
             {copiado ? 'Copiado ✓' : 'Copiar'}
           </button>
         </div>
+        {copiaManual && (
+          <p style={{ fontSize: 11.5, color: '#8a6d00', margin: '6px 0 0' }}>
+            Toque no código e copie manualmente.
+          </p>
+        )}
 
         <div
           style={{
@@ -565,7 +624,8 @@ export function InscricaoClient() {
                   onChange={e => set('instituicao_atual', e.target.value)}
                 />
               </Campo>
-              <Campo label="Modalidade esportiva" obrigatorio span2>
+              <fieldset style={{ gridColumn: '1 / -1', border: 'none', margin: 0, padding: 0 }}>
+                <legend style={{ ...lbl, padding: 0 }}>Modalidade esportiva *</legend>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: 8 }}>
                   {MODALIDADES.map(m => {
                     const on = form.modalidade === m.slug
@@ -591,7 +651,7 @@ export function InscricaoClient() {
                     )
                   })}
                 </div>
-              </Campo>
+              </fieldset>
             </div>
             {erro && <ErroBox mensagem={erro} />}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
@@ -799,8 +859,25 @@ export function InscricaoClient() {
 
             {erro && <ErroBox mensagem={erro} />}
 
+            {falhaComId && (
+              <p style={{ fontSize: 12.5, color: ESJT.navy, background: ESJT.blueBg, border: `1px solid ${ESJT.blueBorder}`, borderRadius: 6, padding: '10px 14px', margin: '14px 0 0', lineHeight: 1.5 }}>
+                Seus dados já foram registrados. Alterações no formulário não serão aplicadas —
+                em caso de erro nos dados, fale com a secretaria após o pagamento.
+              </p>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, gap: 10, flexWrap: 'wrap' }}>
-              <button onClick={() => voltar(2)} style={btnVoltar} disabled={enviando}>← Voltar</button>
+              <button
+                onClick={() => voltar(2)}
+                disabled={enviando || !!falhaComId}
+                style={{
+                  ...btnVoltar,
+                  opacity: enviando || falhaComId ? 0.5 : 1,
+                  cursor: enviando || falhaComId ? 'default' : 'pointer',
+                }}
+              >
+                ← Voltar
+              </button>
               {falhaComId ? (
                 <button
                   onClick={tentarPixNovamente}
