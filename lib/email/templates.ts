@@ -14,7 +14,7 @@ function base(title: string, content: string) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+  <title>${escapeHtml(title)}</title>
 </head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 16px;">
@@ -418,14 +418,14 @@ export function emailPixExpirado(p: EmailPixExpiradoParams): { subject: string; 
       ⏰ Seu PIX expirou
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${p.responsavelNome}</strong>! O PIX do pedido <strong>${p.numeroPedido}</strong> venceu.
+      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! O PIX do pedido <strong>${escapeHtml(p.numeroPedido)}</strong> venceu.
       Seu pedido continua disponível para você gerar um novo código.
     </p>
 
     <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:12px;color:#9a3412;font-weight:600;">PEDIDO</span>
-        <span style="font-size:12px;font-weight:700;color:#7c2d12;font-family:monospace;">${p.numeroPedido}</span>
+        <span style="font-size:12px;font-weight:700;color:#7c2d12;font-family:monospace;">${escapeHtml(p.numeroPedido)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;">
         <span style="font-size:12px;color:#9a3412;font-weight:600;">TOTAL</span>
@@ -438,7 +438,7 @@ export function emailPixExpirado(p: EmailPixExpiradoParams): { subject: string; 
     </div>
 
     <div style="text-align:center;">
-      <a href="${p.pedidoUrl}"
+      <a href="${escapeHtml(p.pedidoUrl)}"
         style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
         Gerar novo PIX
       </a>
@@ -462,7 +462,7 @@ export function emailResetSenhaAdmin(p: EmailResetSenhaAdminParams): { subject: 
       🔐 Redefinição de senha
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${p.responsavelNome}</strong>! A secretaria da escola solicitou o envio de um link para você criar uma nova senha de acesso à Loja Escolar.
+      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! A secretaria da escola solicitou o envio de um link para você criar uma nova senha de acesso à Loja Escolar.
     </p>
 
     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
@@ -472,7 +472,7 @@ export function emailResetSenhaAdmin(p: EmailResetSenhaAdminParams): { subject: 
     </div>
 
     <div style="text-align:center;margin-top:8px;">
-      <a href="${p.resetUrl}"
+      <a href="${escapeHtml(p.resetUrl)}"
         style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
         Criar nova senha
       </a>
@@ -480,7 +480,7 @@ export function emailResetSenhaAdmin(p: EmailResetSenhaAdminParams): { subject: 
 
     <div style="margin-top:24px;font-size:12px;color:#94a3b8;line-height:1.7;">
       Se o botão não abrir, copie e cole este endereço no navegador:<br>
-      <span style="color:#475569;word-break:break-all;">${p.resetUrl}</span>
+      <span style="color:#475569;word-break:break-all;">${escapeHtml(p.resetUrl)}</span>
     </div>
   `
 
@@ -505,12 +505,12 @@ export function emailAvisoTrocaEmail(
       ✉️ Seu e-mail de acesso foi alterado
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Olá, <strong>${p.responsavelNome}</strong>! O e-mail de acesso da sua conta na Loja Escolar foi atualizado pela administração da escola.
+      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! O e-mail de acesso da sua conta na Loja Escolar foi atualizado pela administração da escola.
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:13px;color:#334155;line-height:1.8;">
-      <div>E-mail anterior: <strong>${p.emailAntigo}</strong></div>
-      <div>Novo e-mail de acesso: <strong>${p.emailNovo}</strong></div>
+      <div>E-mail anterior: <strong>${escapeHtml(p.emailAntigo)}</strong></div>
+      <div>Novo e-mail de acesso: <strong>${escapeHtml(p.emailNovo)}</strong></div>
     </div>
 
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px 20px;margin-bottom:8px;">
@@ -541,8 +541,8 @@ export interface EmailIngressoParams {
 export function emailIngressoEmitido(p: EmailIngressoParams): { subject: string; html: string } {
   const detalhes = [
     p.dataEvento ? `📅 ${new Date(p.dataEvento).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}` : null,
-    p.horaEvento ? `🕐 ${p.horaEvento.slice(0, 5)}h` : null,
-    p.localEvento ? `📍 ${p.localEvento}` : null,
+    p.horaEvento ? `🕐 ${escapeHtml(p.horaEvento.slice(0, 5))}h` : null,
+    p.localEvento ? `📍 ${escapeHtml(p.localEvento)}` : null,
   ].filter(Boolean)
 
   const content = `
@@ -550,15 +550,15 @@ export function emailIngressoEmitido(p: EmailIngressoParams): { subject: string;
       🎟️ Ingresso emitido!
     </h2>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;">
-      O pagamento do pedido <strong>${p.numeroPedido}</strong> foi confirmado.<br>
-      O ingresso de <strong>${p.alunoNome}</strong> está disponível.
+      O pagamento do pedido <strong>${escapeHtml(p.numeroPedido)}</strong> foi confirmado.<br>
+      O ingresso de <strong>${escapeHtml(p.alunoNome)}</strong> está disponível.
     </p>
 
     <!-- Card do evento -->
     <div style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
       <div style="font-size:32px;margin-bottom:8px;">🎉</div>
-      <div style="font-size:18px;font-weight:900;color:#4c1d95;margin-bottom:4px;">${p.produtoNome}</div>
-      <div style="font-size:13px;color:#6d28d9;font-weight:600;">${p.alunoNome}</div>
+      <div style="font-size:18px;font-weight:900;color:#4c1d95;margin-bottom:4px;">${escapeHtml(p.produtoNome)}</div>
+      <div style="font-size:13px;color:#6d28d9;font-weight:600;">${escapeHtml(p.alunoNome)}</div>
     </div>
 
     ${detalhes.length > 0 ? `
@@ -575,7 +575,7 @@ export function emailIngressoEmitido(p: EmailIngressoParams): { subject: string;
 
     <!-- CTA -->
     <div style="text-align:center;">
-      <a href="${p.ingressoUrl}"
+      <a href="${escapeHtml(p.ingressoUrl)}"
         style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">
         Ver ingresso digital →
       </a>
@@ -585,5 +585,41 @@ export function emailIngressoEmitido(p: EmailIngressoParams): { subject: string;
   return {
     subject: `🎟️ Seu ingresso para ${p.produtoNome} está pronto!`,
     html: base(`Ingresso — ${p.produtoNome}`, content),
+  }
+}
+
+// ── Template: Inscrição no Concurso de Bolsas confirmada ─────────────────────
+export interface EmailInscricaoConcursoParams {
+  responsavelNome: string
+  alunoNome: string
+  numero: string
+  modalidade: string
+}
+
+export function emailInscricaoConcurso(p: EmailInscricaoConcursoParams): { subject: string; html: string } {
+  const content = `
+    <h2 style="margin:0 0 4px;font-size:22px;font-weight:900;color:#34436B;letter-spacing:-.02em;">
+      ✅ Inscrição confirmada!
+    </h2>
+    <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
+      Olá, <strong>${escapeHtml(p.responsavelNome)}</strong>! Recebemos o pagamento da inscrição de
+      <strong>${escapeHtml(p.alunoNome)}</strong> no Concurso de Bolsas – Seletivas Esportivas 2027
+      (modalidade <strong>${escapeHtml(p.modalidade)}</strong>).
+    </p>
+    <div style="background:#EDF3FF;border:1px solid #C0CEEA;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+      <div style="font-size:12px;color:#34436B;font-weight:600;">INSCRIÇÃO</div>
+      <div style="font-size:16px;font-weight:800;color:#34436B;font-family:monospace;">${escapeHtml(p.numero)}</div>
+    </div>
+    <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#7c2d12;line-height:1.7;">
+      <strong>Próximos passos:</strong><br>
+      • Prova pedagógica: <strong>30/08/2026 (domingo), 08h30–11h30</strong>, na sede do Educandário São Judas Tadeu.<br>
+      • Seletiva técnica: 09 a 19/09/2026 (calendário divulgado dia 31/08 nas redes oficiais).<br>
+      • No dia da seletiva, levar <strong>declaração de saúde</strong> (apto à prática esportiva) e o <strong>boletim escolar</strong> do ano vigente.
+    </div>
+    <p style="font-size:12px;color:#94a3b8;">Guarde este e-mail — o número da inscrição será solicitado no dia da prova.</p>
+  `
+  return {
+    subject: `Inscrição ${p.numero} confirmada — Concurso de Bolsas 2027`,
+    html: base(`Inscrição confirmada — ${p.numero}`, content),
   }
 }

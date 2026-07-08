@@ -94,6 +94,26 @@ describe('auditLog', () => {
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ ip: '5.6.7.8' }))
   })
 
+  it('usa escolaId explícito (fluxo público) sem consultar getEscolaIdParaAdmin', async () => {
+    const insert = vi.fn().mockResolvedValue({ error: null })
+    ;(createClient as any).mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) },
+    })
+    ;(getEscolaIdParaAdmin as any).mockResolvedValue(null) // admin não resolveria a escola
+    ;(headers as any).mockResolvedValue(makeHeaders())
+    ;(createAdminClient as any).mockReturnValue({ from: vi.fn(() => ({ insert })) })
+
+    await auditLog({ modulo: 'concurso', acao: 'concurso_pix_erro', escolaId: 'esc-publica' })
+
+    expect(getEscolaIdParaAdmin).not.toHaveBeenCalled()
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      escola_id: 'esc-publica',
+      user_id: null,
+      modulo: 'concurso',
+      acao: 'concurso_pix_erro',
+    }))
+  })
+
   it('silencia exception quando algo falha (não propaga)', async () => {
     ;(createClient as any).mockRejectedValue(new Error('boom'))
 

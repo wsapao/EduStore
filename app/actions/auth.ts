@@ -6,9 +6,8 @@ import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ratelimit } from '@/lib/ratelimit'
-import { limparCPF, validarCPF } from '@/lib/cpf'
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+import { limparCPF, validarCPF } from '@/lib/validacao/cpf'
+import { EMAIL_RE } from '@/lib/validacao/email'
 
 async function getClientIp() {
   const h = await headers()
