@@ -1,11 +1,13 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getGateway } from '@/lib/pagamentos/gateway'
 import { limparCPF } from '@/lib/validacao/cpf'
 import { validarInscricao, type InscricaoInput } from '@/lib/concurso/validacao'
 import { CONCURSO, CONCURSO_REF_PREFIX, MODALIDADES, inscricoesAbertas } from '@/lib/concurso/config'
 import { auditLog } from '@/lib/auditoria/log'
+import { ratelimit } from '@/lib/ratelimit'
 import type { ResultadoPix } from '@/lib/pagamentos/types'
 
 export interface PixInfo {
@@ -18,7 +20,24 @@ export type CriarInscricaoResult =
   | { success: true; inscricao_id: string; numero: string; pix: PixInfo }
   | { success: false; error: string; inscricao_id?: string }
 
+async function getClientIp() {
+  const h = await headers()
+  return (
+    h.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    h.get('x-real-ip') ??
+    'unknown'
+  )
+}
+
 export async function criarInscricaoConcurso(input: InscricaoInput): Promise<CriarInscricaoResult> {
+  // Rate limit: ação pública (sem login) que cria cliente+cobrança no Asaas e
+  // grava PII — 5 inscrições por IP a cada 10 minutos (família com irmãos cabe).
+  const ip = await getClientIp()
+  const { allowed } = await ratelimit.check(`concurso:${ip}`, 5, 600)
+  if (!allowed) {
+    return { success: false, error: 'Muitas tentativas de inscrição. Aguarde alguns minutos e tente novamente.' }
+  }
+
   if (!inscricoesAbertas()) {
     return { success: false, error: 'As inscrições estão encerradas ou ainda não abriram.' }
   }

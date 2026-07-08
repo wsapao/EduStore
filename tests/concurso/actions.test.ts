@@ -5,6 +5,18 @@ vi.mock('@/lib/pagamentos/gateway', () => ({ getGateway: () => ({ criarPagamento
 
 vi.mock('@/lib/auditoria/log', () => ({ auditLog: vi.fn().mockResolvedValue(undefined) }))
 
+const ratelimitCheck = vi.fn((_key: string, _limit: number, _windowSec: number) =>
+  Promise.resolve({ allowed: true, remaining: 4, retryAfter: 0 }))
+vi.mock('@/lib/ratelimit', () => ({
+  ratelimit: {
+    check: (key: string, limit: number, windowSec: number) => ratelimitCheck(key, limit, windowSec),
+  },
+}))
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn().mockResolvedValue({ get: (key: string) => (key === 'x-forwarded-for' ? '9.8.7.6' : null) }),
+}))
+
 // Mock encadeável mínimo do supabase-js (padrão da suíte: sempre incluir .select)
 const single = vi.fn()
 const insertSelect = vi.fn(() => ({ single }))
@@ -69,6 +81,18 @@ describe('criarInscricaoConcurso', () => {
     }))
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ gateway_id: 'pay_1' }))
     if (r.success) expect(r.pix.qr_code).toBe('copiaecola')
+  })
+
+  it('bloqueia por rate limit sem tocar o banco nem o gateway', async () => {
+    ratelimitCheck.mockResolvedValueOnce({ allowed: false, remaining: 0, retryAfter: 300 })
+    const r = await criarInscricaoConcurso(INPUT)
+    expect(r).toEqual({
+      success: false,
+      error: 'Muitas tentativas de inscrição. Aguarde alguns minutos e tente novamente.',
+    })
+    expect(ratelimitCheck).toHaveBeenCalledWith('concurso:9.8.7.6', 5, 600)
+    expect(insert).not.toHaveBeenCalled()
+    expect(criarPagamento).not.toHaveBeenCalled()
   })
 
   it('rejeita fora da janela de inscrições', async () => {
