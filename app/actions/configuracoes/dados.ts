@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requirePermission, PermissionDeniedError } from '@/lib/permissoes'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
 import { auditLog } from '@/lib/auditoria/log'
+import { limparCPF, mascaraCpf } from '@/lib/validacao/cpf'
 
 // ---------- Tipos públicos ----------
 
@@ -60,16 +61,6 @@ function buildCsv(headers: string[], rows: unknown[][]): string {
 
 function today(): string {
   return new Date().toISOString().slice(0, 10)
-}
-
-function limpaCpf(cpf: string): string {
-  return (cpf || '').replace(/\D+/g, '')
-}
-
-function mascaraCpf(cpf: string): string {
-  const c = limpaCpf(cpf)
-  if (c.length !== 11) return '***'
-  return `${c.slice(0, 3)}.***.***-${c.slice(9)}`
 }
 
 // ---------- Exportações CSV ----------
@@ -260,7 +251,7 @@ export async function previewExclusaoLgpdAction(
   const denied = await ensurePermissao()
   if (denied) return denied
 
-  const cpf = limpaCpf(cpfInput)
+  const cpf = limparCPF(cpfInput)
   if (cpf.length !== 11) return { error: 'CPF inválido.' }
 
   const supabase = await createClient()
@@ -322,7 +313,7 @@ export async function executarExclusaoLgpdAction(input: {
   const denied = await ensurePermissao()
   if (denied) return denied
 
-  const cpf = limpaCpf(input.cpf)
+  const cpf = limparCPF(input.cpf)
   if (cpf.length !== 11) return { error: 'CPF inválido.' }
   if (!input.senhaConfirmacao) return { error: 'Informe sua senha de admin para confirmar.' }
 
@@ -385,7 +376,7 @@ export async function exportarPortabilidadeLgpdAction(
   const denied = await ensurePermissao()
   if (denied) return denied
 
-  const cpf = limpaCpf(cpfInput)
+  const cpf = limparCPF(cpfInput)
   if (cpf.length !== 11) return { error: 'CPF inválido.' }
 
   const supabase = await createClient()

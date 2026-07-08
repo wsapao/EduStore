@@ -13,6 +13,8 @@ import { enviarEmailIngresso, enviarEmailPedidoPago } from '@/lib/email/send'
 import { resolverTemplatePedido } from '@/lib/email/resolver-template'
 import { SITE_URL } from '@/lib/email/resend'
 import { agruparItensEmail, formatarAlunoLabel, fmtBRL, type ItemEmailUnitario } from '@/lib/email/pedido-helpers'
+import { confirmarPagamentoConcurso, expirarPagamentoConcurso } from '@/lib/concurso/confirmarPagamento'
+import { CONCURSO_REF_PREFIX } from '@/lib/concurso/config'
 
 export const runtime = 'nodejs'
 
@@ -296,6 +298,12 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, reverted: true })
   }
 
+  // Concurso de bolsas — Pix vencido
+  if (event === 'PAYMENT_OVERDUE' && payment.externalReference?.startsWith(CONCURSO_REF_PREFIX)) {
+    await expirarPagamentoConcurso(payment.externalReference.slice(CONCURSO_REF_PREFIX.length))
+    return Response.json({ ok: true })
+  }
+
   // 4b. Processa apenas eventos de confirmação de pagamento
   const EVENTOS_CONFIRMACAO = [
     'PAYMENT_RECEIVED',
@@ -320,6 +328,18 @@ export async function POST(request: Request) {
       return Response.json({ ok: true, handled: false, error: rpcErr.message })
     }
     console.log(`[webhook/asaas] Recarga ${recargaId} confirmada via webhook.`)
+    return Response.json({ ok: true })
+  }
+
+  // Concurso de bolsas — confirmação de pagamento de inscrição
+  if (payment.externalReference?.startsWith(CONCURSO_REF_PREFIX)) {
+    const inscricaoId = payment.externalReference.slice(CONCURSO_REF_PREFIX.length)
+    const { confirmado, erro } = await confirmarPagamentoConcurso(inscricaoId, payment.netValue)
+    if (erro) {
+      // Retorna 500 para que o Asaas reenvie o webhook depois
+      return Response.json({ ok: false, error: 'Erro ao confirmar inscrição.' }, { status: 500 })
+    }
+    console.log(`[webhook/asaas] Inscrição concurso ${inscricaoId} — confirmado=${confirmado}`)
     return Response.json({ ok: true })
   }
 

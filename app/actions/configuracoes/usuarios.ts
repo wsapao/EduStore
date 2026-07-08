@@ -6,10 +6,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requirePermission, PermissionDeniedError } from '@/lib/permissoes'
 import { getEscolaIdParaAdmin } from '@/lib/escola/getEscolaIdParaAdmin'
 import { auditLog } from '@/lib/auditoria/log'
-import { limparCPF, validarCPF } from '@/lib/cpf'
+import { limparCPF, validarCPF } from '@/lib/validacao/cpf'
+import { EMAIL_RE } from '@/lib/validacao/email'
 
 const PERM_GUARD = 'configuracoes.gerenciar_usuarios'
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 async function ensurePermissao(): Promise<{ error: string } | null> {
   try {

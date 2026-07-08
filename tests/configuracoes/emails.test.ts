@@ -260,4 +260,46 @@ describe('enviarTesteEmailAction', () => {
       metadata: expect.objectContaining({ tipo: 'pedido_pago', destinatario: 'admin@escola.com' }),
     }))
   })
+
+  // Guarda anti-injeção: o corpo renderizado por renderEmailTemplate NÃO é
+  // HTML-escapado, então ele só pode ser enviado como `text` (text/plain).
+  // Se este teste quebrar porque o envio passou a usar `html`, é obrigatório
+  // escapar os valores substituídos (escapeHtml em lib/email/templates.ts)
+  // antes — template do banco + nomes de responsável/aluno viram vetor de
+  // injeção de HTML no cliente de e-mail.
+  it('envia como text/plain (nunca html), mesmo com template do banco contendo HTML', async () => {
+    ;(requirePermission as any).mockResolvedValue(undefined)
+    setupAuthAndEscola()
+
+    const send = vi.fn().mockResolvedValue({ data: { id: 'msg-1' }, error: null })
+    ;(getResend as any).mockReturnValue({ emails: { send } })
+
+    // Template customizado no banco com HTML malicioso no corpo
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        assunto: 'Pedido {{numero_pedido}}',
+        corpo: '<script>alert(1)</script> Olá {{nome_responsavel}}',
+        ativo: true,
+      },
+      error: null,
+    })
+    const eqTipo = vi.fn(() => ({ maybeSingle }))
+    const eqEscola = vi.fn(() => ({ eq: eqTipo }))
+    const select = vi.fn(() => ({ eq: eqEscola }))
+    ;(createClient as any).mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1', email: 'admin@escola.com' } } }) },
+      from: vi.fn(() => ({ select })),
+    })
+
+    const r = await enviarTesteEmailAction({ tipo: 'pedido_pago' })
+    expect(r).toEqual({ success: true, destinatario: 'admin@escola.com' })
+
+    expect(send).toHaveBeenCalledTimes(1)
+    const payload = send.mock.calls[0][0] as any
+    // O payload NÃO pode ter parte HTML — texto puro é o que torna o
+    // conteúdo não-escapado inofensivo.
+    expect(payload.html).toBeUndefined()
+    expect(payload.react).toBeUndefined()
+    expect(payload.text).toContain('<script>alert(1)</script> Olá Maria Silva')
+  })
 })

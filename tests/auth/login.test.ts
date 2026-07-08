@@ -22,7 +22,7 @@ function fd(obj: Record<string, string>) {
 }
 
 function setup({
-  signInError = null,
+  signInError = null as string | null,
   appRole = undefined as string | undefined,
   rpcEmail = null as string | null,
 } = {}) {

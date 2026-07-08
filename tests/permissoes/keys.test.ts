@@ -6,7 +6,7 @@ describe('permission keys', () => {
     const modulos = [
       'produtos','categorias','pedidos','pagamentos','vouchers',
       'alunos','responsaveis','checkin','pdv','cantina',
-      'relatorios','receita','configuracoes',
+      'relatorios','receita','configuracoes','concurso',
     ]
     for (const m of modulos) {
       expect(PERMISSION_KEYS.some(k => k.startsWith(`${m}.`))).toBe(true)

@@ -8,6 +8,8 @@ export type AuditEvent = {
   acao: string
   descricao?: string | null
   metadata?: Record<string, unknown> | null
+  /** Fluxos públicos (sem admin autenticado) podem informar a escola explicitamente. */
+  escolaId?: string | null
 }
 
 /**
@@ -21,7 +23,7 @@ export async function auditLog(event: AuditEvent): Promise<void> {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    const escolaId = await getEscolaIdParaAdmin(supabase)
+    const escolaId = event.escolaId ?? await getEscolaIdParaAdmin(supabase)
 
     if (!escolaId) return // sem escola, sem auditoria — silencioso
 

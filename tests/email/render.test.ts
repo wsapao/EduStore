@@ -66,6 +66,22 @@ describe('renderEmailTemplate', () => {
     )
     expect(r.assunto).toBe('4321')
   })
+
+  // Contrato text/plain: o output NÃO é HTML-escapado de propósito — ele só
+  // pode ser consumido como texto puro (Resend `text:` ou JSX auto-escapado).
+  // Se este teste te incomodar porque você quer enviar o corpo como HTML,
+  // escape os valores com escapeHtml (lib/email/templates.ts) no ponto de uso.
+  it('contrato text/plain: valores com HTML passam verbatim, sem escapar', () => {
+    const r = renderEmailTemplate(
+      'pedido_pago',
+      { assunto: '{{nome_responsavel}}', corpo: 'Olá, {{nome_responsavel}} & cia' },
+      { nome_responsavel: '<b>Maria</b> <img src=x onerror=alert(1)>' },
+    )
+    // Verbatim (não "&lt;b&gt;..."): o e-mail é texto puro e escapar aqui
+    // mostraria entidades HTML cruas para o leitor.
+    expect(r.corpo).toBe('Olá, <b>Maria</b> <img src=x onerror=alert(1)> & cia')
+    expect(r.assunto).toBe('<b>Maria</b> <img src=x onerror=alert(1)>')
+  })
 })
 
 describe('EMAIL_TEMPLATE_META manifest', () => {

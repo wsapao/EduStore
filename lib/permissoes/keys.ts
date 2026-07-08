@@ -104,6 +104,16 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { chave: 'configuracoes.gerenciar_papeis',      rotulo: 'Gerenciar papéis' },
     ],
   },
+  {
+    // Política deliberada: concedida aos mesmos papéis que possuem pedidos.ver
+    // (migration 20260707_concurso_permissao). Se o significado de pedidos.ver
+    // mudar, revisar os grants de concurso.ver — o acoplamento é de política,
+    // não incidental.
+    modulo: 'concurso', rotulo: 'Concurso de Bolsas',
+    permissoes: [
+      { chave: 'concurso.ver', rotulo: 'Ver inscrições do concurso' },
+    ],
+  },
 ]
 
 export const PERMISSION_KEYS: string[] = PERMISSION_GROUPS.flatMap(
