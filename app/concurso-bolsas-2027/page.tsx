@@ -213,7 +213,7 @@ export default function ConcursoBolsasPage() {
               >
                 {stat.valor}
               </div>
-              <div style={{ fontSize: 12, color: ESJT.gray }}>{stat.legenda}</div>
+              <div style={{ fontSize: 12, color: '#5a6577' }}>{stat.legenda}</div>
             </div>
           ))}
         </section>
@@ -249,7 +249,7 @@ export default function ConcursoBolsasPage() {
           <h2 style={{ ...h2Style, textAlign: 'center', fontSize: 24, margin: '26px 0 6px' }}>
             Modalidades
           </h2>
-          <p style={{ textAlign: 'center', color: ESJT.gray, fontSize: 13, margin: '0 0 24px' }}>
+          <p style={{ textAlign: 'center', color: '#5a6577', fontSize: 13, margin: '0 0 24px' }}>
             Escolha 1 modalidade por inscrição · categorias masculina e feminina
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -290,7 +290,7 @@ export default function ConcursoBolsasPage() {
                   {etapa.n}
                 </div>
                 <b style={{ color: ESJT.navy }}>{etapa.titulo}</b>
-                <p style={{ fontSize: 13, color: ESJT.gray, margin: '6px 0 0' }}>{etapa.desc}</p>
+                <p style={{ fontSize: 13, color: '#5a6577', margin: '6px 0 0' }}>{etapa.desc}</p>
               </div>
             ))}
           </div>
@@ -357,7 +357,7 @@ export default function ConcursoBolsasPage() {
               Fazer inscrição — {taxa}
             </Link>
           ) : (
-            <span style={{ ...pillEncerradasStyle, background: '#fff', color: ESJT.gray }}>
+            <span style={{ ...pillEncerradasStyle, background: '#fff' }}>
               Inscrições encerradas
             </span>
           )}
@@ -418,7 +418,8 @@ const btnRedStyle: React.CSSProperties = {
 
 const pillEncerradasStyle: React.CSSProperties = {
   background: '#E3E7EF',
-  color: ESJT.gray,
+  // Navy em vez de gray: contraste AA em texto pequeno sobre fundo claro.
+  color: ESJT.navy,
   padding: '13px 26px',
   borderRadius: 999,
   fontWeight: 700,
