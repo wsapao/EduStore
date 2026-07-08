@@ -142,16 +142,7 @@ export const EMAIL_TEMPLATE_META: Record<EmailTemplateTipo, EmailTemplateMeta> =
       { chave: 'motivo', descricao: 'Motivo do cancelamento (curto).', exemplo: 'Pagamento não confirmado dentro do prazo' },
     ],
     defaultAssunto: 'Pedido {{numero_pedido}} cancelado',
-    defaultCorpo: `Olá, {{nome_responsavel}}.
-
-Seu pedido {{numero_pedido}} foi cancelado.
-
-Motivo: {{motivo}}
-
-Se quiser realizar a compra novamente, é só voltar à loja:
-{{link_pedido}}
-
-Equipe {{nome_escola}}`,
+    defaultCorpo: `Olá, {{nome_responsavel}}. Infelizmente seu pedido {{numero_pedido}} foi cancelado — os detalhes estão logo abaixo.`,
   },
 
   ingresso_emitido: {
@@ -190,13 +181,7 @@ Equipe {{nome_escola}}`,
       VAR_NOME_ESCOLA,
     ],
     defaultAssunto: 'Recarga de cantina aprovada para {{nome_aluno}}',
-    defaultCorpo: `Olá, {{nome_responsavel}}!
-
-A recarga de {{valor}} no cartão da cantina de {{nome_aluno}} foi aprovada.
-
-Saldo atual: {{saldo_atual}}
-
-Equipe {{nome_escola}}`,
+    defaultCorpo: `Olá, {{nome_responsavel}}! A recarga na carteira da cantina de {{nome_aluno}} foi aprovada. Os detalhes estão logo abaixo.`,
   },
 
   convite_admin: {

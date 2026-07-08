@@ -3,7 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { enviarEmailIngresso } from '@/lib/email/send'
-import { enviarEmailResetSenhaAdmin } from '@/lib/email/send'
+import { enviarEmailResetSenhaAdmin, enviarEmailPedidoCancelado } from '@/lib/email/send'
+import { resolverTemplatePedido } from '@/lib/email/resolver-template'
+import { SITE_URL } from '@/lib/email/resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 async function verificarAdmin() {
@@ -103,6 +105,8 @@ export async function confirmarPagamentoAction(pedidoId: string) {
 }
 
 // ── Cancelar pedido ───────────────────────────────────────────────────────────
+const MOTIVO_CANCELAMENTO_ADMIN = 'Cancelamento realizado pela administração da escola'
+
 export async function cancelarPedidoAction(pedidoId: string) {
   const { supabase } = await verificarAdmin()
 
@@ -110,6 +114,18 @@ export async function cancelarPedidoAction(pedidoId: string) {
     .from('itens_pedido')
     .select('variante_id')
     .eq('pedido_id', pedidoId)
+
+  // Dados p/ o e-mail — lidos ANTES do cancel (pagamentos vira 'falhou' abaixo)
+  const { data: pedidoEmail } = await supabase
+    .from('pedidos')
+    .select('numero, total, escola_id, responsavel:responsaveis(nome, email)')
+    .eq('id', pedidoId)
+    .single()
+  const { data: pagamentoAntes } = await supabase
+    .from('pagamentos')
+    .select('status')
+    .eq('pedido_id', pedidoId)
+    .maybeSingle()
 
   // Guarda de status + idempotência: só cancela pedidos ainda pendentes/pagos e
   // exige que UMA linha tenha de fato transicionado. Sem isso, cada clique
@@ -144,6 +160,53 @@ export async function cancelarPedidoAction(pedidoId: string) {
 
   // Invalida ingressos emitidos associados ao pedido
   await adminClient.rpc('cancelar_ingressos_pedido', { p_pedido_id: pedidoId })
+
+  // Envia e-mail de cancelamento aguardando a conclusão — em serverless o
+  // processo pode congelar após a resposta e engolir promises soltas.
+  // Erros são capturados aqui e não derrubam o cancelamento.
+  await (async () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const respRaw = (pedidoEmail as any)?.responsavel
+      const responsavel = (Array.isArray(respRaw) ? respRaw[0] : respRaw) as { nome: string; email: string } | null
+      if (!pedidoEmail || !responsavel?.email) return
+
+      let escolaNome: string | null = null
+      if (pedidoEmail.escola_id) {
+        const { data: escola } = await adminClient
+          .from('escolas').select('nome').eq('id', pedidoEmail.escola_id).maybeSingle()
+        escolaNome = escola?.nome ?? null
+      }
+
+      const pedidoUrl = `${SITE_URL}/pedido/${pedidoId}`
+      const { assunto, aberturaHtml } = await resolverTemplatePedido({
+        escolaId: pedidoEmail.escola_id,
+        tipo: 'pedido_cancelado',
+        vars: {
+          nome_responsavel: responsavel.nome,
+          numero_pedido: pedidoEmail.numero,
+          link_pedido: pedidoUrl,
+          nome_escola: escolaNome ?? '',
+          motivo: MOTIVO_CANCELAMENTO_ADMIN,
+        },
+        client: adminClient,
+      })
+
+      await enviarEmailPedidoCancelado(responsavel.email, {
+        assunto,
+        aberturaHtml,
+        responsavelNome: responsavel.nome,
+        numeroPedido: pedidoEmail.numero,
+        total: pedidoEmail.total,
+        motivo: MOTIVO_CANCELAMENTO_ADMIN,
+        foiPago: pagamentoAntes?.status === 'confirmado',
+        pedidoUrl,
+        escolaNome,
+      })
+    } catch (err) {
+      console.error('[cancelarPedidoAction] Erro ao enviar e-mail de cancelamento:', err)
+    }
+  })()
 
   revalidatePath('/admin')
   revalidatePath('/admin/pedidos')

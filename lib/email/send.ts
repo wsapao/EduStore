@@ -2,6 +2,8 @@ import { getResend, EMAIL_FROM, SITE_URL } from './resend'
 import {
   emailConfirmacaoPedido,
   emailPedidoPago,
+  emailPedidoCancelado,
+  emailRecargaAprovada,
   emailPixExpirado,
   emailIngressoEmitido,
   emailResetSenhaAdmin,
@@ -9,6 +11,8 @@ import {
   emailInscricaoConcurso,
   type EmailPedidoParams,
   type EmailPedidoPagoParams,
+  type EmailPedidoCanceladoParams,
+  type EmailRecargaAprovadaParams,
   type EmailPixExpiradoParams,
   type EmailIngressoParams,
   type EmailResetSenhaAdminParams,
@@ -49,6 +53,40 @@ export async function enviarEmailPedidoPago(
     await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
   } catch (err) {
     console.error('[Email] Erro ao enviar pagamento confirmado:', err)
+  }
+}
+
+// ── Enviar pedido cancelado ───────────────────────────────────────────────────
+export async function enviarEmailPedidoCancelado(
+  to: string,
+  params: EmailPedidoCanceladoParams
+) {
+  const resend = getResend()
+  if (!resend) return
+
+  const { subject, html } = emailPedidoCancelado(params)
+
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
+  } catch (err) {
+    console.error('[Email] Erro ao enviar pedido cancelado:', err)
+  }
+}
+
+// ── Enviar recarga de cantina aprovada ────────────────────────────────────────
+export async function enviarEmailRecargaAprovada(
+  to: string,
+  params: EmailRecargaAprovadaParams
+) {
+  const resend = getResend()
+  if (!resend) return
+
+  const { subject, html } = emailRecargaAprovada(params)
+
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to, subject, html })
+  } catch (err) {
+    console.error('[Email] Erro ao enviar recarga aprovada:', err)
   }
 }
 

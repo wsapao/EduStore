@@ -43,7 +43,8 @@ function setupResults(overrides?: { ingressos?: unknown[] }) {
     value: { error: null },
     single: { data: { id: 'pag1', pedido_id: 'ped1', status: 'pendente' }, error: null },
   }
-  results.pedidos = { value: { error: null } }
+  // A guarda de rowcount em confirmarPagamento exige data com a linha transicionada
+  results.pedidos = { value: { data: [{ id: 'ped1' }], error: null } }
   results.itens_pedido = { value: { data: [{ id: 'ip1' }] } }
   results.ingressos = { value: { data: overrides?.ingressos ?? [INGRESSO] } }
 }
