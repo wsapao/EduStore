@@ -1,7 +1,8 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useCart } from './CartProvider'
+import { buildAlunoNomesExibicao } from '@/lib/loja/aluno-display'
 import type { Escola, Responsavel, Aluno } from '@/types/database'
 import { ChildSelector } from './ChildSelector'
 import { XkolaStoreBrand } from './XkolaStoreBrand'
@@ -26,6 +27,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
 
   const avatarColor = selectedAluno?.cor ?? '#6366f1'
   const initials = selectedAluno ? (selectedAluno.nome || '').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?'
+  const nomes = useMemo(() => buildAlunoNomesExibicao(alunos), [alunos])
 
   return (
     <div style={{
@@ -95,7 +97,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
               {greeting}, responsável
             </div>
             <div style={{ fontSize: 24, fontWeight: 900, color: 'white', letterSpacing: '-.04em', marginBottom: 5 }}>
-              {(selectedAluno.nome || '').split(' ')[0]}
+              {nomes.get(selectedAluno.id)?.primeiro || (selectedAluno.nome || '').split(' ')[0]}
             </div>
             <div style={{
               background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)',
@@ -125,7 +127,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
       {showChildSelector && (
         <div style={{ position: 'relative', zIndex: 20, padding: '0 16px 16px', animation: 'fadeUp 0.2s ease-out' }}>
           <div style={{ background: 'white', borderRadius: 20, padding: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-             <ChildSelector alunos={alunos} />
+             <ChildSelector alunos={alunos} defaultOpen />
           </div>
         </div>
       )}

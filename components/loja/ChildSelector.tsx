@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { buildAlunoNomesExibicao } from '@/lib/loja/aluno-display'
 import type { Aluno } from '@/types/database'
 
 const AVATAR_COLORS = [
@@ -14,14 +15,16 @@ const AVATAR_COLORS = [
 
 interface Props {
   alunos: Aluno[]
+  defaultOpen?: boolean
 }
 
-export function ChildSelector({ alunos }: Props) {
+export function ChildSelector({ alunos, defaultOpen = false }: Props) {
   const router = useRouter()
   const sp = useSearchParams()
   const selectedId = sp.get('aluno') ?? alunos[0]?.id ?? ''
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const containerRef = useRef<HTMLDivElement>(null)
+  const nomes = useMemo(() => buildAlunoNomesExibicao(alunos), [alunos])
 
   const selectedAluno = alunos.find(a => a.id === selectedId) || alunos[0]
 
@@ -101,7 +104,7 @@ export function ChildSelector({ alunos }: Props) {
             fontSize: 16, fontWeight: 800, color: 'var(--text-1)',
             letterSpacing: '-.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
           }}>
-            {(() => { const p = (selectedAluno?.nome || '').split(' ').filter(Boolean); return p.length > 1 ? `${p[0]} ${p[p.length - 1]}` : (p[0] || '') })()}
+            {(selectedAluno && nomes.get(selectedAluno.id)?.curto) || ''}
           </div>
           <div style={{
             fontSize: 13, fontWeight: 600, color: 'var(--text-3)', marginTop: 2,
@@ -122,12 +125,14 @@ export function ChildSelector({ alunos }: Props) {
       </div>
 
       {open && showDropdown && (
+        /* Lista em fluxo normal (não absolute): dentro do StoreHero (overflow hidden)
+           um overlay era clipado na borda do hero e os demais filhos ficavam inacessíveis. */
         <div className="animate-fadeIn" style={{
-          position: 'absolute', top: 'calc(100% + 8px)', left: 18, right: 18,
+          marginTop: 8,
           background: 'var(--surface)', borderRadius: 16,
           border: '1.5px solid var(--border)',
           boxShadow: '0 8px 32px rgba(0,0,0,.12)',
-          overflow: 'hidden', zIndex: 110,
+          overflow: 'hidden',
         }}>
           {alunos.map((aluno, i) => {
             const isSelected = aluno.id === selectedId
@@ -157,7 +162,7 @@ export function ChildSelector({ alunos }: Props) {
                 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)' }}>
-                    {(() => { const p = (aluno.nome || '').split(' ').filter(Boolean); return p.length > 1 ? `${p[0]} ${p[p.length - 1]}` : (p[0] || '') })()}
+                    {nomes.get(aluno.id)?.curto || ''}
                   </div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-3)' }}>
                     {aluno.serie}{aluno.turma ? ` · ${aluno.turma}` : ''}
