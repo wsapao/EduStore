@@ -361,9 +361,9 @@ export default function ConcursoBolsasPage() {
         <div>
           <b style={{ color: '#fff' }}>Educandário São Judas Tadeu</b>
           <br />
-          Rua Amaro Albino Pimentel, 79B
+          Rua Pedro de Paula Rocha, 188
           <br />
-          Bairro Novo do Carmo · Camaragibe/PE
+          Bairro Novo · Camaragibe/PE
         </div>
         <div>
           <b style={{ color: '#fff' }}>Contato</b>
