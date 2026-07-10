@@ -58,7 +58,7 @@ export function RelatorioClient({ produtos, produtoSelecionado, relatorio }: Pro
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', paddingBottom: 100 }}>
+    <div>
 
       {/* Header */}
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
