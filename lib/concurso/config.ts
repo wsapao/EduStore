@@ -3,8 +3,11 @@
 export const MODALIDADES = [
   { slug: 'futsal',    nome: 'Futsal',    icone: '⚽' },
   { slug: 'volei',     nome: 'Vôlei',     icone: '🏐' },
+  { slug: 'basquete',  nome: 'Basquete',  icone: '🏀' },
+  { slug: 'handebol',  nome: 'Handebol',  icone: '🤾' },
   { slug: 'judo',      nome: 'Judô',      icone: '🥋' },
   { slug: 'ginastica', nome: 'Ginástica', icone: '🤸' },
+  { slug: 'ballet',    nome: 'Ballet',    icone: '🩰' },
   { slug: 'natacao',   nome: 'Natação',   icone: '🏊' },
 ] as const
 
