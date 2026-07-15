@@ -5,6 +5,7 @@ import { CartDrawer } from '@/components/loja/CartDrawer'
 import { CartBar } from '@/components/loja/CartBar'
 import { BottomNavigation } from '@/components/loja/BottomNavigation'
 import { escolaThemeStyle, ESCOLA_FALLBACK } from '@/lib/escola/getEscola'
+import { getUserPermissions, podeAcessarAdmin } from '@/lib/permissoes'
 import type { Escola } from '@/types/database'
 
 export default async function LojaLayout({ children }: { children: React.ReactNode }) {
@@ -14,11 +15,14 @@ export default async function LojaLayout({ children }: { children: React.ReactNo
   if (!user) redirect('/login')
 
   // 1 query com join em vez de 2 sequenciais (responsaveis + getEscolaByUser)
-  const { data: resp } = await supabase
-    .from('responsaveis')
-    .select('*, escola:escolas(*)')
-    .eq('id', user.id)
-    .single()
+  const [{ data: resp }, permissoes] = await Promise.all([
+    supabase
+      .from('responsaveis')
+      .select('*, escola:escolas(*)')
+      .eq('id', user.id)
+      .single(),
+    getUserPermissions(supabase),
+  ])
 
   if (!resp) redirect('/login')
 
@@ -32,7 +36,7 @@ export default async function LojaLayout({ children }: { children: React.ReactNo
       </div>
       <CartDrawer />
       <CartBar />
-      <BottomNavigation />
+      <BottomNavigation showAdminShortcut={podeAcessarAdmin(permissoes)} />
     </CartProvider>
   )
 }

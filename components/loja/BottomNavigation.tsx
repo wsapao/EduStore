@@ -2,10 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Store, ShoppingBag, Utensils, User } from 'lucide-react'
+import { Store, ShoppingBag, Utensils, User, LayoutDashboard } from 'lucide-react'
 import { useCart } from './CartProvider'
 
-export function BottomNavigation() {
+interface Props {
+  /** Exibe o atalho para /admin — só para quem passa em podeAcessarAdmin (equipe). */
+  showAdminShortcut?: boolean
+}
+
+export function BottomNavigation({ showAdminShortcut = false }: Props) {
   const pathname = usePathname()
   const { items: cartItems } = useCart()
 
@@ -18,6 +23,7 @@ export function BottomNavigation() {
     { label: 'Pedidos', href: '/pedidos', icon: ShoppingBag },
     // { label: 'Cantina', href: '/cantina', icon: Utensils }, // Temporariamente oculto
     { label: 'Perfil', href: '/perfil', icon: User },
+    ...(showAdminShortcut ? [{ label: 'Painel', href: '/admin', icon: LayoutDashboard }] : []),
   ]
 
   const cartItemsCount = cartItems.length
