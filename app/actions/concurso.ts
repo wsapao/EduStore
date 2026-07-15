@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getGateway } from '@/lib/pagamentos/gateway'
 import { limparCPF } from '@/lib/validacao/cpf'
-import { validarInscricao, type InscricaoInput } from '@/lib/concurso/validacao'
+import { normalizarNomeCandidato, validarInscricao, type InscricaoInput } from '@/lib/concurso/validacao'
 import { CONCURSO, CONCURSO_REF_PREFIX, MODALIDADES, inscricoesAbertas } from '@/lib/concurso/config'
 import { auditLog } from '@/lib/auditoria/log'
 import { ratelimit } from '@/lib/ratelimit'
@@ -47,6 +47,35 @@ export async function criarInscricaoConcurso(input: InscricaoInput): Promise<Cri
 
   const supabase = createAdminClient()
   const cpf = limparCPF(input.resp1_cpf)
+
+  // Edital 2.2.e: 1 modalidade por candidato — bloqueia se o MESMO aluno (nome
+  // equivalente + nascimento) já tem inscrição paga. Pendente não bloqueia (é o
+  // caminho legítimo de refazer/trocar antes de pagar); irmãos têm nomes distintos.
+  const { data: pagas, error: dupErr } = await supabase
+    .from('inscricoes_concurso')
+    .select('aluno_nome, modalidade')
+    .match({
+      escola_id: CONCURSO.escolaId,
+      aluno_nascimento: input.aluno_nascimento,
+      status_pagamento: 'pago',
+    })
+
+  if (dupErr) {
+    // Fail-open: sem a checagem a regra segue valendo administrativamente
+    // (edital: vale a última inscrição com pagamento confirmado).
+    console.error('[concurso] Falha na checagem de duplicidade:', dupErr.message)
+  } else {
+    const alvo = normalizarNomeCandidato(input.aluno_nome)
+    const jaPaga = (pagas as { aluno_nome: string; modalidade: string }[] | null)
+      ?.find(p => normalizarNomeCandidato(p.aluno_nome) === alvo)
+    if (jaPaga) {
+      const nomeModalidade = MODALIDADES.find(m => m.slug === jaPaga.modalidade)?.nome ?? jaPaga.modalidade
+      return {
+        success: false,
+        error: `Este candidato já possui inscrição paga em ${nomeModalidade}. O edital permite inscrição em apenas uma modalidade por candidato.`,
+      }
+    }
+  }
 
   const { data: inscricao, error: insertErr } = await supabase
     .from('inscricoes_concurso')

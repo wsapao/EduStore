@@ -25,7 +25,8 @@ const updateEq = vi.fn(() => Promise.resolve({ error: null as { message: string 
 const update = vi.fn(() => ({ eq: updateEq }))
 const maybeSingle = vi.fn()
 const selectEq = vi.fn(() => ({ maybeSingle, single: maybeSingle }))
-const select = vi.fn(() => ({ eq: selectEq }))
+const selectMatch = vi.fn(() => Promise.resolve({ data: [] as unknown[] | null, error: null as { message: string } | null }))
+const select = vi.fn(() => ({ eq: selectEq, match: selectMatch }))
 const from = vi.fn(() => ({ insert, update, select }))
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ from }) }))
 
@@ -107,6 +108,40 @@ describe('criarInscricaoConcurso', () => {
     expect(r.success).toBe(false)
     expect(insert).not.toHaveBeenCalled()
     expect(criarPagamento).not.toHaveBeenCalled()
+  })
+
+  it('bloqueia candidato que já tem inscrição paga (nome equivalente + mesmo nascimento), sem tocar banco nem gateway', async () => {
+    selectMatch.mockResolvedValueOnce({
+      data: [{ aluno_nome: '  JOÃO ', modalidade: 'volei' }],
+      error: null,
+    })
+    const r = await criarInscricaoConcurso(INPUT) // aluno_nome: 'João'
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error).toContain('apenas uma modalidade')
+    expect(selectMatch).toHaveBeenCalledWith({
+      escola_id: '5d4b0ca0-b55b-4c7b-a41f-08b83e3ec350',
+      aluno_nascimento: '2015-03-10',
+      status_pagamento: 'pago',
+    })
+    expect(insert).not.toHaveBeenCalled()
+    expect(criarPagamento).not.toHaveBeenCalled()
+  })
+
+  it('permite inscrever irmão: inscrição paga de OUTRO aluno não bloqueia', async () => {
+    selectMatch.mockResolvedValueOnce({
+      data: [{ aluno_nome: 'Ana Clara', modalidade: 'judo' }],
+      error: null,
+    })
+    const r = await criarInscricaoConcurso(INPUT)
+    expect(r.success).toBe(true)
+    expect(insert).toHaveBeenCalled()
+  })
+
+  it('não bloqueia inscrição se a checagem de duplicidade falhar (fail-open, regra vira administrativa)', async () => {
+    selectMatch.mockResolvedValueOnce({ data: null, error: { message: 'db indisponível' } })
+    const r = await criarInscricaoConcurso(INPUT)
+    expect(r.success).toBe(true)
+    expect(insert).toHaveBeenCalled()
   })
 
   it('retorna erro amigável se o insert falhar, sem chamar o gateway', async () => {

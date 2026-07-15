@@ -651,6 +651,9 @@ export function InscricaoClient() {
                     )
                   })}
                 </div>
+                <p style={{ fontSize: 12, color: '#6B6B70', margin: '8px 0 0' }}>
+                  O edital permite inscrição em apenas <b>uma modalidade por candidato</b>.
+                </p>
               </fieldset>
             </div>
             {erro && <ErroBox mensagem={erro} />}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validarInscricao, type InscricaoInput } from '@/lib/concurso/validacao'
+import { normalizarNomeCandidato, validarInscricao, type InscricaoInput } from '@/lib/concurso/validacao'
 
 const valida: InscricaoInput = {
   aluno_nome: 'João Pedro Silva', aluno_nascimento: '2015-03-10',
@@ -52,5 +52,14 @@ describe('validarInscricao', () => {
   })
   it('aceita 29 de fevereiro em ano bissexto', () => {
     expect(validarInscricao({ ...valida, aluno_nascimento: '2016-02-29' })).toEqual({ ok: true })
+  })
+})
+
+describe('normalizarNomeCandidato', () => {
+  it('ignora caixa, acentos, espaços duplicados e bordas', () => {
+    expect(normalizarNomeCandidato('  JOÃO   Pedro  ')).toBe('joao pedro')
+  })
+  it('considera equivalentes grafias diferentes do mesmo nome', () => {
+    expect(normalizarNomeCandidato('João Pedro Silva')).toBe(normalizarNomeCandidato('JOAO PEDRO SILVA'))
   })
 })

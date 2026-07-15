@@ -15,6 +15,16 @@ export interface InscricaoInput {
 
 export type ResultadoValidacao = { ok: true } | { ok: false; erros: string[] }
 
+/** Chave de comparação de candidato p/ regra de 1 modalidade (edital 2.2.e): ignora caixa, acentos e espaços. */
+export function normalizarNomeCandidato(nome: string): string {
+  return (nome ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
 /** Data ISO (aaaa-mm-dd) que existe de fato no calendário (Date.parse rola 30/02 p/ março). */
 function dataValida(iso: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso ?? '')) return false
