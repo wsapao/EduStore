@@ -167,12 +167,15 @@ const specs: Spec[] = [
     nome: 'validarIngressoAction',
     chaves: ['checkin.usar'],
     invoke: () => adminActions.validarIngressoAction('tok-1', 'Operadora'),
-    verificaExec: ({ result, session }) => {
-      expect(session.rpc).toHaveBeenCalledWith('validar_ingresso', {
+    verificaExec: ({ result, session, adminClient }) => {
+      // Deve rodar via service role (admin client), nunca via client de sessão —
+      // após o REVOKE de 20260715 só o service_role tem EXECUTE em validar_ingresso.
+      expect(adminClient.rpc).toHaveBeenCalledWith('validar_ingresso', {
         p_token: 'tok-1',
         p_validado_por: 'Operadora',
       })
-      expect(result).toEqual({ ok: true, motivo: '' })
+      expect(session.rpc).not.toHaveBeenCalled()
+      expect((result as { ok: boolean }).ok).toBe(true)
     },
   },
   {
