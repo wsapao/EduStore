@@ -7,12 +7,37 @@ import { enviarEmailResetSenhaAdmin, enviarEmailPedidoCancelado } from '@/lib/em
 import { resolverTemplatePedido } from '@/lib/email/resolver-template'
 import { SITE_URL } from '@/lib/email/resend'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getUserPermissions } from '@/lib/permissoes'
 
+// Guard das actions somente-admin (reset/definição de senha de responsável:
+// devolvem capacidade de assumir a conta de qualquer responsável — inclusive
+// de admins —, então não são delegáveis por permissão de papel).
 async function verificarAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.app_metadata?.role !== 'admin') {
     throw new Error('Acesso negado.')
+  }
+  return { supabase, user }
+}
+
+// Guard por permissão de papel (papel_permissoes): qualquer uma das chaves
+// concede. role=admin passa direto — papéis Admin foram seedados antes de
+// chaves novas (ex.: pagamentos.confirmar) e não as têm no banco.
+//
+// Após este guard as mutations rodam via service role (createAdminClient):
+// as policies de escrita do RLS ainda exigem is_admin(), então o client de
+// sessão de um papel como Financeiro afetaria 0 linhas. O guard é a única
+// barreira — cada action deve exigir exatamente a chave do seu módulo.
+async function verificarPermissao(...chaves: string[]) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Acesso negado.')
+  if (user.app_metadata?.role !== 'admin') {
+    const permissoes = await getUserPermissions(supabase)
+    if (!chaves.some((chave) => permissoes.includes(chave))) {
+      throw new Error('Acesso negado.')
+    }
   }
   return { supabase, user }
 }
@@ -27,13 +52,14 @@ interface VariantePayload {
 
 // ── Confirmar pagamento manualmente ──────────────────────────────────────────
 export async function confirmarPagamentoAction(pedidoId: string) {
-  const { supabase } = await verificarAdmin()
+  await verificarPermissao('pagamentos.confirmar')
+  const db = createAdminClient()
 
   const now = new Date().toISOString()
 
   // Atualiza pedido — só transiciona se ainda pendente (idempotência). Sem essa
   // guarda, cada clique reconfirmava e re-emitia ingressos.
-  const { data: pedidoRows, error: pedidoError } = await supabase
+  const { data: pedidoRows, error: pedidoError } = await db
     .from('pedidos')
     .update({ status: 'pago', data_pagamento: now })
     .eq('id', pedidoId)
@@ -50,14 +76,14 @@ export async function confirmarPagamentoAction(pedidoId: string) {
   }
 
   // Atualiza pagamento
-  await supabase
+  await db
     .from('pagamentos')
     .update({ status: 'confirmado', webhook_confirmado_em: now })
     .eq('pedido_id', pedidoId)
 
   // Gera ingressos para itens que possuem gera_ingresso = true.
   // RPC privilegiada (SECURITY DEFINER) — roda via service role.
-  await createAdminClient().rpc('gerar_ingressos_pedido', { p_pedido_id: pedidoId })
+  await db.rpc('gerar_ingressos_pedido', { p_pedido_id: pedidoId })
 
   revalidatePath('/admin')
   revalidatePath('/admin/pedidos')
@@ -68,7 +94,7 @@ export async function confirmarPagamentoAction(pedidoId: string) {
   // processo pode congelar após a resposta e perder promises soltas (fire-and-forget).
   // Erros de e-mail são capturados aqui e não derrubam a confirmação do pagamento.
   try {
-    const { data: ingressos } = await supabase
+    const { data: ingressos } = await db
       .from('ingressos')
       .select(`
         token,
@@ -79,7 +105,7 @@ export async function confirmarPagamentoAction(pedidoId: string) {
       `)
       .eq('status', 'emitido')
       .in('item_pedido_id',
-        (await supabase.from('itens_pedido').select('id').eq('pedido_id', pedidoId)).data?.map(i => i.id) ?? []
+        (await db.from('itens_pedido').select('id').eq('pedido_id', pedidoId)).data?.map(i => i.id) ?? []
       )
 
     for (const ing of ingressos ?? []) {
@@ -108,20 +134,21 @@ export async function confirmarPagamentoAction(pedidoId: string) {
 const MOTIVO_CANCELAMENTO_ADMIN = 'Cancelamento realizado pela administração da escola'
 
 export async function cancelarPedidoAction(pedidoId: string) {
-  const { supabase } = await verificarAdmin()
+  await verificarPermissao('pedidos.cancelar')
+  const adminClient = createAdminClient()
 
-  const { data: itens } = await supabase
+  const { data: itens } = await adminClient
     .from('itens_pedido')
     .select('variante_id')
     .eq('pedido_id', pedidoId)
 
   // Dados p/ o e-mail — lidos ANTES do cancel (pagamentos vira 'falhou' abaixo)
-  const { data: pedidoEmail } = await supabase
+  const { data: pedidoEmail } = await adminClient
     .from('pedidos')
     .select('numero, total, escola_id, responsavel:responsaveis(nome, email)')
     .eq('id', pedidoId)
     .single()
-  const { data: pagamentoAntes } = await supabase
+  const { data: pagamentoAntes } = await adminClient
     .from('pagamentos')
     .select('status')
     .eq('pedido_id', pedidoId)
@@ -130,7 +157,7 @@ export async function cancelarPedidoAction(pedidoId: string) {
   // Guarda de status + idempotência: só cancela pedidos ainda pendentes/pagos e
   // exige que UMA linha tenha de fato transicionado. Sem isso, cada clique
   // re-executava restaurar_estoque_variante e inflava o estoque.
-  const { data: pedidoRows, error } = await supabase
+  const { data: pedidoRows, error } = await adminClient
     .from('pedidos')
     .update({ status: 'cancelado' })
     .eq('id', pedidoId)
@@ -147,12 +174,11 @@ export async function cancelarPedidoAction(pedidoId: string) {
     return { success: false, error: 'Pedido não pode ser cancelado (já cancelado/reembolsado ou inexistente).' }
   }
 
-  await supabase
+  await adminClient
     .from('pagamentos')
     .update({ status: 'falhou' })
     .eq('pedido_id', pedidoId)
 
-  const adminClient = createAdminClient()
   for (const item of itens ?? []) {
     if (!item.variante_id) continue
     await adminClient.rpc('restaurar_estoque_variante', { p_variante_id: item.variante_id })
@@ -217,7 +243,9 @@ export async function cancelarPedidoAction(pedidoId: string) {
 
 // ── Validar ingresso no check-in ──────────────────────────────────────────────
 export async function validarIngressoAction(token: string, validadoPor: string) {
-  const { supabase } = await verificarAdmin()
+  // RPC validar_ingresso é executável por authenticated (não está no REVOKE
+  // de 20260519) — o client de sessão basta para qualquer papel com a chave.
+  const { supabase } = await verificarPermissao('checkin.usar')
 
   const { data, error } = await supabase
     .rpc('validar_ingresso', { p_token: token, p_validado_por: validadoPor })
@@ -231,9 +259,9 @@ export async function validarIngressoAction(token: string, validadoPor: string) 
 
 // ── Toggle produto ativo ──────────────────────────────────────────────────────
 export async function toggleProdutoAtivoAction(produtoId: string, ativo: boolean) {
-  const { supabase } = await verificarAdmin()
+  await verificarPermissao('produtos.editar')
 
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await createAdminClient()
     .from('produtos')
     .update({ ativo: !ativo })
     .eq('id', produtoId)
@@ -256,24 +284,24 @@ export async function toggleProdutoAtivoAction(produtoId: string, ativo: boolean
 
 // ── Criar produto ─────────────────────────────────────────────────────────────
 export async function criarProdutoAction(formData: FormData) {
-  const { supabase } = await verificarAdmin()
+  const { user } = await verificarPermissao('produtos.criar')
+  const db = createAdminClient()
 
-  // Busca escola_id do admin
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: resp } = await supabase
-    .from('responsaveis').select('escola_id').eq('id', user!.id).single()
-  if (!resp?.escola_id) return { success: false, error: 'Admin sem escola vinculada.' }
+  // Busca escola_id do membro da equipe
+  const { data: resp } = await db
+    .from('responsaveis').select('escola_id').eq('id', user.id).single()
+  if (!resp?.escola_id) return { success: false, error: 'Usuário sem escola vinculada.' }
 
   let imagem_url: string | null = null
   const imgFile = formData.get('imagem_arquivo') as File | null
   if (imgFile && imgFile.size > 0) {
     const ext = imgFile.name.split('.').pop() || 'png'
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await db.storage
       .from('produtos-imagens')
       .upload(fileName, imgFile)
     if (!uploadError && uploadData) {
-      const { data: publicUrlData } = supabase.storage.from('produtos-imagens').getPublicUrl(uploadData.path)
+      const { data: publicUrlData } = db.storage.from('produtos-imagens').getPublicUrl(uploadData.path)
       imagem_url = publicUrlData.publicUrl
     }
   }
@@ -281,10 +309,10 @@ export async function criarProdutoAction(formData: FormData) {
   const payload = parseProdutoForm(formData, resp.escola_id)
   if (imagem_url) payload.imagem_url = imagem_url
 
-  const { data, error } = await supabase.from('produtos').insert(payload).select('id').single()
+  const { data, error } = await db.from('produtos').insert(payload).select('id').single()
   if (error) return { success: false, error: error.message }
 
-  await syncProdutoVariantes(supabase, data.id, parseVariantesForm(formData))
+  await syncProdutoVariantes(db, data.id, parseVariantesForm(formData))
 
   revalidatePath('/admin/produtos')
   revalidatePath('/loja')
@@ -293,18 +321,19 @@ export async function criarProdutoAction(formData: FormData) {
 
 // ── Editar produto ────────────────────────────────────────────────────────────
 export async function editarProdutoAction(produtoId: string, formData: FormData) {
-  const { supabase } = await verificarAdmin()
+  await verificarPermissao('produtos.editar')
+  const db = createAdminClient()
 
   let imagem_url: string | null = null
   const imgFile = formData.get('imagem_arquivo') as File | null
   if (imgFile && imgFile.size > 0) {
     const ext = imgFile.name.split('.').pop() || 'png'
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await db.storage
       .from('produtos-imagens')
       .upload(fileName, imgFile)
     if (!uploadError && uploadData) {
-      const { data: publicUrlData } = supabase.storage.from('produtos-imagens').getPublicUrl(uploadData.path)
+      const { data: publicUrlData } = db.storage.from('produtos-imagens').getPublicUrl(uploadData.path)
       imagem_url = publicUrlData.publicUrl
     }
   }
@@ -312,7 +341,7 @@ export async function editarProdutoAction(produtoId: string, formData: FormData)
   const payload = parseProdutoForm(formData)
   if (imagem_url) payload.imagem_url = imagem_url
 
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await db
     .from('produtos')
     .update(payload)
     .eq('id', produtoId)
@@ -326,7 +355,7 @@ export async function editarProdutoAction(produtoId: string, formData: FormData)
     return { success: false, error: 'Produto não encontrado ou sem permissão.' }
   }
 
-  await syncProdutoVariantes(supabase, produtoId, parseVariantesForm(formData))
+  await syncProdutoVariantes(db, produtoId, parseVariantesForm(formData))
 
   revalidatePath('/admin/produtos')
   revalidatePath(`/admin/produtos/${produtoId}/editar`)
@@ -336,15 +365,16 @@ export async function editarProdutoAction(produtoId: string, formData: FormData)
 
 // ── Duplicar produto ──────────────────────────────────────────────────────────
 export async function duplicarProdutoAction(produtoId: string) {
-  const { supabase } = await verificarAdmin()
+  await verificarPermissao('produtos.criar')
+  const db = createAdminClient()
 
-  const { data: original } = await supabase
+  const { data: original } = await db
     .from('produtos').select('*').eq('id', produtoId).single()
   if (!original) return { success: false, error: 'Produto não encontrado.' }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, created_at, ...rest } = original
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('produtos')
     .insert({ ...rest, nome: `${rest.nome} (cópia)`, ativo: false })
     .select('id').single()
@@ -428,15 +458,15 @@ function parseVariantesForm(formData: FormData): VariantePayload[] {
 }
 
 async function syncProdutoVariantes(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  db: ReturnType<typeof createAdminClient>,
   produtoId: string,
   variantes: VariantePayload[]
 ) {
-  await supabase.from('produto_variantes').delete().eq('produto_id', produtoId)
+  await db.from('produto_variantes').delete().eq('produto_id', produtoId)
 
   if (variantes.length === 0) return
 
-  await supabase.from('produto_variantes').insert(
+  await db.from('produto_variantes').insert(
     variantes.map((variante) => ({
       produto_id: produtoId,
       nome: variante.nome,
@@ -449,9 +479,9 @@ async function syncProdutoVariantes(
 
 // ── Toggle produto esgotado ───────────────────────────────────────────────────
 export async function toggleEsgotadoAction(produtoId: string, esgotado: boolean) {
-  const { supabase } = await verificarAdmin()
+  await verificarPermissao('produtos.editar')
 
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await createAdminClient()
     .from('produtos')
     .update({ esgotado: !esgotado })
     .eq('id', produtoId)
@@ -474,10 +504,11 @@ export async function toggleEsgotadoAction(produtoId: string, esgotado: boolean)
 
 // ── Excluir produto ───────────────────────────────────────────────────────────
 export async function excluirProdutoAction(produtoId: string) {
-  const { supabase } = await verificarAdmin()
+  await verificarPermissao('produtos.excluir')
+  const db = createAdminClient()
 
   // Impede exclusão se há pedidos com este produto
-  const { count } = await supabase
+  const { count } = await db
     .from('itens_pedido')
     .select('id', { count: 'exact', head: true })
     .eq('produto_id', produtoId)
@@ -490,9 +521,9 @@ export async function excluirProdutoAction(produtoId: string) {
   }
 
   // Remove variantes primeiro (FK)
-  await supabase.from('produto_variantes').delete().eq('produto_id', produtoId)
+  await db.from('produto_variantes').delete().eq('produto_id', produtoId)
 
-  const { error } = await supabase.from('produtos').delete().eq('id', produtoId)
+  const { error } = await db.from('produtos').delete().eq('id', produtoId)
   if (error) return { success: false, error: error.message }
 
   revalidatePath('/admin/produtos')
@@ -502,7 +533,8 @@ export async function excluirProdutoAction(produtoId: string) {
 
 // ── Vincular responsável ↔ aluno ─────────────────────────────────────────────
 export async function vincularAlunoResponsavelAction(formData: FormData) {
-  const { supabase } = await verificarAdmin()
+  await verificarPermissao('alunos.editar', 'responsaveis.editar')
+  const db = createAdminClient()
 
   const responsavelId = (formData.get('responsavel_id') as string | null)?.trim()
   const alunoId = (formData.get('aluno_id') as string | null)?.trim()
@@ -512,8 +544,8 @@ export async function vincularAlunoResponsavelAction(formData: FormData) {
   }
 
   const [{ data: responsavel }, { data: aluno }] = await Promise.all([
-    supabase.from('responsaveis').select('id, escola_id').eq('id', responsavelId).single(),
-    supabase.from('alunos').select('id, escola_id').eq('id', alunoId).single(),
+    db.from('responsaveis').select('id, escola_id').eq('id', responsavelId).single(),
+    db.from('alunos').select('id, escola_id').eq('id', alunoId).single(),
   ])
 
   if (!responsavel || !aluno) {
@@ -524,7 +556,7 @@ export async function vincularAlunoResponsavelAction(formData: FormData) {
     return
   }
 
-  const { data: existente } = await supabase
+  const { data: existente } = await db
     .from('responsavel_aluno')
     .select('responsavel_id')
     .eq('responsavel_id', responsavelId)
@@ -535,7 +567,7 @@ export async function vincularAlunoResponsavelAction(formData: FormData) {
     return
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('responsavel_aluno')
     .insert({ responsavel_id: responsavelId, aluno_id: alunoId })
 
@@ -550,7 +582,7 @@ export async function vincularAlunoResponsavelAction(formData: FormData) {
 
 // ── Desvincular responsável ↔ aluno ──────────────────────────────────────────
 export async function desvincularAlunoResponsavelAction(formData: FormData) {
-  const { supabase } = await verificarAdmin()
+  await verificarPermissao('alunos.editar', 'responsaveis.editar')
 
   const responsavelId = (formData.get('responsavel_id') as string | null)?.trim()
   const alunoId = (formData.get('aluno_id') as string | null)?.trim()
@@ -559,7 +591,7 @@ export async function desvincularAlunoResponsavelAction(formData: FormData) {
     return
   }
 
-  const { error } = await supabase
+  const { error } = await createAdminClient()
     .from('responsavel_aluno')
     .delete()
     .eq('responsavel_id', responsavelId)
@@ -682,8 +714,9 @@ export async function definirSenhaResponsavelAction(
 
 // ── Categorias ────────────────────────────────────────────────────────────────
 export async function criarCategoriaAction(formData: FormData) {
-  const { supabase, user } = await verificarAdmin()
-  const { data: resp, error: respErr } = await supabase
+  const { user } = await verificarPermissao('categorias.gerenciar')
+  const db = createAdminClient()
+  const { data: resp, error: respErr } = await db
     .from('responsaveis')
     .select('escola_id')
     .eq('id', user.id)
@@ -699,8 +732,8 @@ export async function criarCategoriaAction(formData: FormData) {
     return { success: false, error: 'Erro ao identificar escola do admin.' }
   }
   if (!resp?.escola_id) {
-    console.error('[criarCategoriaAction] admin sem responsavel vinculado', { userId: user.id })
-    return { success: false, error: 'Admin sem escola vinculada.' }
+    console.error('[criarCategoriaAction] usuário sem responsavel vinculado', { userId: user.id })
+    return { success: false, error: 'Usuário sem escola vinculada.' }
   }
 
   const nome = (formData.get('nome') as string).trim()
@@ -710,7 +743,7 @@ export async function criarCategoriaAction(formData: FormData) {
   if (!nome) return { success: false, error: 'Nome da categoria é obrigatório.' }
 
   // Retorna a row criada pra o cliente atualizar o select inline (UX do form de produto).
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('categorias_produto')
     .insert({
       escola_id: resp.escola_id,
@@ -746,16 +779,16 @@ export async function criarCategoriaAction(formData: FormData) {
 }
 
 export async function toggleCategoriaAction(id: string, ativo: boolean) {
-  const { supabase } = await verificarAdmin()
-  const { error } = await supabase.from('categorias_produto').update({ ativo: !ativo }).eq('id', id)
+  await verificarPermissao('categorias.gerenciar')
+  const { error } = await createAdminClient().from('categorias_produto').update({ ativo: !ativo }).eq('id', id)
   if (error) return { success: false, error: error.message }
   revalidatePath('/admin/produtos/categorias')
   return { success: true }
 }
 
 export async function excluirCategoriaAction(id: string) {
-  const { supabase } = await verificarAdmin()
-  const { error } = await supabase.from('categorias_produto').delete().eq('id', id)
+  await verificarPermissao('categorias.gerenciar')
+  const { error } = await createAdminClient().from('categorias_produto').delete().eq('id', id)
   if (error) return { success: false, error: error.message }
   revalidatePath('/admin/produtos/categorias')
   return { success: true }
@@ -763,10 +796,10 @@ export async function excluirCategoriaAction(id: string) {
 
 // ── Vouchers ──────────────────────────────────────────────────────────────────
 export async function criarVoucherAction(formData: FormData) {
-  const { supabase } = await verificarAdmin()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: resp } = await supabase.from('responsaveis').select('escola_id').eq('id', user!.id).single()
-  if (!resp?.escola_id) return { success: false, error: 'Admin sem escola vinculada.' }
+  const { user } = await verificarPermissao('vouchers.gerenciar')
+  const db = createAdminClient()
+  const { data: resp } = await db.from('responsaveis').select('escola_id').eq('id', user.id).single()
+  if (!resp?.escola_id) return { success: false, error: 'Usuário sem escola vinculada.' }
 
   const gerarAleatorio = formData.get('gerar_aleatorio') === 'on'
   const codigoDigitado = (formData.get('codigo') as string)?.trim().toUpperCase()
@@ -814,7 +847,7 @@ export async function criarVoucherAction(formData: FormData) {
     ativo: true,
   }))
 
-  const { error } = await supabase.from('vouchers').insert(inserts)
+  const { error } = await db.from('vouchers').insert(inserts)
 
   if (error) {
     if (error.code === '23505') return { success: false, error: 'Um cupom com esse código já existe.' }
@@ -826,24 +859,24 @@ export async function criarVoucherAction(formData: FormData) {
 }
 
 export async function toggleVoucherAction(id: string, ativo: boolean) {
-  const { supabase } = await verificarAdmin()
-  const { error } = await supabase.from('vouchers').update({ ativo: !ativo }).eq('id', id)
+  await verificarPermissao('vouchers.gerenciar')
+  const { error } = await createAdminClient().from('vouchers').update({ ativo: !ativo }).eq('id', id)
   if (error) return { success: false, error: error.message }
   revalidatePath('/admin/vouchers')
   return { success: true }
 }
 
 export async function excluirVoucherAction(id: string) {
-  const { supabase } = await verificarAdmin()
-  const { error } = await supabase.from('vouchers').delete().eq('id', id)
+  await verificarPermissao('vouchers.gerenciar')
+  const { error } = await createAdminClient().from('vouchers').delete().eq('id', id)
   if (error) return { success: false, error: error.message }
   revalidatePath('/admin/vouchers')
   return { success: true }
 }
 
 export async function excluirVouchersLoteAction(ids: string[]) {
-  const { supabase } = await verificarAdmin()
-  const { error } = await supabase.from('vouchers').delete().in('id', ids)
+  await verificarPermissao('vouchers.gerenciar')
+  const { error } = await createAdminClient().from('vouchers').delete().in('id', ids)
   if (error) return { success: false, error: error.message }
   revalidatePath('/admin/vouchers')
   return { success: true }
@@ -851,7 +884,7 @@ export async function excluirVouchersLoteAction(ids: string[]) {
 
 // ── Estornar recarga confirmada (admin only) ──────────────────
 export async function estornarRecargaAdminAction(recargaId: string): Promise<{ success: true; saldoApos: number } | { error: string }> {
-  const { supabase, user } = await verificarAdmin()
+  const { user } = await verificarPermissao('cantina.gerenciar')
   const adminClient = createAdminClient()
 
   const { data: recarga } = await adminClient
@@ -909,7 +942,7 @@ export async function estornarRecargaAdminAction(recargaId: string): Promise<{ s
 
 // ── Cancelar recarga aguardando (admin — qualquer método) ─────
 export async function cancelarRecargaAdminAction(recargaId: string): Promise<{ success: true } | { error: string }> {
-  const { user } = await verificarAdmin()
+  const { user } = await verificarPermissao('cantina.gerenciar')
   const adminClient = createAdminClient()
 
   const { data: recarga } = await adminClient
@@ -943,7 +976,7 @@ export async function cancelarRecargaAdminAction(recargaId: string): Promise<{ s
 export async function aprovarEstornoAction(
   solicitacaoId: string,
 ): Promise<{ success: true } | { error: string }> {
-  const { user } = await verificarAdmin()
+  const { user } = await verificarPermissao('cantina.gerenciar')
   const adminClient = createAdminClient()
 
   // Buscar solicitação + recarga para obter gateway_id e método ANTES de aprovar
@@ -1020,7 +1053,7 @@ export async function negarEstornoAction(
   solicitacaoId: string,
   observacao?: string,
 ): Promise<{ success: true } | { error: string }> {
-  const { user } = await verificarAdmin()
+  const { user } = await verificarPermissao('cantina.gerenciar')
   const adminClient = createAdminClient()
 
   const { data, error } = await adminClient.rpc('negar_estorno' as any, {
@@ -1040,7 +1073,7 @@ export async function negarEstornoAction(
 export async function aprovarEstornoParcialAction(
   estornoId: string,
 ): Promise<{ success: true } | { error: string }> {
-  await verificarAdmin()
+  await verificarPermissao('pedidos.estornar')
   const adminClient = createAdminClient()
 
   function firstOf<T>(v: T | T[] | null | undefined): T | null {
@@ -1157,7 +1190,7 @@ export async function negarEstornoParcialAction(
   estornoId: string,
   obs_admin: string,
 ): Promise<{ success: true } | { error: string }> {
-  await verificarAdmin()
+  await verificarPermissao('pedidos.estornar')
   if (!obs_admin.trim()) return { error: 'Observação é obrigatória ao negar.' }
 
   const adminClient = createAdminClient()

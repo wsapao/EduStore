@@ -37,8 +37,11 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   {
     modulo: 'pagamentos', rotulo: 'Pagamentos',
     permissoes: [
-      { chave: 'pagamentos.ver',      rotulo: 'Ver pagamentos' },
-      { chave: 'pagamentos.estornar', rotulo: 'Estornar pagamentos' },
+      { chave: 'pagamentos.ver',       rotulo: 'Ver pagamentos' },
+      { chave: 'pagamentos.estornar',  rotulo: 'Estornar pagamentos' },
+      // Não faz parte do seed original (seed_papeis_presets): papéis existentes
+      // só a recebem via UI de papéis. Admins passam pelo fallback role=admin.
+      { chave: 'pagamentos.confirmar', rotulo: 'Confirmar pagamentos manualmente' },
     ],
   },
   {
