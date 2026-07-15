@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { criarAlunoAction, editarAlunoAction, toggleAlunoAtivoAction } from '@/app/actions/alunos'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { SerieChecklist } from '@/components/loja/SerieChecklist'
 import type { Aluno } from '@/types/database'
 
 const TURMAS = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -75,6 +76,11 @@ export function AlunosClient({ alunos: initialAlunos, series, isOnboarding }: Pr
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (!serie) {
+      setError('Selecione a série do aluno na lista.')
+      return
+    }
 
     const fd = new FormData()
     fd.set('nome', nome)
@@ -242,52 +248,42 @@ export function AlunosClient({ alunos: initialAlunos, series, isOnboarding }: Pr
                 />
               </div>
 
-              {/* Série e Turma */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-2)', marginBottom: 6, letterSpacing: '.03em' }}>
-                    SÉRIE / ANO *
-                  </label>
-                  <select
-                    value={serie}
-                    onChange={e => setSerie(e.target.value)}
-                    required
-                    style={{
-                      width: '100%', height: 44, padding: '0 14px',
-                      borderRadius: 10, border: '1.5px solid var(--border)',
-                      fontSize: 14, color: serie ? 'var(--text-1)' : 'var(--text-3)',
-                      background: 'var(--surface-2)', appearance: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <option value="">Selecionar…</option>
-                    {serieOptions.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+              {/* Série */}
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-2)', marginBottom: 6, letterSpacing: '.03em' }}>
+                  SÉRIE / ANO *
+                </label>
+                <SerieChecklist
+                  series={serieOptions}
+                  value={serie}
+                  onChange={setSerie}
+                />
+                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
+                  Marque a série do aluno. Os produtos da loja são liberados conforme a série escolhida.
                 </div>
+              </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-2)', marginBottom: 6, letterSpacing: '.03em' }}>
-                    TURMA
-                  </label>
-                  <select
-                    value={turma}
-                    onChange={e => setTurma(e.target.value)}
-                    style={{
-                      width: '100%', height: 44, padding: '0 14px',
-                      borderRadius: 10, border: '1.5px solid var(--border)',
-                      fontSize: 14, color: turma ? 'var(--text-1)' : 'var(--text-3)',
-                      background: 'var(--surface-2)', appearance: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <option value="">Opcional</option>
-                    {TURMAS.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
+              {/* Turma */}
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-2)', marginBottom: 6, letterSpacing: '.03em' }}>
+                  TURMA
+                </label>
+                <select
+                  value={turma}
+                  onChange={e => setTurma(e.target.value)}
+                  style={{
+                    width: '100%', height: 44, padding: '0 14px',
+                    borderRadius: 10, border: '1.5px solid var(--border)',
+                    fontSize: 14, color: turma ? 'var(--text-1)' : 'var(--text-3)',
+                    background: 'var(--surface-2)', appearance: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="">Opcional</option>
+                  {TURMAS.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
 
               {error && (

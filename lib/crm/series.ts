@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { activesoft } from '@/lib/activesoft'
-import { DEFAULT_SERIES, ordenarSeries } from '@/lib/crm/series-core'
+import { DEFAULT_SERIES, consolidarSeries, ordenarSeries } from '@/lib/crm/series-core'
 
 export { DEFAULT_SERIES, normalizeSerie, serieMatches, produtoDisponivelParaSerie } from '@/lib/crm/series-core'
 
@@ -56,12 +56,13 @@ export async function getSeriesDisponiveis(): Promise<string[]> {
   const seriesCrm = await getSeriesFromEduCRM()
   if (seriesCrm.length > 0) return ordenarSeries(seriesCrm)
 
-  // 3) Fallback local: séries presentes na tabela `alunos` + lista default.
+  // 3) Fallback local: séries presentes na tabela `alunos` + lista default,
+  // consolidadas pra não oferecer grafias equivalentes duplicadas.
   try {
     const supabase = await createClient()
     const { data } = await supabase.from('alunos').select('serie').eq('ativo', true)
     const seriesLocais = (data?.map(a => a.serie) || []) as string[]
-    return ordenarSeries([...DEFAULT_SERIES, ...seriesLocais])
+    return consolidarSeries(seriesLocais, DEFAULT_SERIES)
   } catch {
     return ordenarSeries(DEFAULT_SERIES)
   }
