@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ratelimit } from '@/lib/ratelimit'
 import { limparCPF, validarCPF } from '@/lib/validacao/cpf'
 import { EMAIL_RE } from '@/lib/validacao/email'
+import { getUserPermissions, podeAcessarAdmin } from '@/lib/permissoes'
 
 async function getClientIp() {
   const h = await headers()
@@ -79,8 +80,10 @@ export async function loginAction(formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  const isAdmin = authData.user?.app_metadata?.role === 'admin'
-  redirect(isAdmin ? '/admin' : '/loja')
+  // Mesmo critério do guard de app/(admin)/layout.tsx: quem tem papel de
+  // equipe (Admin, Financeiro, …) entra pelo admin, mesmo sendo também pai.
+  const permissoes = await getUserPermissions(supabase)
+  redirect(podeAcessarAdmin(permissoes) ? '/admin' : '/loja')
 }
 
 // ── CADASTRO ──

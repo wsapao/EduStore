@@ -25,6 +25,7 @@ function setup({
   signInError = null as string | null,
   appRole = undefined as string | undefined,
   rpcEmail = null as string | null,
+  permissoes = [] as string[],
 } = {}) {
   ;(ratelimit.check as any).mockResolvedValue({ allowed: true, retryAfter: 0 })
 
@@ -34,8 +35,28 @@ function setup({
       : { data: { user: { id: 'u-1', app_metadata: appRole ? { role: appRole } : {} } }, error: null }
   )
   const resetPasswordForEmail = vi.fn().mockResolvedValue({ data: {}, error: null })
+  const getUser = vi.fn().mockResolvedValue({ data: { user: { id: 'u-1' } } })
+  const from = vi.fn((table: string) => {
+    if (table === 'usuario_papel') {
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: permissoes.length ? { papel_id: 'papel-1', suspenso: false } : null,
+            }),
+          }),
+        }),
+      }
+    }
+    return {
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: permissoes.map((chave) => ({ chave })) }),
+      }),
+    }
+  })
   ;(createClient as any).mockResolvedValue({
-    auth: { signInWithPassword, resetPasswordForEmail },
+    auth: { signInWithPassword, resetPasswordForEmail, getUser },
+    from,
   })
 
   const rpc = vi.fn().mockResolvedValue({ data: rpcEmail, error: null })
@@ -66,9 +87,21 @@ describe('loginAction — CPF ou e-mail', () => {
   })
 
   it('admin logando por e-mail é redirecionado para /admin', async () => {
-    setup({ appRole: 'admin' })
+    setup({ appRole: 'admin', permissoes: ['configuracoes.ver', 'produtos.ver', 'pedidos.ver'] })
     await loginAction(fd({ cpf: 'admin@escola.com', senha: 'segredo123' }))
     expect(redirect).toHaveBeenCalledWith('/admin')
+  })
+
+  it('membro da equipe sem role admin (ex.: Financeiro) também vai para /admin', async () => {
+    setup({ appRole: 'financeiro', permissoes: ['pedidos.ver', 'pagamentos.ver'] })
+    await loginAction(fd({ cpf: 'financeiro@escola.com', senha: 'segredo123' }))
+    expect(redirect).toHaveBeenCalledWith('/admin')
+  })
+
+  it('pai sem papel de equipe continua indo para /loja', async () => {
+    setup({ permissoes: [] })
+    await loginAction(fd({ cpf: 'pai@escola.com', senha: 'segredo123' }))
+    expect(redirect).toHaveBeenCalledWith('/loja')
   })
 
   it('e-mail com formato inválido retorna erro genérico sem tentar autenticar', async () => {
