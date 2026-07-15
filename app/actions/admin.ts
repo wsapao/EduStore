@@ -243,11 +243,13 @@ export async function cancelarPedidoAction(pedidoId: string) {
 
 // ── Validar ingresso no check-in ──────────────────────────────────────────────
 export async function validarIngressoAction(token: string, validadoPor: string) {
-  // RPC validar_ingresso é executável por authenticated (não está no REVOKE
-  // de 20260519) — o client de sessão basta para qualquer papel com a chave.
-  const { supabase } = await verificarPermissao('checkin.usar')
+  // validar_ingresso é SECURITY DEFINER e queima o ingresso (UPDATE usado_em).
+  // A migration 20260715 revoga o EXECUTE de anon/authenticated e concede só ao
+  // service_role, então a chamada roda via admin client — verificarPermissao é
+  // a única barreira, impedindo POST /rpc/validar_ingresso direto por um pai.
+  await verificarPermissao('checkin.usar')
 
-  const { data, error } = await supabase
+  const { data, error } = await createAdminClient()
     .rpc('validar_ingresso', { p_token: token, p_validado_por: validadoPor })
 
   if (error) return { ok: false, motivo: error.message }
