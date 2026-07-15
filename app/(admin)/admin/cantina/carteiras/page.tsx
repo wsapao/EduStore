@@ -1,13 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 import { CarteirasClient } from './CarteirasClient'
 
 export default async function AdminCantinaCarteirasPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!user) redirect('/login')
+  if (!(await currentPermissions()).includes('cantina.ver')) redirect('/admin')
 
   const adminClient = createAdminClient()
   const { data: resp } = await adminClient.from('responsaveis').select('escola_id').eq('id', user.id).single()

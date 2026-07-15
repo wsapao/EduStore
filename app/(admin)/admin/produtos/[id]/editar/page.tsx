@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 import { ProdutoForm } from '../../ProdutoForm'
 import { getSeriesDisponiveis } from '@/lib/crm/series'
@@ -15,7 +16,8 @@ export default async function EditarProdutoPage({ params }: Props) {
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!user) redirect('/login')
+  if (!(await currentPermissions()).includes('produtos.editar')) redirect('/admin')
 
   // Paraleliza tudo: produto + categorias + séries (CRM com timeout 2s).
   // Antes essas 3 chamadas rodavam em série e travavam quando o CRM ficava lento.

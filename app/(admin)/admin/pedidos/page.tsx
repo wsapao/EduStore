@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 import { confirmarPagamentoAction, cancelarPedidoAction } from '@/app/actions/admin'
 import type { StatusPedido, MetodoPagamento } from '@/types/database'
@@ -84,7 +85,8 @@ export default async function AdminPedidos({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!user) redirect('/login')
+  if (!(await currentPermissions()).includes('pedidos.ver')) redirect('/admin')
 
   const { status: filtroStatus, q, page, from: fromDate, to: toDate } = await searchParams
   const filtroAtual = filtroStatus ?? 'todos'

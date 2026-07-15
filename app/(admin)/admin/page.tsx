@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { currentPermissions, podeAcessarAdmin } from '@/lib/permissoes'
 import Link from 'next/link'
 import type {
   CategoriaProduto,
@@ -76,7 +77,8 @@ export default async function AdminDashboard({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!user) redirect('/login')
+  if (!podeAcessarAdmin(await currentPermissions())) redirect('/loja')
 
   const { periodo, from, to } = await searchParams
   const periodoAtual: PeriodoDashboard =

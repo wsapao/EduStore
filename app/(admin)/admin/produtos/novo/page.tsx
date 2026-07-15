@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 import { ProdutoForm } from '../ProdutoForm'
 import { getSeriesDisponiveis } from '@/lib/crm/series'
@@ -7,7 +8,8 @@ import { getSeriesDisponiveis } from '@/lib/crm/series'
 export default async function NovoProdutoPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!user) redirect('/login')
+  if (!(await currentPermissions()).includes('produtos.criar')) redirect('/admin')
 
   // Paraleliza categorias + séries (CRM com timeout 2s) — antes rodavam em série.
   const [{ data: categorias }, seriesDisponiveis] = await Promise.all([

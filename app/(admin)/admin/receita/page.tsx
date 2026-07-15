@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getAdminTone } from '@/lib/admin-ui-tones'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 import type { MetodoPagamento } from '@/types/database'
 
@@ -86,7 +87,8 @@ export default async function ReceitaPage({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!user) redirect('/login')
+  if (!(await currentPermissions()).includes('receita.ver')) redirect('/admin')
 
   const { periodo, from, to } = await searchParams
   const periodoAtual: PeriodoDashboard =

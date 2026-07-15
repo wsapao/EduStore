@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAdminTone } from '@/lib/admin-ui-tones'
 import { summarizeCantinaMovementsMonth } from '@/lib/cantina/dashboard'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 
 function fmtMoeda(v: number) {
@@ -26,7 +27,8 @@ export default async function AdminCantinaPage() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+    if (!user) redirect('/login')
+    if (!(await currentPermissions()).includes('cantina.ver')) redirect('/admin')
 
     const adminClient = createAdminClient()
 

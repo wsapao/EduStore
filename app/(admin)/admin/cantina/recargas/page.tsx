@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAdminTone } from '@/lib/admin-ui-tones'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 import { RecargasClient } from './RecargasClient'
 import { SolicitacoesClient } from './SolicitacoesClient'
@@ -13,7 +14,7 @@ export default async function RecargasAdminPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  if (user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!(await currentPermissions()).includes('cantina.ver')) redirect('/admin')
 
   const adminClient = createAdminClient()
 

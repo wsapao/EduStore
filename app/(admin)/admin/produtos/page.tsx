@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 import { ExcluirProdutoButton } from './ExcluirProdutoButton'
 import { DuplicarProdutoButton, ToggleAtivoButton, ToggleEsgotadoButton } from './ProdutoAcoesButtons'
@@ -32,7 +33,8 @@ export default async function AdminProdutos({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!user) redirect('/login')
+  if (!(await currentPermissions()).includes('produtos.ver')) redirect('/admin')
 
   const { q, page } = await searchParams
   const busca = q?.trim() ?? ''

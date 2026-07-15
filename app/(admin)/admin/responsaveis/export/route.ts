@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUserPermissions } from '@/lib/permissoes'
 
 function escapeCsv(value: string | null | undefined) {
   let normalized = value ?? ''
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.app_metadata?.role !== 'admin') {
+  if (!user || !(await getUserPermissions(supabase)).includes('responsaveis.ver')) {
     return new Response('Acesso negado.', { status: 403 })
   }
 

@@ -1,12 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 import { VoucherManager } from './VoucherManager'
 
 export default async function VouchersPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!user) redirect('/login')
+  if (!(await currentPermissions()).includes('vouchers.ver')) redirect('/admin')
 
   const [{ data: vouchers }, { data: produtos }] = await Promise.all([
     supabase.from('vouchers').select('*').order('created_at', { ascending: false }),

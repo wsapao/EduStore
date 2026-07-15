@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import Link from 'next/link'
 import type { Aluno } from '@/types/database'
 import {
@@ -72,7 +73,8 @@ export default async function AdminResponsaveisPage({
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/loja')
+  if (!user) redirect('/login')
+  if (!(await currentPermissions()).includes('responsaveis.ver')) redirect('/admin')
 
   let query = supabase
     .from('responsaveis')

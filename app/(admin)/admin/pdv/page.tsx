@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { currentPermissions } from '@/lib/permissoes'
 import { PDVClient } from './PDVClient'
 
 export default async function PDVPage() {
@@ -7,9 +8,7 @@ export default async function PDVPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
-
-  const role = user.app_metadata?.role
-  if (role !== 'admin' && role !== 'operador') redirect('/loja')
+  if (!(await currentPermissions()).includes('pdv.usar')) redirect('/admin')
 
   // Fetch responsavel/operador para obter a escola_id
   const { data: responsavel } = await supabase
