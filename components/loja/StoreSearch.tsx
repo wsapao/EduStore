@@ -48,14 +48,14 @@ export function StoreSearch({
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        background: 'white',
-        border: '1.5px solid rgba(0,0,0,.07)',
-        borderRadius: 13,
+        background: 'rgba(118,118,128,.12)',
+        border: 'none',
+        borderRadius: 12,
         padding: '0 12px',
         height: 40,
-        boxShadow: 'inset 0 1px 3px rgba(0,0,0,.05)'
+        boxShadow: 'none'
       }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
           <circle cx="11" cy="11" r="8"/>
           <path d="m21 21-4.35-4.35"/>
         </svg>
@@ -71,7 +71,7 @@ export function StoreSearch({
             outline: 'none',
             background: 'transparent',
             fontSize: 12,
-            color: '#374151',
+            color: '#000000',
             fontFamily: 'inherit',
           }}
         />
@@ -111,7 +111,7 @@ export function StoreSearch({
             type="button"
             onClick={clearSearch}
             style={{
-              background: 'none', border: 'none', color: '#f59e0b', 
+              background: 'none', border: 'none', color: '#f97316',
               fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: 0
             }}
           >

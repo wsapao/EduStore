@@ -25,13 +25,13 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
   if (hour < 12) greeting = 'Bom dia'
   else if (hour < 18) greeting = 'Boa tarde'
 
-  const avatarColor = selectedAluno?.cor ?? '#6366f1'
+  const avatarColor = selectedAluno?.cor ?? '#6155f5'
   const initials = selectedAluno ? (selectedAluno.nome || '').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?'
   const nomes = useMemo(() => buildAlunoNomesExibicao(alunos), [alunos])
 
   return (
     <div style={{
-      background: 'linear-gradient(175deg, #0c1e3d 0%, #0a1628 70%)',
+      background: 'linear-gradient(175deg, #2c2c2e 0%, #1c1c1e 70%)',
       borderRadius: '0 0 28px 28px',
       position: 'relative',
       overflow: 'hidden'
@@ -45,7 +45,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
       
       <div style={{
         position: 'absolute', top: -50, right: -30, width: 160, height: 160,
-        borderRadius: '50%', background: 'rgba(245,158,11,.12)', filter: 'blur(32px)'
+        borderRadius: '50%', background: 'rgba(249,115,22,.16)', filter: 'blur(32px)'
       }} />
 
       <div style={{
@@ -69,8 +69,8 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
           {cartItemsCount > 0 && (
             <span style={{
               position: 'absolute', top: -4, right: -4, width: 16, height: 16,
-              background: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 9, fontWeight: 'bold', color: 'white', border: '2px solid #0a1628'
+              background: '#ff383c', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 9, fontWeight: 'bold', color: 'white', border: '2px solid #1c1c1e'
             }}>
               {cartItemsCount}
             </span>
@@ -96,7 +96,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
             <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,.85)', letterSpacing: '.02em', marginBottom: 2 }}>
               {greeting}, responsável
             </div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: 'white', letterSpacing: '-.04em', marginBottom: 5 }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: 'white', letterSpacing: '-.03em', marginBottom: 5 }}>
               {nomes.get(selectedAluno.id)?.primeiro || (selectedAluno.nome || '').split(' ')[0]}
             </div>
             <div style={{
@@ -107,7 +107,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
             </div>
             <button 
               onClick={() => setShowChildSelector(!showChildSelector)}
-              style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24', marginTop: 8, background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ fontSize: 11, fontWeight: 600, color: '#fb923c', marginTop: 8, background: 'none', border: 'none', cursor: 'pointer' }}
             >
               Trocar filho ↓
             </button>
@@ -117,7 +117,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
             <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,.85)', letterSpacing: '.02em', marginBottom: 2 }}>
               {greeting}, {responsavel?.nome?.split(' ')[0] ?? 'Usuário'}
             </div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: 'white', letterSpacing: '-.04em', marginBottom: 5 }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: 'white', letterSpacing: '-.03em', marginBottom: 5 }}>
               Bem-vindo(a)!
             </div>
           </>

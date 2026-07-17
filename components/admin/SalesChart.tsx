@@ -47,22 +47,22 @@ export function SalesChart({ data }: SalesChartProps) {
         >
           <defs>
             <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+              <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5ea" />
           <XAxis 
             dataKey="label" 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} 
+            tick={{ fontSize: 11, fill: '#6c6c70', fontWeight: 600 }} 
             dy={10}
           />
           <YAxis 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} 
+            tick={{ fontSize: 11, fill: '#6c6c70', fontWeight: 600 }} 
             tickFormatter={(value) => `R$ ${value}`}
           />
           <Tooltip 
@@ -83,7 +83,7 @@ export function SalesChart({ data }: SalesChartProps) {
           <Area 
             type="monotone" 
             dataKey="value" 
-            stroke="#4f46e5" 
+            stroke="#f97316" 
             strokeWidth={3}
             fillOpacity={1} 
             fill="url(#colorValue)" 

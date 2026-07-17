@@ -2,9 +2,18 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getEscolaByUser, escolaThemeStyle } from '@/lib/escola/getEscola'
 import { currentPermissions, podeAcessarAdmin } from '@/lib/permissoes'
+import { isPreviewTemaAdmin, PREVIEW_ESCOLA_NOME, PREVIEW_PERMISSOES } from '@/lib/preview-tema/admin-mocks'
 import { AdminShell } from './AdminShell'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  if (isPreviewTemaAdmin()) {
+    return (
+      <AdminShell escolaNome={PREVIEW_ESCOLA_NOME} iniciais="WS" permissoes={PREVIEW_PERMISSOES}>
+        {children}
+      </AdminShell>
+    )
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

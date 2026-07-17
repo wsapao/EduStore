@@ -197,8 +197,8 @@ export function AdminMobileNav({ permissoes, theme }: { permissoes: string[]; th
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     padding: '12px 14px', borderRadius: 12,
-                    fontSize: 13, fontWeight: 700, color: '#b91c1c',
-                    background: '#fee2e2', border: 'none', cursor: 'pointer',
+                    fontSize: 13, fontWeight: 700, color: '#e9152d',
+                    background: '#ffe3e2', border: 'none', cursor: 'pointer',
                   }}
                 >
                   <LogOut size={16} strokeWidth={2} />
