@@ -112,7 +112,9 @@ export function ProductCard({
       }}
     >
       <div style={{
-        height: 76,
+        // Com imagem, a área de mídia usa proporção 16:9 (limitada a 200px);
+        // a faixa de 76px com cover cortava quase todo o cartaz de eventos.
+        ...(produto.imagem_url ? { aspectRatio: '16 / 9', maxHeight: 200 } : { height: 76 }),
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -125,9 +127,27 @@ export function ProductCard({
           backgroundImage: 'radial-gradient(circle, rgba(255,255,255,.1) 1px, transparent 1px)',
           backgroundSize: '14px 14px'
         }} />
-        
+
         {produto.imagem_url ? (
-          <Image src={produto.imagem_url} alt={produto.nome} fill sizes="150px" style={{ objectFit: 'cover' }} />
+          <>
+            {/* Cartazes verticais não cabem em cover sem corte: fundo desfocado
+                preenche a área e a arte inteira aparece por cima com contain. */}
+            <Image
+              src={produto.imagem_url}
+              alt=""
+              aria-hidden
+              fill
+              sizes="(max-width: 767px) 100vw, 340px"
+              style={{ objectFit: 'cover', filter: 'blur(20px) saturate(1.1)', transform: 'scale(1.2)', opacity: 0.9 }}
+            />
+            <Image
+              src={produto.imagem_url}
+              alt={produto.nome}
+              fill
+              sizes="(max-width: 767px) 100vw, 340px"
+              style={{ objectFit: 'contain' }}
+            />
+          </>
         ) : (
           <div style={{
             fontSize: 30,

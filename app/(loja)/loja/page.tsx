@@ -574,7 +574,9 @@ function getProductListStyle(layout: 'grid' | 'lista'): React.CSSProperties {
     return {
       display: 'grid',
       gap: 12,
-      gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+      // auto-fill (não auto-fit): seção com 1 produto mantém card em largura de
+      // coluna em vez de esticar até a largura toda da tela no desktop.
+      gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
       alignItems: 'start',
     }
   }
