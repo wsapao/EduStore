@@ -33,16 +33,16 @@ const NOMES = [
 ]
 
 const PRODUTOS = [
-  { id: 'pv-p1', nome: 'Passeio ao Museu do Ipiranga', categoria: 'passeios', ativo: true, esgotado: false, capacidade: 40, prazo: 9, evento: 12, preco: 120 },
-  { id: 'pv-p2', nome: 'Festa Junina 2026 — Ingresso Família', categoria: 'eventos', ativo: true, esgotado: false, capacidade: 300, prazo: 18, evento: 20, preco: 35 },
+  { id: 'pv-p1', nome: 'Passeio ao Museu do Ipiranga', categoria: 'passeios', ativo: true, esgotado: false, capacidade: null, prazo: 9, evento: 12, preco: 120 },
+  { id: 'pv-p2', nome: 'Festa Junina 2026 — Ingresso Família', categoria: 'eventos', ativo: true, esgotado: false, capacidade: null, prazo: 18, evento: 20, preco: 35 },
   { id: 'pv-p3', nome: 'Camiseta Polo do Uniforme', categoria: 'uniforme', ativo: true, esgotado: false, capacidade: null, prazo: null, evento: null, preco: 89.9 },
   { id: 'pv-p4', nome: 'Agasalho de Inverno', categoria: 'uniforme', ativo: true, esgotado: false, capacidade: null, prazo: null, evento: null, preco: 129.9 },
   { id: 'pv-p5', nome: 'Kit Material de Artes', categoria: 'materiais', ativo: true, esgotado: false, capacidade: null, prazo: 9, evento: null, preco: 75 },
   { id: 'pv-p6', nome: 'Apostila 2º Semestre', categoria: 'materiais', ativo: true, esgotado: false, capacidade: null, prazo: null, evento: null, preco: 210 },
-  { id: 'pv-p7', nome: 'Formatura EF2 — Convite Extra', categoria: 'eventos', ativo: true, esgotado: true, capacidade: 180, prazo: null, evento: 30, preco: 60 },
+  { id: 'pv-p7', nome: 'Formatura EF2 — Convite Extra', categoria: 'eventos', ativo: true, esgotado: true, capacidade: null, prazo: null, evento: 30, preco: 60 },
   { id: 'pv-p8', nome: 'Segunda Chamada — Matemática', categoria: 'segunda_chamada', ativo: true, esgotado: false, capacidade: null, prazo: 11, evento: null, preco: 50 },
   { id: 'pv-p9', nome: 'Caneca da Copa Tadeu', categoria: 'outros', ativo: true, esgotado: false, capacidade: null, prazo: null, evento: null, preco: 28 },
-  { id: 'pv-p10', nome: 'Estudo do Meio — Fazenda', categoria: 'passeios', ativo: true, esgotado: false, capacidade: 80, prazo: 22, evento: 28, preco: 185 },
+  { id: 'pv-p10', nome: 'Estudo do Meio — Fazenda', categoria: 'passeios', ativo: true, esgotado: false, capacidade: null, prazo: 22, evento: 28, preco: 185 },
 ]
 
 export function getPreviewAdminData(_interval?: unknown) {
@@ -108,7 +108,7 @@ export function getPreviewAdminData(_interval?: unknown) {
     ...Array.from({ length: 23 }, () => ({ produto_id: 'pv-p10', status: 'emitido' })),
   ]
 
-  const carteiras = Array.from({ length: 86 }, () => ({ saldo: Number((rand() * 120).toFixed(2)) }))
+  const carteiras: Array<{ saldo: number }> = []
 
   const pixPendentes = pedidos
     .filter((p) => p.status === 'pendente' && agora - new Date(p.created_at).getTime() < DIA)
