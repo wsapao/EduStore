@@ -109,15 +109,15 @@ export function CategoryFilter({ counts, tabs }: Props) {
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              padding: '6px 11px',
-              borderRadius: 10,
+              padding: '6px 12px',
+              borderRadius: 999,
               fontSize: 11,
-              fontWeight: 700,
+              fontWeight: 600,
               flexShrink: 0,
-              border: isActive ? '1.5px solid transparent' : '1.5px solid rgba(0,0,0,.07)',
-              background: isActive ? '#f59e0b' : 'white',
-              color: isActive ? '#78350f' : '#374151',
-              boxShadow: isActive ? '0 3px 10px rgba(245,158,11,.4)' : 'none',
+              border: isActive ? '1px solid transparent' : '1px solid rgba(60,60,67,.12)',
+              background: isActive ? '#007aff' : 'white',
+              color: isActive ? 'white' : '#3c3c43',
+              boxShadow: isActive ? '0 3px 10px rgba(0,122,255,.35)' : 'none',
               cursor: 'pointer',
             }}
           >
@@ -129,8 +129,8 @@ export function CategoryFilter({ counts, tabs }: Props) {
               borderRadius: 99,
               padding: '1px 4px',
               lineHeight: 1.5,
-              background: isActive ? 'rgba(0,0,0,.12)' : '#f0f2f8',
-              color: isActive ? '#78350f' : '#9ca3af'
+              background: isActive ? 'rgba(255,255,255,.28)' : 'rgba(118,118,128,.12)',
+              color: isActive ? 'white' : '#8e8e93'
             }}>
               {count}
             </span>

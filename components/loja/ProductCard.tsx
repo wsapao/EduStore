@@ -11,12 +11,12 @@ function fmtBRL(v: number) {
 }
 
 const CAT_THEMES: Record<string, { bg: string, text: string }> = {
-  eventos:        { bg: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', text: '#6d28d9' },
-  passeios:       { bg: 'linear-gradient(135deg,#0ea5e9,#0284c7)', text: '#0369a1' },
-  segunda_chamada:{ bg: 'linear-gradient(135deg,#f59e0b,#d97706)', text: '#b45309' },
-  materiais:      { bg: 'linear-gradient(135deg,#10b981,#059669)', text: '#047857' },
-  uniforme:       { bg: 'linear-gradient(135deg,#f43f5e,#e11d48)', text: '#be123c' },
-  outros:         { bg: 'linear-gradient(135deg,#6b7280,#4b5563)', text: '#374151' },
+  eventos:        { bg: 'linear-gradient(135deg,#bf5af2,#af52de)', text: '#a541d4' },
+  passeios:       { bg: 'linear-gradient(135deg,#0a84ff,#007aff)', text: '#0071e3' },
+  segunda_chamada:{ bg: 'linear-gradient(135deg,#ff9f0a,#ff9500)', text: '#c26e00' },
+  materiais:      { bg: 'linear-gradient(135deg,#00c7be,#30b0c7)', text: '#0e8f88' },
+  uniforme:       { bg: 'linear-gradient(135deg,#ff375f,#ff2d55)', text: '#e0234b' },
+  outros:         { bg: 'linear-gradient(135deg,#98989d,#8e8e93)', text: '#636366' },
 }
 
 const DEFAULT_ICONS: Record<string, string> = {
@@ -99,8 +99,8 @@ export function ProductCard({
       onClick={() => router.push(`/loja/produto/${produto.id}?aluno=${aluno.id}`)}
       style={{
         background: 'white',
-        border: '1.5px solid rgba(0,0,0,.07)',
-        borderRadius: 18,
+        border: '1px solid rgba(60,60,67,.1)',
+        borderRadius: 20,
         overflow: 'hidden',
         margin: layout === 'grid' ? '0' : '0 14px 10px',
         boxShadow: '0 2px 8px rgba(0,0,0,.06)',
@@ -150,7 +150,7 @@ export function ProductCard({
         {!produto.esgotado && isUrgent && (
           <div style={{
             position: 'absolute', top: 7, left: 9, fontSize: 8, fontWeight: 800,
-            padding: '3px 7px', borderRadius: 99, background: 'rgba(220,38,38,.75)',
+            padding: '3px 7px', borderRadius: 99, background: 'rgba(255,59,48,.8)',
             color: 'white', letterSpacing: '.04em', backdropFilter: 'blur(8px)'
           }}>
             ⏰ {urgencia.text}
@@ -159,7 +159,7 @@ export function ProductCard({
         {inCart && (
           <div style={{
             position: 'absolute', top: 7, right: 9, fontSize: 8, fontWeight: 800,
-            padding: '3px 7px', borderRadius: 99, background: 'rgba(22,163,74,.8)',
+            padding: '3px 7px', borderRadius: 99, background: 'rgba(52,199,89,.85)',
             color: 'white'
           }}>
             ✓ No carrinho
@@ -168,8 +168,8 @@ export function ProductCard({
         {lowStockBadge && (
           <div style={{
             position: 'absolute', top: 7, right: 9, fontSize: 8, fontWeight: 800,
-            padding: '3px 7px', borderRadius: 99, background: 'rgba(245,158,11,.85)',
-            color: '#78350f', backdropFilter: 'blur(8px)'
+            padding: '3px 7px', borderRadius: 99, background: 'rgba(255,159,10,.9)',
+            color: 'white', backdropFilter: 'blur(8px)'
           }}>
             {lowStockBadge}
           </div>
@@ -184,14 +184,14 @@ export function ProductCard({
           {produto.categoria.replace('_', ' ')}
         </div>
         <div style={{
-          fontSize: 13, fontWeight: 800, color: '#0a1628',
+          fontSize: 13, fontWeight: 700, color: '#000000',
           letterSpacing: '-.02em', lineHeight: 1.3, marginBottom: 4
         }}>
           {produto.nome}
         </div>
         {produto.descricao && (
           <div style={{
-            fontSize: 10, color: '#9ca3af', lineHeight: 1.5,
+            fontSize: 10, color: '#8e8e93', lineHeight: 1.5,
             marginBottom: 7, display: '-webkit-box', WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical', overflow: 'hidden'
           }}>
@@ -202,7 +202,7 @@ export function ProductCard({
           {produto.data_evento && (
             <span style={{
               fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 7,
-              background: '#f0f2f8', color: '#374151', border: '1px solid rgba(0,0,0,.07)',
+              background: 'rgba(118,118,128,.12)', color: '#3c3c43', border: 'none',
               display: 'inline-block'
             }}>
               📅 {formatDate(produto.data_evento)}
@@ -211,7 +211,7 @@ export function ProductCard({
           {exigeVariante && (
             <span style={{
               fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 7,
-              background: '#f0f2f8', color: '#374151', border: '1px solid rgba(0,0,0,.07)',
+              background: 'rgba(118,118,128,.12)', color: '#3c3c43', border: 'none',
               display: 'inline-block'
             }}>
               Variantes
@@ -220,7 +220,7 @@ export function ProductCard({
           {!produto.esgotado && isUrgent && (
             <span style={{
               fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 7,
-              background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca',
+              background: '#ffefee', color: '#ff3b30', border: '1px solid #ffd6d3',
               display: 'inline-block'
             }}>
               ⏰ Termina {urgencia.text.toLowerCase()}
@@ -234,10 +234,10 @@ export function ProductCard({
         padding: '9px 13px 12px', borderTop: '1px solid rgba(0,0,0,.06)', gap: 10
       }}>
         <div>
-          <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', marginBottom: 1 }}>
+          <div style={{ fontSize: 9, fontWeight: 600, color: '#8e8e93', marginBottom: 1 }}>
             Valor total
           </div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: '#0a1628', letterSpacing: '-.04em', lineHeight: 1 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#000000', letterSpacing: '-.03em', lineHeight: 1 }}>
             {fmtBRL(produto.preco_promocional ?? produto.preco)}
           </div>
         </div>
@@ -249,12 +249,12 @@ export function ProductCard({
           onMouseLeave={() => setIsPressing(false)}
           disabled={produto.esgotado}
           style={{
-            height: 40, padding: '0 14px', borderRadius: 12,
-            background: produto.esgotado ? '#e5e7eb' : inCart ? '#16a34a' : '#f59e0b',
-            border: 'none', fontSize: 12, fontWeight: 800,
-            color: produto.esgotado ? '#9ca3af' : inCart ? 'white' : '#78350f',
+            height: 40, padding: '0 16px', borderRadius: 999,
+            background: produto.esgotado ? '#e5e5ea' : inCart ? '#34c759' : '#007aff',
+            border: 'none', fontSize: 12, fontWeight: 600,
+            color: produto.esgotado ? '#8e8e93' : 'white',
             display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
-            boxShadow: produto.esgotado ? 'none' : inCart ? '0 3px 10px rgba(22,163,74,.4)' : '0 3px 10px rgba(245,158,11,.4)',
+            boxShadow: produto.esgotado ? 'none' : inCart ? '0 3px 10px rgba(52,199,89,.35)' : '0 3px 10px rgba(0,122,255,.35)',
             transform: isPressing && !produto.esgotado ? 'scale(0.95)' : 'scale(1)',
             transition: 'all 0.2s', cursor: produto.esgotado ? 'not-allowed' : 'pointer'
           }}

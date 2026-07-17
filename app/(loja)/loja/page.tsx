@@ -210,10 +210,10 @@ export default async function LojaPage({
           {!lojaAbertaAgora && (
             <div style={{ padding: '14px 14px 0' }}>
               <div style={warningBannerStyle}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#a05a00', textTransform: 'uppercase', letterSpacing: '.06em' }}>
                   Loja fechada neste horário
                 </div>
-                <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13, color: '#7a4a10', lineHeight: 1.5 }}>
                   A vitrine continua visível, mas novos pedidos só podem ser finalizados durante o horário configurado pela escola.
                 </div>
               </div>
@@ -224,10 +224,10 @@ export default async function LojaPage({
             <div style={{ padding: '12px 0 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', marginBottom: 7 }}>
                 <div
-                  style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }}
+                  style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff3b30' }}
                   className="animate-pulse-red"
                 />
-                <div style={{ fontSize: 10, fontWeight: 800, color: '#dc2626', letterSpacing: '.07em', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#ff3b30', letterSpacing: '.07em', textTransform: 'uppercase' }}>
                   Prazos encerrando
                 </div>
               </div>
@@ -242,9 +242,9 @@ export default async function LojaPage({
                       href={`/loja/produto/${produto.id}?aluno=${selectedAluno.id}`}
                       style={{
                         width: 145,
-                        background: 'linear-gradient(135deg,#1a0505,#2d0a0a)',
-                        border: '1px solid rgba(220,38,38,.3)',
-                        borderRadius: 15,
+                        background: 'linear-gradient(135deg,#1c1c1e,#2c2c2e)',
+                        border: '1px solid rgba(255,69,58,.35)',
+                        borderRadius: 16,
                         padding: 12,
                         display: 'flex',
                         flexDirection: 'column',
@@ -272,14 +272,14 @@ export default async function LojaPage({
 
                       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
                         <div>
-                          <div style={{ fontSize: 18, fontWeight: 900, color: '#f87171', letterSpacing: '-.03em', lineHeight: 1 }}>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: '#ff453a', letterSpacing: '-.03em', lineHeight: 1 }}>
                             {diff === 0 ? 'Hoje' : `${diff} dias`}
                           </div>
-                          <div style={{ fontSize: 8, fontWeight: 700, color: 'rgba(248,113,113,.6)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
+                          <div style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,69,58,.65)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
                             restante{diff !== 0 && 's'}
                           </div>
                         </div>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: 'white', background: 'rgba(220,38,38,.4)', padding: '3px 6px', borderRadius: 6 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'white', background: 'rgba(255,69,58,.4)', padding: '3px 6px', borderRadius: 999 }}>
                           {fmtBRL(produto.preco_promocional ?? produto.preco).replace(',00', '')}
                         </div>
                       </div>
@@ -500,7 +500,7 @@ function SchoolBrandIntro({ escola }: { escola: Escola }) {
             borderRadius: 16,
             overflow: 'hidden',
             marginBottom: 12,
-            background: '#0a1628',
+            background: '#1c1c1e',
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -515,12 +515,12 @@ function SchoolBrandIntro({ escola }: { escola: Escola }) {
       {(escola.slogan || escola.texto_boas_vindas) && (
         <div style={{ padding: '0 4px 4px' }}>
           {escola.slogan && (
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0a1628', letterSpacing: '-.01em', marginBottom: 2 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#000000', letterSpacing: '-.01em', marginBottom: 2 }}>
               {escola.slogan}
             </div>
           )}
           {escola.texto_boas_vindas && (
-            <div style={{ fontSize: 12, fontWeight: 500, color: '#475569', lineHeight: 1.4 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: '#3c3c43', lineHeight: 1.4 }}>
               {escola.texto_boas_vindas}
             </div>
           )}
@@ -588,18 +588,18 @@ function getProductListStyle(layout: 'grid' | 'lista'): React.CSSProperties {
 const warningBannerStyle: React.CSSProperties = {
   display: 'grid',
   gap: 4,
-  borderRadius: 16,
-  border: '1px solid rgba(245,158,11,.3)',
-  background: 'linear-gradient(135deg,rgba(245,158,11,.18),rgba(251,191,36,.22))',
+  borderRadius: 18,
+  border: '1px solid rgba(255,149,0,.35)',
+  background: 'linear-gradient(135deg,rgba(255,149,0,.14),rgba(255,159,10,.2))',
   padding: '14px 16px',
 }
 
 const footerStyle: React.CSSProperties = {
   margin: '28px 18px 0',
   padding: '16px 18px',
-  borderRadius: 16,
-  background: 'rgba(15,23,42,0.06)',
-  color: '#475569',
+  borderRadius: 18,
+  background: 'rgba(118,118,128,.1)',
+  color: '#3c3c43',
   fontSize: 12,
   lineHeight: 1.6,
   textAlign: 'center',

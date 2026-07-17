@@ -8,10 +8,13 @@ import { useCart } from './CartProvider'
 interface Props {
   /** Exibe o atalho para /admin — só para quem passa em podeAcessarAdmin (equipe). */
   showAdminShortcut?: boolean
+  /** Força um pathname (usado apenas pela rota dev-only /preview-tema). */
+  previewPathname?: string
 }
 
-export function BottomNavigation({ showAdminShortcut = false }: Props) {
-  const pathname = usePathname()
+export function BottomNavigation({ showAdminShortcut = false, previewPathname }: Props) {
+  const realPathname = usePathname()
+  const pathname = previewPathname ?? realPathname
   const { items: cartItems } = useCart()
 
   // Mostrar apenas nas rotas raiz
@@ -39,7 +42,7 @@ export function BottomNavigation({ showAdminShortcut = false }: Props) {
             key={item.href}
             href={item.href}
             className={`flex flex-col items-center justify-center flex-1 py-1.5 rounded-[11px] transition-colors ${
-              isActive ? 'bg-[#fef9ec] text-[#b45309]' : 'text-[#9ca3af]'
+              isActive ? 'text-[#007aff]' : 'text-[#8e8e93]'
             }`}
           >
             <div className="relative mb-0.5">

@@ -82,7 +82,7 @@ export function useCart(): CartContextValue {
 
 const STORAGE_KEY = 'loja_cart'
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children, previewMode = false }: { children: ReactNode; previewMode?: boolean }) {
   const posthog = usePostHog()
   const [state, dispatch] = useReducer(cartReducer, { items: [], isOpen: false, hydrated: false })
 
@@ -111,6 +111,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Aluno de uma família) ficam no localStorage e "vazam" para o próximo login no
   // mesmo navegador — ex.: tablet compartilhado, pai A sai e pai B entra.
   useEffect(() => {
+    if (previewMode) return
     const supabase = createClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
@@ -119,7 +120,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     })
     return () => subscription.unsubscribe()
-  }, [])
+  }, [previewMode])
 
   // Lock body scroll when cart is open
   useEffect(() => {
