@@ -134,8 +134,7 @@ export default async function AdminDashboard({
     { data: cantinaCarteiras },
     { data: itensVendidos },
     { data: ingressosEmitidos },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ] = previewTema ? (getPreviewAdminData(interval) as any[]) : await Promise.all([
+  ] = (previewTema ? getPreviewAdminData(interval) : await Promise.all([
     pedidosResumoQuery,
     pedidosRecentesQuery,
     supabase.from('produtos').select('id, nome, categoria, ativo, esgotado, capacidade, prazo_compra, data_evento'),
@@ -151,14 +150,23 @@ export default async function AdminDashboard({
     supabase.from('cantina_carteira').select('saldo'),
     itensQuery,
     supabase.from('ingressos').select('produto_id, status').in('status', ['emitido', 'usado']),
-  ])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ])) as any[]
 
   const pedidos = (pedidosTodos ?? []) as PedidoResumo[]
   const produtos = (produtosAll ?? []) as Array<Pick<Produto, 'id' | 'nome' | 'categoria' | 'ativo' | 'esgotado' | 'capacidade' | 'prazo_compra' | 'data_evento'>>
   const totalAlunos = alunosCount ?? 0
   const totalResponsaveis = responsaveisCount ?? 0
-  const pixPendentes = pixPendentesData ?? []
-  const cantinaSaldoTotal = (cantinaCarteiras ?? []).reduce((acc, c) => acc + Number(c.saldo), 0)
+  type PixPendente = {
+    id: string
+    numero: string
+    total: number
+    created_at: string
+    responsavel: { nome: string; telefone: string | null } | Array<{ nome: string; telefone: string | null }> | null
+  }
+  const pixPendentes = (pixPendentesData ?? []) as PixPendente[]
+  const cantinaSaldoTotal = ((cantinaCarteiras ?? []) as Array<{ saldo: number }>)
+    .reduce((acc, c) => acc + Number(c.saldo), 0)
 
   const produtosComCapacidade = produtos.filter((produto) => produto.capacidade !== null)
 

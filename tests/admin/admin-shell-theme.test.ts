@@ -28,11 +28,13 @@ describe('resolveAdminShellThemeName', () => {
 })
 
 describe('getAdminShellTheme', () => {
-  it('expõe tokens do tema claro com acento laranja energia criativa', () => {
+  it('expõe tokens do tema claro: base neutra Apple com tint laranja XKola', () => {
     const theme = getAdminShellTheme('creative-light')
 
-    expect(theme.rootBackground).toContain('#fff')
+    expect(theme.rootBackground).toContain('#f2f2f7')
     expect(theme.accent).toBe('#f97316')
-    expect(theme.logoGradient).toContain('#ec4899')
+    expect(theme.logoGradient).toContain('#f97316')
+    expect(theme.navActiveBackground).toBe('#ffffff')
+    expect(theme.navTextActive).toBe('#f97316')
   })
 })
