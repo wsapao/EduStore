@@ -111,7 +111,7 @@ export function StoreSearch({
             type="button"
             onClick={clearSearch}
             style={{
-              background: 'none', border: 'none', color: '#007aff',
+              background: 'none', border: 'none', color: '#0088ff',
               fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: 0
             }}
           >

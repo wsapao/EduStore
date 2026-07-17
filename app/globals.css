@@ -6,16 +6,16 @@
 :root {
   --brand:        #1c1c1e;   /* iOS systemGray6 (dark) — hero/superfícies escuras */
   --brand-mid:    #2c2c2e;   /* iOS secondarySystemBackground (dark) */
-  --accent:       #007aff;   /* iOS systemBlue (tint) */
-  --accent-dark:  #0051d4;   /* systemBlue rebaixado p/ texto sobre tinted fill */
-  --accent-soft:  #eaf3ff;   /* tinted fill azul */
-  --accent-glow:  rgba(0,122,255,.4);
+  --accent:       #0088ff;   /* iOS systemBlue (tint) */
+  --accent-dark:  #1e6ef4;   /* systemBlue rebaixado p/ texto sobre tinted fill */
+  --accent-soft:  #e5f2ff;   /* tinted fill azul */
+  --accent-glow:  rgba(0,136,255,.4);
 
   --success:      #34c759;   /* iOS systemGreen */
   --success-soft: #e7f9ed;
-  --danger:       #ff3b30;   /* iOS systemRed */
+  --danger:       #ff383c;   /* iOS systemRed */
   --danger-soft:  #ffefee;
-  --warn:         #ff9500;   /* iOS systemOrange */
+  --warn:         #ff8d28;   /* iOS systemOrange */
   --warn-soft:    #fff4e5;
 
   --bg:           #f2f2f7;   /* iOS systemGroupedBackground */
@@ -29,11 +29,11 @@
   --text-3:       #8e8e93;   /* iOS systemGray */
 
   /* Categorias — accents do sistema iOS */
-  --cat-passeios:        linear-gradient(135deg,#0a84ff,#007aff);
-  --cat-eventos:         linear-gradient(135deg,#bf5af2,#af52de);
-  --cat-materiais:       linear-gradient(135deg,#00c7be,#30b0c7);
-  --cat-uniforme:        linear-gradient(135deg,#ff375f,#ff2d55);
-  --cat-segunda-chamada: linear-gradient(135deg,#ff9f0a,#ff9500);
+  --cat-passeios:        linear-gradient(135deg,#0091ff,#0088ff);
+  --cat-eventos:         linear-gradient(135deg,#db34f2,#cb30e0);
+  --cat-materiais:       linear-gradient(135deg,#00c8b3,#00c3d0);
+  --cat-uniforme:        linear-gradient(135deg,#ff383c,#ff2d55);
+  --cat-segunda-chamada: linear-gradient(135deg,#ff9230,#ff8d28);
   --cat-outros:          linear-gradient(135deg,#98989d,#8e8e93);
 
   /* Sombras — mais difusas e discretas, estilo HIG */
@@ -42,8 +42,8 @@
   --shadow-md: 0 4px 18px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
   --shadow-lg: 0 12px 44px rgba(0,0,0,.11), 0 4px 12px rgba(0,0,0,.05);
   --shadow-card:  0 2px 12px rgba(0,0,0,.05);
-  --shadow-card-active: 0 0 0 3px rgba(0,122,255,.2), 0 2px 12px rgba(0,0,0,.06);
-  --shadow-amber: 0 4px 14px rgba(0,122,255,.4);
+  --shadow-card-active: 0 0 0 3px rgba(0,136,255,.2), 0 2px 12px rgba(0,0,0,.06);
+  --shadow-amber: 0 4px 14px rgba(0,136,255,.4);
   --shadow-hero:  0 60px 120px rgba(0,0,0,.7);
 
   /* Raios concêntricos maiores (iOS 26) */

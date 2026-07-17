@@ -11,11 +11,11 @@ function fmtBRL(v: number) {
 }
 
 const CAT_THEMES: Record<string, { bg: string, text: string }> = {
-  eventos:        { bg: 'linear-gradient(135deg,#bf5af2,#af52de)', text: '#a541d4' },
-  passeios:       { bg: 'linear-gradient(135deg,#0a84ff,#007aff)', text: '#0071e3' },
-  segunda_chamada:{ bg: 'linear-gradient(135deg,#ff9f0a,#ff9500)', text: '#c26e00' },
-  materiais:      { bg: 'linear-gradient(135deg,#00c7be,#30b0c7)', text: '#0e8f88' },
-  uniforme:       { bg: 'linear-gradient(135deg,#ff375f,#ff2d55)', text: '#e0234b' },
+  eventos:        { bg: 'linear-gradient(135deg,#db34f2,#cb30e0)', text: '#b02fc2' },
+  passeios:       { bg: 'linear-gradient(135deg,#0091ff,#0088ff)', text: '#1e6ef4' },
+  segunda_chamada:{ bg: 'linear-gradient(135deg,#ff9230,#ff8d28)', text: '#c55300' },
+  materiais:      { bg: 'linear-gradient(135deg,#00c8b3,#00c3d0)', text: '#008575' },
+  uniforme:       { bg: 'linear-gradient(135deg,#ff383c,#ff2d55)', text: '#e7124d' },
   outros:         { bg: 'linear-gradient(135deg,#98989d,#8e8e93)', text: '#636366' },
 }
 
@@ -150,7 +150,7 @@ export function ProductCard({
         {!produto.esgotado && isUrgent && (
           <div style={{
             position: 'absolute', top: 7, left: 9, fontSize: 8, fontWeight: 800,
-            padding: '3px 7px', borderRadius: 99, background: 'rgba(255,59,48,.8)',
+            padding: '3px 7px', borderRadius: 99, background: 'rgba(255,56,60,.8)',
             color: 'white', letterSpacing: '.04em', backdropFilter: 'blur(8px)'
           }}>
             ⏰ {urgencia.text}
@@ -168,7 +168,7 @@ export function ProductCard({
         {lowStockBadge && (
           <div style={{
             position: 'absolute', top: 7, right: 9, fontSize: 8, fontWeight: 800,
-            padding: '3px 7px', borderRadius: 99, background: 'rgba(255,159,10,.9)',
+            padding: '3px 7px', borderRadius: 99, background: 'rgba(255,146,48,.9)',
             color: 'white', backdropFilter: 'blur(8px)'
           }}>
             {lowStockBadge}
@@ -220,7 +220,7 @@ export function ProductCard({
           {!produto.esgotado && isUrgent && (
             <span style={{
               fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 7,
-              background: '#ffefee', color: '#ff3b30', border: '1px solid #ffd6d3',
+              background: '#ffefee', color: '#ff383c', border: '1px solid #ffd6d3',
               display: 'inline-block'
             }}>
               ⏰ Termina {urgencia.text.toLowerCase()}
@@ -250,11 +250,11 @@ export function ProductCard({
           disabled={produto.esgotado}
           style={{
             height: 40, padding: '0 16px', borderRadius: 999,
-            background: produto.esgotado ? '#e5e5ea' : inCart ? '#34c759' : '#007aff',
+            background: produto.esgotado ? '#e5e5ea' : inCart ? '#34c759' : '#0088ff',
             border: 'none', fontSize: 12, fontWeight: 600,
             color: produto.esgotado ? '#8e8e93' : 'white',
             display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
-            boxShadow: produto.esgotado ? 'none' : inCart ? '0 3px 10px rgba(52,199,89,.35)' : '0 3px 10px rgba(0,122,255,.35)',
+            boxShadow: produto.esgotado ? 'none' : inCart ? '0 3px 10px rgba(52,199,89,.35)' : '0 3px 10px rgba(0,136,255,.35)',
             transform: isPressing && !produto.esgotado ? 'scale(0.95)' : 'scale(1)',
             transition: 'all 0.2s', cursor: produto.esgotado ? 'not-allowed' : 'pointer'
           }}

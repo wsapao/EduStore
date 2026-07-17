@@ -10,6 +10,7 @@ import type {
   StatusPedido,
 } from '@/types/database'
 import { SalesChart } from '@/components/admin/SalesChart'
+import { getPreviewAdminData, isPreviewTemaAdmin } from '@/lib/preview-tema/admin-mocks'
 
 type PeriodoDashboard = '7d' | '30d' | 'mes' | 'custom'
 
@@ -34,10 +35,10 @@ type ItemVendido = Pick<ItemPedido, 'id' | 'pedido_id' | 'produto_id' | 'preco_u
 }
 
 const STATUS_BADGE: Record<StatusPedido, { label: string; color: string; bg: string }> = {
-  pendente: { label: 'Aguardando', color: '#92400e', bg: '#fef3c7' },
-  pago: { label: 'Pago', color: '#065f46', bg: '#d1fae5' },
-  cancelado: { label: 'Cancelado', color: '#991b1b', bg: '#fee2e2' },
-  reembolsado: { label: 'Reembolsado', color: '#374151', bg: '#f3f4f6' },
+  pendente: { label: 'Aguardando', color: '#c55300', bg: '#ffe8cf' },
+  pago: { label: 'Pago', color: '#008932', bg: '#dff8e6' },
+  cancelado: { label: 'Cancelado', color: '#e9152d', bg: '#ffe3e2' },
+  reembolsado: { label: 'Reembolsado', color: '#3c3c43', bg: '#f2f2f7' },
 }
 
 const METODO_LABEL: Record<MetodoPagamento, string> = {
@@ -47,27 +48,27 @@ const METODO_LABEL: Record<MetodoPagamento, string> = {
 }
 
 const CATEGORY_META: Record<CategoriaProduto, { label: string; icon: string; color: string }> = {
-  eventos: { label: 'Eventos', icon: '🎉', color: '#ec4899' },
-  passeios: { label: 'Passeios', icon: '🚌', color: '#2563eb' },
-  segunda_chamada: { label: '2a chamada', icon: '📝', color: '#7c3aed' },
-  materiais: { label: 'Materiais', icon: '📚', color: '#0f766e' },
-  uniforme: { label: 'Uniforme', icon: '👕', color: '#ea580c' },
-  outros: { label: 'Outros', icon: '📦', color: '#475569' },
+  eventos: { label: 'Eventos', icon: '🎉', color: '#ff2d55' },
+  passeios: { label: 'Passeios', icon: '🚌', color: '#0088ff' },
+  segunda_chamada: { label: '2a chamada', icon: '📝', color: '#cb30e0' },
+  materiais: { label: 'Materiais', icon: '📚', color: '#008575' },
+  uniforme: { label: 'Uniforme', icon: '👕', color: '#ff383c' },
+  outros: { label: 'Outros', icon: '📦', color: '#3c3c43' },
 }
 
 const CREATIVE = {
-  ink: '#1f2937',
-  inkStrong: '#111827',
-  muted: '#7c2d12',
-  softText: '#9a3412',
-  accent: '#f97316',
-  accentStrong: '#c2410c',
-  accentSoft: '#fff1e7',
-  accentBorder: '#fed7aa',
-  rose: '#ec4899',
-  roseSoft: '#fff1f7',
-  link: '#c2410c',
-  panelShadow: '0 18px 38px rgba(249,115,22,.12), inset 0 1px 0 rgba(255,255,255,.65)',
+  ink: '#1c1c1e',
+  inkStrong: '#000000',
+  muted: '#3c3c43',
+  softText: '#6c6c70',
+  accent: '#0088ff',
+  accentStrong: '#1e6ef4',
+  accentSoft: '#e5f2ff',
+  accentBorder: '#b8dcff',
+  rose: '#ff2d55',
+  roseSoft: '#ffedf2',
+  link: '#1e6ef4',
+  panelShadow: '0 18px 38px rgba(0,136,255,.12), inset 0 1px 0 rgba(255,255,255,.65)',
 } as const
 
 export default async function AdminDashboard({
@@ -75,10 +76,13 @@ export default async function AdminDashboard({
 }: {
   searchParams: Promise<{ periodo?: string; from?: string; to?: string }>
 }) {
+  const previewTema = isPreviewTemaAdmin()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-  if (!podeAcessarAdmin(await currentPermissions())) redirect('/loja')
+  if (!previewTema) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/login')
+    if (!podeAcessarAdmin(await currentPermissions())) redirect('/loja')
+  }
 
   const { periodo, from, to } = await searchParams
   const periodoAtual: PeriodoDashboard =
@@ -130,7 +134,8 @@ export default async function AdminDashboard({
     { data: cantinaCarteiras },
     { data: itensVendidos },
     { data: ingressosEmitidos },
-  ] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ] = previewTema ? (getPreviewAdminData(interval) as any[]) : await Promise.all([
     pedidosResumoQuery,
     pedidosRecentesQuery,
     supabase.from('produtos').select('id, nome, categoria, ativo, esgotado, capacidade, prazo_compra, data_evento'),
@@ -249,7 +254,7 @@ export default async function AdminDashboard({
                 { label: 'Aguardando', value: String(aguardando) },
                 { label: 'Ativos', value: `${produtosAtivos}` },
               ].map((item) => (
-                <div key={item.label} style={{ background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', border: `1px solid ${CREATIVE.accentBorder}`, borderRadius: 20, padding: '16px', boxShadow: '0 12px 28px rgba(249,115,22,.08)' }}>
+                <div key={item.label} style={{ background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', border: `1px solid ${CREATIVE.accentBorder}`, borderRadius: 20, padding: '16px', boxShadow: '0 12px 28px rgba(0,136,255,.08)' }}>
                   <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: CREATIVE.softText, marginBottom: 8 }}>
                     {item.label}
                   </div>
@@ -261,7 +266,7 @@ export default async function AdminDashboard({
             </div>
           </div>
 
-          <div style={{ background: 'linear-gradient(180deg, #fff7ed 0%, #fffdfb 100%)', backdropFilter: 'blur(12px)', border: `1px solid ${CREATIVE.accentBorder}`, borderRadius: 28, padding: 28, display: 'flex', flexDirection: 'column', gap: 20, position: 'relative', overflow: 'hidden', boxShadow: CREATIVE.panelShadow }}>
+          <div style={{ background: 'linear-gradient(180deg, #eef6ff 0%, #fbfbfd 100%)', backdropFilter: 'blur(12px)', border: `1px solid ${CREATIVE.accentBorder}`, borderRadius: 28, padding: 28, display: 'flex', flexDirection: 'column', gap: 20, position: 'relative', overflow: 'hidden', boxShadow: CREATIVE.panelShadow }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <div>
                 <div style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: CREATIVE.accentStrong, fontWeight: 800 }}>
@@ -278,8 +283,8 @@ export default async function AdminDashboard({
                   placeItems: 'center',
                   fontSize: 20,
                   fontWeight: 900,
-                  background: `conic-gradient(${CREATIVE.accent} 0 ${saudeGradientDeg}deg, rgba(249,115,22,.12) ${saudeGradientDeg}deg 360deg)`,
-                  boxShadow: '0 0 20px rgba(249,115,22,.18)'
+                  background: `conic-gradient(${CREATIVE.accent} 0 ${saudeGradientDeg}deg, rgba(0,136,255,.12) ${saudeGradientDeg}deg 360deg)`,
+                  boxShadow: '0 0 20px rgba(0,136,255,.18)'
                 }}
               >
                 <span
@@ -291,7 +296,7 @@ export default async function AdminDashboard({
                     display: 'grid',
                     placeItems: 'center',
                     color: CREATIVE.inkStrong,
-                    boxShadow: 'inset 0 2px 4px rgba(249,115,22,.12)'
+                    boxShadow: 'inset 0 2px 4px rgba(0,136,255,.12)'
                   }}
                 >
                   {saudeScore}%
@@ -325,11 +330,11 @@ export default async function AdminDashboard({
                   style={{
                     borderRadius: 16,
                     padding: '14px 16px',
-                    background: '#ecfdf5',
-                    border: '1px solid rgba(52,211,153,.25)',
+                    background: '#e7f9ed',
+                    border: '1px solid rgba(48,209,88,.25)',
                     fontSize: 13,
                     lineHeight: 1.55,
-                    color: '#065f46',
+                    color: '#008932',
                   }}
                 >
                   Operacao sem alertas criticos neste periodo. Vale usar este espaco para acompanhar quedas de conversao ou gargalos de atendimento.
@@ -353,10 +358,10 @@ export default async function AdminDashboard({
                 textDecoration: 'none',
                 fontSize: 13,
                 fontWeight: 800,
-                background: periodoAtual === key ? CREATIVE.accent : '#fff7ed',
-                color: periodoAtual === key ? '#fff7ed' : CREATIVE.accentStrong,
+                background: periodoAtual === key ? CREATIVE.accent : '#eef6ff',
+                color: periodoAtual === key ? '#eef6ff' : CREATIVE.accentStrong,
                 border: `1.5px solid ${periodoAtual === key ? CREATIVE.accent : CREATIVE.accentBorder}`,
-                boxShadow: periodoAtual === key ? '0 8px 18px rgba(249,115,22,.22)' : 'none',
+                boxShadow: periodoAtual === key ? '0 8px 18px rgba(0,136,255,.22)' : 'none',
                 transition: 'all .2s'
               }}
             >
@@ -373,25 +378,25 @@ export default async function AdminDashboard({
             label: 'Receita confirmada',
             value: fmtBRL(receitaConfirmada),
             note: `${pedidosPagos.length} pedidos pagos`,
-            badge: '⬆ 12%', badgeColor: '#10b981', badgeBg: 'rgba(16,185,129,.1)'
+            badge: '⬆ 12%', badgeColor: '#34c759', badgeBg: 'rgba(52,199,89,.1)'
           },
           {
             label: 'Ticket médio',
             value: fmtBRL(ticketMedio),
             note: aguardando > 0 ? `${aguardando} aguardando` : 'Sem fila',
-            badge: 'Estável', badgeColor: CREATIVE.accentStrong, badgeBg: 'rgba(249,115,22,.12)'
+            badge: 'Estável', badgeColor: CREATIVE.accentStrong, badgeBg: 'rgba(0,136,255,.12)'
           },
           {
             label: 'Base ativa',
             value: `${totalAlunos}`,
             note: `${totalResponsaveis} responsáveis`,
-            badge: 'Alunos', badgeColor: CREATIVE.rose, badgeBg: 'rgba(236,72,153,.1)'
+            badge: 'Alunos', badgeColor: CREATIVE.rose, badgeBg: 'rgba(255,45,85,.1)'
           },
           {
             label: 'Catálogo',
             value: `${produtosAtivos}`,
             note: `${esgotados} esgotados · ${urgenciasPrazo} críticos`,
-            badge: 'Itens', badgeColor: '#f43f5e', badgeBg: 'rgba(244,63,94,.1)'
+            badge: 'Itens', badgeColor: '#ff383c', badgeBg: 'rgba(255,56,60,.1)'
           },
         ].map((card) => (
           <article
@@ -404,7 +409,7 @@ export default async function AdminDashboard({
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 800, color: '#64748b' }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 800, color: '#6c6c70' }}>
                 {card.label}
               </div>
               <span style={{ fontSize: 10, fontWeight: 800, color: card.badgeColor, background: card.badgeBg, padding: '4px 8px', borderRadius: 8 }}>{card.badge}</span>
@@ -412,7 +417,7 @@ export default async function AdminDashboard({
             <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: '-.04em', marginTop: 12, color: '#0a1628', lineHeight: 1 }}>
               {card.value}
             </div>
-            <div style={{ fontSize: 13, marginTop: 10, fontWeight: 600, color: '#94a3b8' }}>
+            <div style={{ fontSize: 13, marginTop: 10, fontWeight: 600, color: '#8e8e93' }}>
               {card.note}
             </div>
           </article>
@@ -425,8 +430,8 @@ export default async function AdminDashboard({
         <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', margin: 0 }}>Recuperação de PIX</h3>
-              <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0' }}>Nas últimas 24h</p>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2c2c2e', margin: 0 }}>Recuperação de PIX</h3>
+              <p style={{ fontSize: 12, color: '#8e8e93', margin: '2px 0 0' }}>Nas últimas 24h</p>
             </div>
             <span style={{ fontSize: 24 }}>💸</span>
           </div>
@@ -437,28 +442,28 @@ export default async function AdminDashboard({
                 const fone = resp?.telefone ? resp.telefone.replace(/\D/g, '') : ''
                 const nomeResp = resp?.nome || 'Sem nome'
                 return (
-                  <div key={pix.id} style={{ background: '#fff', border: '1px solid #f1f5f9', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+                  <div key={pix.id} style={{ background: '#fff', border: '1px solid #f2f2f7', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
                     <div>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: '#1e293b', margin: 0 }}>{fmtBRL(pix.total)}</p>
-                      <p style={{ fontSize: 11, color: '#94a3b8', margin: '2px 0 0', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeResp}</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: '#2c2c2e', margin: 0 }}>{fmtBRL(pix.total)}</p>
+                      <p style={{ fontSize: 11, color: '#8e8e93', margin: '2px 0 0', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeResp}</p>
                     </div>
                     {fone ? (
                       <a
                         href={`https://wa.me/55${fone}?text=${encodeURIComponent(`Olá ${nomeResp}! Vimos que você gerou um PIX de ${fmtBRL(pix.total)} na Loja Escolar e ainda não foi pago. Precisando de ajuda, estamos à disposição!`)}`}
                         target="_blank"
                         rel="noreferrer"
-                        style={{ background: '#ecfdf5', color: '#059669', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}
+                        style={{ background: '#e7f9ed', color: '#059669', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}
                       >
                         Lembrar
                       </a>
                     ) : (
-                      <span style={{ fontSize: 10, color: '#94a3b8' }}>Sem fone</span>
+                      <span style={{ fontSize: 10, color: '#8e8e93' }}>Sem fone</span>
                     )}
                   </div>
                 )
               })
             ) : (
-              <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', padding: '24px 0' }}>Nenhum PIX pendente recente.</div>
+              <div style={{ fontSize: 12, color: '#8e8e93', textAlign: 'center', padding: '24px 0' }}>Nenhum PIX pendente recente.</div>
             )}
           </div>
         </div>
@@ -467,8 +472,8 @@ export default async function AdminDashboard({
         <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', margin: 0 }}>Adesão de Eventos</h3>
-              <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0' }}>Engajamento nas compras</p>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2c2c2e', margin: 0 }}>Adesão de Eventos</h3>
+              <p style={{ fontSize: 12, color: '#8e8e93', margin: '2px 0 0' }}>Engajamento nas compras</p>
             </div>
             <span style={{ fontSize: 24 }}>🎟️</span>
           </div>
@@ -479,30 +484,30 @@ export default async function AdminDashboard({
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 8 }}>{evento.nome}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: CREATIVE.accentStrong, background: CREATIVE.accentSoft, padding: '2px 8px', borderRadius: 6, flexShrink: 0 }}>{adesao}%</span>
                 </div>
-                <div style={{ width: '100%', background: '#f1f5f9', height: 10, borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ width: '100%', background: '#f2f2f7', height: 10, borderRadius: 999, overflow: 'hidden' }}>
                   <div style={{ width: `${adesao}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${CREATIVE.accent}, ${CREATIVE.rose})` }} />
                 </div>
-                <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>{pagantes} de {total} alunos aderiram</p>
+                <p style={{ fontSize: 10, color: '#8e8e93', marginTop: 4 }}>{pagantes} de {total} alunos aderiram</p>
               </div>
             )) : (
-              <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', padding: '24px 0' }}>Nenhum evento ativo.</div>
+              <div style={{ fontSize: 12, color: '#8e8e93', textAlign: 'center', padding: '24px 0' }}>Nenhum evento ativo.</div>
             )}
           </div>
         </div>
 
         {/* Saúde da Cantina */}
-        <div style={{ ...panelStyle, background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', border: 'none', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ ...panelStyle, background: 'linear-gradient(135deg, #fff3e8, #ffe8cf)', border: 'none', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#7c2d12', margin: 0 }}>Saúde da Cantina</h3>
-              <p style={{ fontSize: 12, color: 'rgba(124,45,18,.7)', margin: '2px 0 0' }}>Saldos depositados</p>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#3c3c43', margin: 0 }}>Saúde da Cantina</h3>
+              <p style={{ fontSize: 12, color: 'rgba(60,60,67,.7)', margin: '2px 0 0' }}>Saldos depositados</p>
             </div>
             <span style={{ fontSize: 24 }}>🍔</span>
           </div>
           <div style={{ marginTop: 'auto' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(124,45,18,.6)', marginBottom: 4 }}>Passivo de Carteiras</p>
-            <p style={{ fontSize: 30, fontWeight: 900, color: '#7c2d12', letterSpacing: '-.02em', margin: 0 }}>{fmtBRL(cantinaSaldoTotal)}</p>
-            <p style={{ fontSize: 12, color: 'rgba(124,45,18,.7)', marginTop: 12, lineHeight: 1.55 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(60,60,67,.6)', marginBottom: 4 }}>Passivo de Carteiras</p>
+            <p style={{ fontSize: 30, fontWeight: 900, color: '#3c3c43', letterSpacing: '-.02em', margin: 0 }}>{fmtBRL(cantinaSaldoTotal)}</p>
+            <p style={{ fontSize: 12, color: 'rgba(60,60,67,.7)', marginTop: 12, lineHeight: 1.55 }}>
               Valor total "guardado" pela escola nas carteiras digitais dos alunos da cantina.
             </p>
           </div>
@@ -513,8 +518,8 @@ export default async function AdminDashboard({
         <article style={{ ...panelStyle, display: 'flex', flexDirection: 'column', minHeight: 340 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
             <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', letterSpacing: '-.01em', margin: 0 }}>Receita confirmada</h2>
-              <p style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500, marginTop: 2 }}>Visão consolidada de vendas diárias pagas</p>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#2c2c2e', letterSpacing: '-.01em', margin: 0 }}>Receita confirmada</h2>
+              <p style={{ fontSize: 12, color: '#8e8e93', fontWeight: 500, marginTop: 2 }}>Visão consolidada de vendas diárias pagas</p>
             </div>
           </div>
           <div style={{ flex: 1, width: '100%' }}>
@@ -541,16 +546,16 @@ export default async function AdminDashboard({
                 href={action.href}
                 style={{
                   textDecoration: 'none',
-                  color: '#0f172a',
+                  color: '#1c1c1e',
                   borderRadius: 18,
                   padding: '16px 20px',
-                  background: '#f8fafc',
+                  background: '#f6f6f8',
                   boxShadow: 'inset 0 1px 3px rgba(0,0,0,.04)',
                   transition: 'all .2s'
                 }}
               >
                 <div style={{ fontSize: 15, fontWeight: 900 }}>{action.title}</div>
-                <div style={{ fontSize: 12, lineHeight: 1.55, color: '#94a3b8', marginTop: 4 }}>{action.desc}</div>
+                <div style={{ fontSize: 12, lineHeight: 1.55, color: '#8e8e93', marginTop: 4 }}>{action.desc}</div>
               </Link>
             ))}
           </div>
@@ -576,7 +581,7 @@ export default async function AdminDashboard({
                     gap: 12,
                     alignItems: 'center',
                     borderRadius: 20,
-                    background: '#f8fafc',
+                    background: '#f6f6f8',
                     border: 'none',
                     padding: '14px 16px',
                   }}
@@ -596,10 +601,10 @@ export default async function AdminDashboard({
                     #{index + 1}
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#1c1c1e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {produto.nome}
                     </div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>
+                    <div style={{ fontSize: 12, color: '#8e8e93', marginTop: 3 }}>
                       {produto.vendas} vendas · {fmtBRL(produto.receita)}
                     </div>
                   </div>
@@ -642,12 +647,12 @@ export default async function AdminDashboard({
                 return (
                 <div key={item.categoria} style={{ display: 'grid', gap: 6 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1c1e' }}>
                       {meta.icon} {meta.label}
                     </span>
-                    <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{item.percentual}%</span>
+                    <span style={{ fontSize: 12, color: '#8e8e93', fontWeight: 700 }}>{item.percentual}%</span>
                   </div>
-                  <div style={{ height: 10, borderRadius: 999, background: '#e2e8f0', overflow: 'hidden' }}>
+                  <div style={{ height: 10, borderRadius: 999, background: '#e5e5ea', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${item.percentual}%`,
@@ -657,7 +662,7 @@ export default async function AdminDashboard({
                       }}
                     />
                   </div>
-                  <div style={{ fontSize: 11, color: '#94a3b8' }}>{item.vendas} itens vendidos no periodo</div>
+                  <div style={{ fontSize: 11, color: '#8e8e93' }}>{item.vendas} itens vendidos no periodo</div>
                 </div>
               )})
             ) : (
@@ -672,7 +677,7 @@ export default async function AdminDashboard({
           <div
             style={{
               paddingBottom: 14,
-              borderBottom: '1px solid #f1f5f9',
+              borderBottom: '1px solid #f2f2f7',
               display: 'flex',
               alignItems: 'flex-start',
               justifyContent: 'space-between',
@@ -680,10 +685,10 @@ export default async function AdminDashboard({
             }}
           >
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#94a3b8' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#8e8e93' }}>
                 Operação recente
               </div>
-              <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', margin: '5px 0 0' }}>
+              <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-.03em', color: '#1c1c1e', margin: '5px 0 0' }}>
                 Pedidos que merecem contexto
               </h2>
             </div>
@@ -696,7 +701,7 @@ export default async function AdminDashboard({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 620 }}>
               <thead>
-                <tr style={{ background: '#f8fafc' }}>
+                <tr style={{ background: '#f6f6f8' }}>
                   {['Pedido', 'Responsavel', 'Itens', 'Metodo', 'Total', 'Status'].map((header) => (
                     <th
                       key={header}
@@ -705,7 +710,7 @@ export default async function AdminDashboard({
                         textAlign: 'left',
                         fontSize: 11,
                         fontWeight: 800,
-                        color: '#94a3b8',
+                        color: '#8e8e93',
                         letterSpacing: '.08em',
                         textTransform: 'uppercase',
                       }}
@@ -724,17 +729,17 @@ export default async function AdminDashboard({
                   const status = STATUS_BADGE[pedido.status]
 
                   return (
-                    <tr key={pedido.id} style={{ borderTop: index === 0 ? 'none' : '1px solid #f1f5f9' }}>
+                    <tr key={pedido.id} style={{ borderTop: index === 0 ? 'none' : '1px solid #f2f2f7' }}>
                       <td style={tableCellStyle}>
                         <Link href={`/pedido/${pedido.id}`} style={{ color: CREATIVE.link, textDecoration: 'none', fontWeight: 800, fontFamily: 'monospace' }}>
                           #{pedido.numero.replace('PED-', '')}
                         </Link>
-                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{fmtData(pedido.data_criacao)}</div>
+                        <div style={{ fontSize: 11, color: '#8e8e93', marginTop: 2 }}>{fmtData(pedido.data_criacao)}</div>
                       </td>
                       <td style={tableCellStyle}>{responsavelNome}</td>
                       <td style={tableCellStyle}>{itensLabel}</td>
                       <td style={tableCellStyle}>{pedido.metodo_pagamento ? METODO_LABEL[pedido.metodo_pagamento] : '—'}</td>
-                      <td style={{ ...tableCellStyle, fontWeight: 800, color: '#0f172a' }}>{fmtBRL(Number(pedido.total))}</td>
+                      <td style={{ ...tableCellStyle, fontWeight: 800, color: '#1c1c1e' }}>{fmtBRL(Number(pedido.total))}</td>
                       <td style={tableCellStyle}>
                         <span
                           style={{
@@ -755,7 +760,7 @@ export default async function AdminDashboard({
                 })}
                 {(pedidosRecentes ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ padding: '34px 20px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+                    <td colSpan={6} style={{ padding: '34px 20px', textAlign: 'center', color: '#8e8e93', fontSize: 13 }}>
                       Nenhum pedido neste periodo.
                     </td>
                   </tr>
@@ -778,22 +783,22 @@ export default async function AdminDashboard({
                 <div key={item.id} style={{ display: 'grid', gap: 6 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#1c1c1e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {item.nome}
                       </div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{item.ocupados}/{item.capacidade} ingressos ocupados</div>
+                      <div style={{ fontSize: 11, color: '#8e8e93', marginTop: 2 }}>{item.ocupados}/{item.capacidade} ingressos ocupados</div>
                     </div>
                     <span style={{ fontSize: 12, fontWeight: 800, color: item.percentual >= 90 ? '#b91c1c' : '#1d4ed8' }}>
                       {item.percentual}%
                     </span>
                   </div>
-                  <div style={{ height: 10, borderRadius: 999, background: '#e2e8f0', overflow: 'hidden' }}>
+                  <div style={{ height: 10, borderRadius: 999, background: '#e5e5ea', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${item.percentual}%`,
                         height: '100%',
                         borderRadius: 999,
-                        background: item.percentual >= 90 ? '#ef4444' : item.percentual >= 70 ? '#f59e0b' : '#3b82f6',
+                        background: item.percentual >= 90 ? '#ef4444' : item.percentual >= 70 ? '#ff8d28' : '#3b82f6',
                       }}
                     />
                   </div>
@@ -1072,7 +1077,7 @@ function PanelHeader({
       <h2 style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-.04em', color: CREATIVE.inkStrong, margin: 0, lineHeight: 1.1 }}>
         {title}
       </h2>
-      <p style={{ fontSize: 14, lineHeight: 1.6, color: '#94a3b8', margin: 0, fontWeight: 500 }}>{description}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.6, color: '#8e8e93', margin: 0, fontWeight: 500 }}>{description}</p>
     </div>
   )
 }
@@ -1082,10 +1087,10 @@ function EmptyPanel({ text }: { text: string }) {
     <div
       style={{
         borderRadius: 18,
-        border: '1px dashed #cbd5e1',
+        border: '1px dashed #c7c7cc',
         padding: '20px 16px',
-        color: '#64748b',
-        background: '#f8fafc',
+        color: '#6c6c70',
+        background: '#f6f6f8',
         fontSize: 13,
         lineHeight: 1.6,
       }}
@@ -1108,7 +1113,7 @@ const labelStyle = {
   display: 'block',
   fontSize: 11,
   fontWeight: 700,
-  color: '#64748b',
+  color: '#6c6c70',
   marginBottom: 6,
   letterSpacing: '.05em',
 } as const
@@ -1116,11 +1121,11 @@ const labelStyle = {
 const inputStyle = {
   height: 40,
   borderRadius: 10,
-  border: '1.5px solid #e2e8f0',
-  background: '#f8fafc',
+  border: '1.5px solid #e5e5ea',
+  background: '#f6f6f8',
   padding: '0 12px',
   fontSize: 13,
-  color: '#0f172a',
+  color: '#1c1c1e',
   fontFamily: 'inherit',
 } as const
 
@@ -1128,7 +1133,7 @@ const primaryPillButton = {
   height: 40,
   padding: '0 14px',
   borderRadius: 999,
-  background: '#0f172a',
+  background: '#1c1c1e',
   color: '#fff',
   border: 'none',
   fontSize: 12,
@@ -1155,7 +1160,7 @@ const secondaryPillButton = {
 const tableCellStyle = {
   padding: '12px 14px',
   fontSize: 13,
-  color: '#475569',
+  color: '#3c3c43',
 } as const
 
 const textLinkStyle = {

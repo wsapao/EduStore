@@ -2,6 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  // Preview de tema (dev-only): libera as rotas protegidas para renderizar
+  // com dados mockados. Inerte em produção (exige NODE_ENV=development).
+  if (process.env.NODE_ENV === 'development' && process.env.PREVIEW_TEMA_ADMIN === '1') {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

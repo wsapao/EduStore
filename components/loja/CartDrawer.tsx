@@ -98,7 +98,7 @@ export function CartDrawer() {
                   {item.variante && (
                     <>
                       <span className="text-[#d1d5db]">•</span>
-                      <span className="text-[11px] font-[600] text-[#0062cc] bg-[#eaf3ff] px-1.5 rounded-md">
+                      <span className="text-[11px] font-[600] text-[#1e6ef4] bg-[#e5f2ff] px-1.5 rounded-md">
                         Tamanho {item.variante}
                       </span>
                     </>

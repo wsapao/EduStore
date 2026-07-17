@@ -224,10 +224,10 @@ export default async function LojaPage({
             <div style={{ padding: '12px 0 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', marginBottom: 7 }}>
                 <div
-                  style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff3b30' }}
+                  style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff383c' }}
                   className="animate-pulse-red"
                 />
-                <div style={{ fontSize: 10, fontWeight: 800, color: '#ff3b30', letterSpacing: '.07em', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#ff383c', letterSpacing: '.07em', textTransform: 'uppercase' }}>
                   Prazos encerrando
                 </div>
               </div>
@@ -243,7 +243,7 @@ export default async function LojaPage({
                       style={{
                         width: 145,
                         background: 'linear-gradient(135deg,#1c1c1e,#2c2c2e)',
-                        border: '1px solid rgba(255,69,58,.35)',
+                        border: '1px solid rgba(255,66,69,.35)',
                         borderRadius: 16,
                         padding: 12,
                         display: 'flex',
@@ -272,14 +272,14 @@ export default async function LojaPage({
 
                       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
                         <div>
-                          <div style={{ fontSize: 18, fontWeight: 700, color: '#ff453a', letterSpacing: '-.03em', lineHeight: 1 }}>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: '#ff4245', letterSpacing: '-.03em', lineHeight: 1 }}>
                             {diff === 0 ? 'Hoje' : `${diff} dias`}
                           </div>
-                          <div style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,69,58,.65)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
+                          <div style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,66,69,.65)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
                             restante{diff !== 0 && 's'}
                           </div>
                         </div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: 'white', background: 'rgba(255,69,58,.4)', padding: '3px 6px', borderRadius: 999 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'white', background: 'rgba(255,66,69,.4)', padding: '3px 6px', borderRadius: 999 }}>
                           {fmtBRL(produto.preco_promocional ?? produto.preco).replace(',00', '')}
                         </div>
                       </div>
@@ -589,8 +589,8 @@ const warningBannerStyle: React.CSSProperties = {
   display: 'grid',
   gap: 4,
   borderRadius: 18,
-  border: '1px solid rgba(255,149,0,.35)',
-  background: 'linear-gradient(135deg,rgba(255,149,0,.14),rgba(255,159,10,.2))',
+  border: '1px solid rgba(255,141,40,.35)',
+  background: 'linear-gradient(135deg,rgba(255,141,40,.14),rgba(255,146,48,.2))',
   padding: '14px 16px',
 }
 

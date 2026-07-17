@@ -114,7 +114,7 @@ export function AdminSidebar({
               textDecoration: 'none', transition: 'all .2s ease',
               position: 'relative',
               boxShadow: isActive && theme.name === 'creative-light' ? '0 10px 25px rgba(249,115,22,.12)' : 'none',
-              border: isActive && theme.name === 'creative-light' ? '1px solid rgba(249,115,22,.16)' : '1px solid transparent',
+              border: isActive && theme.name === 'creative-light' ? '1px solid rgba(0,136,255,.16)' : '1px solid transparent',
             }}
             className={!isActive ? theme.navHoverClassName : ""}
             >
@@ -145,7 +145,7 @@ export function AdminSidebar({
                   textDecoration: 'none', transition: 'all .2s ease',
                   position: 'relative',
                   boxShadow: isActive && theme.name === 'creative-light' ? '0 10px 25px rgba(249,115,22,.12)' : 'none',
-                  border: isActive && theme.name === 'creative-light' ? '1px solid rgba(249,115,22,.16)' : '1px solid transparent',
+                  border: isActive && theme.name === 'creative-light' ? '1px solid rgba(0,136,255,.16)' : '1px solid transparent',
                 }}
                 className={!isActive ? theme.navHoverClassName : ""}
                 >
@@ -177,7 +177,7 @@ export function AdminSidebar({
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: theme.bottomCardBackground, padding: '10px 12px', borderRadius: 16, border: theme.bottomCardBorder }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.logoGradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: '#fff', border: theme.name === 'creative-light' ? '1px solid rgba(249,115,22,.16)' : '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.logoGradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: '#fff', border: theme.name === 'creative-light' ? '1px solid rgba(0,136,255,.16)' : '1px solid rgba(255,255,255,0.1)' }}>
               {iniciais}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>

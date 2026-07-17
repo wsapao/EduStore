@@ -31,7 +31,7 @@ const alunos = [
     nome: 'Maria Clara Santos',
     serie: '3º Ano',
     turma: 'B',
-    cor: '#5e5ce6',
+    cor: '#6155f5',
     ativo: true,
   },
   {
@@ -39,7 +39,7 @@ const alunos = [
     nome: 'Pedro Santos',
     serie: '7º Ano',
     turma: 'A',
-    cor: '#30b0c7',
+    cor: '#00c3d0',
     ativo: true,
   },
 ] as unknown as Aluno[]

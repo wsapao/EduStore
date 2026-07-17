@@ -25,7 +25,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
   if (hour < 12) greeting = 'Bom dia'
   else if (hour < 18) greeting = 'Boa tarde'
 
-  const avatarColor = selectedAluno?.cor ?? '#5e5ce6'
+  const avatarColor = selectedAluno?.cor ?? '#6155f5'
   const initials = selectedAluno ? (selectedAluno.nome || '').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?'
   const nomes = useMemo(() => buildAlunoNomesExibicao(alunos), [alunos])
 
@@ -69,7 +69,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
           {cartItemsCount > 0 && (
             <span style={{
               position: 'absolute', top: -4, right: -4, width: 16, height: 16,
-              background: '#ff3b30', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: '#ff383c', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 9, fontWeight: 'bold', color: 'white', border: '2px solid #1c1c1e'
             }}>
               {cartItemsCount}
@@ -107,7 +107,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
             </div>
             <button 
               onClick={() => setShowChildSelector(!showChildSelector)}
-              style={{ fontSize: 11, fontWeight: 600, color: '#0a84ff', marginTop: 8, background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ fontSize: 11, fontWeight: 600, color: '#0091ff', marginTop: 8, background: 'none', border: 'none', cursor: 'pointer' }}
             >
               Trocar filho ↓
             </button>
