@@ -181,13 +181,6 @@ export default async function AdminDashboard({
   const urgenciasPrazo = produtos.filter((produto) => isWithinDays(produto.prazo_compra, 7)).length
 
   const salesSeries = buildSalesSeries(pedidos, interval)
-  const metodoBreakdown = pedidos.reduce<Record<MetodoPagamento, number>>(
-    (acc, pedido) => {
-      if (pedido.metodo_pagamento) acc[pedido.metodo_pagamento] += 1
-      return acc
-    },
-    { pix: 0, cartao: 0, boleto: 0 },
-  )
 
   const itemRows = (itensVendidos ?? []) as ItemVendido[]
   const topProdutos = buildTopProducts(itemRows)
@@ -220,137 +213,91 @@ export default async function AdminDashboard({
   ]
 
   return (
-    <div className="animate-fade-in admin-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 80 }}>
-      {/* HEADER HERO */}
-      <section style={{
-        position: 'relative', overflow: 'hidden', padding: '10px 0 20px',
-        color: CREATIVE.ink,
-      }}>
-        {/* Glow Blobs */}
-        <div style={{ position: 'absolute', top: -100, left: -50, width: 300, height: 300, background: CREATIVE.accent, filter: 'blur(120px)', opacity: 0.14, borderRadius: '50%', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: 50, right: 100, width: 400, height: 400, background: CREATIVE.rose, filter: 'blur(150px)', opacity: 0.08, borderRadius: '50%', pointerEvents: 'none' }} />
+    <div className="animate-fade-in admin-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 18, paddingBottom: 56 }}>
+      {/* CABEÇALHO COMPACTO: título + saúde + chips de alerta */}
+      <section style={{ position: 'relative', overflow: 'hidden', padding: '6px 0 0', color: CREATIVE.ink }}>
+        <div style={{ position: 'absolute', top: -120, left: -60, width: 280, height: 280, background: CREATIVE.accent, filter: 'blur(120px)', opacity: 0.12, borderRadius: '50%', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 32, alignItems: 'stretch' }}>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 260 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 999, background: CREATIVE.accentSoft, border: `1px solid ${CREATIVE.accentBorder}`, color: CREATIVE.accentStrong, fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: CREATIVE.accentSoft, border: `1px solid ${CREATIVE.accentBorder}`, color: CREATIVE.accentStrong, fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase' }}>
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: CREATIVE.accent }}></span>
                   <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: CREATIVE.accent }}></span>
                 </span>
                 Cockpit
               </span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: CREATIVE.softText }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: CREATIVE.softText }}>
                 {interval.label ? `Período analisado: ${interval.label}` : 'Últimos 30 dias'}
               </span>
             </div>
 
-            <div>
-              <h1 style={{ fontSize: 44, lineHeight: 1.1, fontWeight: 900, letterSpacing: '-.04em', color: CREATIVE.inkStrong, margin: 0 }}>
-                Dashboard Geral
-              </h1>
-              <p style={{ fontSize: 15, lineHeight: 1.6, color: CREATIVE.muted, marginTop: 8, maxWidth: 520, fontWeight: 500 }}>
-                Acompanhe o fluxo de caixa, pendências urgentes e a saúde das vendas em tempo real.
-              </p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 12 }}>
-              {[
-                { label: 'Receita confirmada', value: fmtBRL(receitaConfirmada) },
-                { label: 'Ticket médio', value: fmtBRL(ticketMedio) },
-                { label: 'Aguardando', value: String(aguardando) },
-                { label: 'Ativos', value: `${produtosAtivos}` },
-              ].map((item) => (
-                <div key={item.label} style={{ background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', border: `1px solid ${CREATIVE.accentBorder}`, borderRadius: 20, padding: '16px', boxShadow: '0 12px 28px rgba(249,115,22,.08)' }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: CREATIVE.softText, marginBottom: 8 }}>
-                    {item.label}
-                  </div>
-                  <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-.03em', color: CREATIVE.inkStrong }}>
-                    {item.value}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h1 style={{ fontSize: 30, lineHeight: 1.1, fontWeight: 800, letterSpacing: '-.03em', color: CREATIVE.inkStrong, margin: 0 }}>
+              Dashboard Geral
+            </h1>
           </div>
 
-          <div style={{ background: 'linear-gradient(180deg, #eef6ff 0%, #fbfbfd 100%)', backdropFilter: 'blur(12px)', border: `1px solid ${CREATIVE.accentBorder}`, borderRadius: 28, padding: 28, display: 'flex', flexDirection: 'column', gap: 20, position: 'relative', overflow: 'hidden', boxShadow: CREATIVE.panelShadow }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: CREATIVE.accentStrong, fontWeight: 800 }}>
-                  Estado geral
-                </div>
-                <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4, letterSpacing: '-.02em', color: CREATIVE.inkStrong }}>Saúde da operação</div>
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+            title={`Saúde da operação: ${saudeScore}%`}
+          >
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: CREATIVE.softText, fontWeight: 800 }}>
+                Saúde da operação
               </div>
-              <div
-                style={{
-                  minWidth: 72,
-                  height: 72,
-                  borderRadius: '50%',
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontSize: 20,
-                  fontWeight: 900,
-                  background: `conic-gradient(${CREATIVE.accent} 0 ${saudeGradientDeg}deg, rgba(249,115,22,.12) ${saudeGradientDeg}deg 360deg)`,
-                  boxShadow: '0 0 20px rgba(249,115,22,.18)'
-                }}
-              >
-                <span
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: '50%',
-                    background: '#ffffff',
-                    display: 'grid',
-                    placeItems: 'center',
-                    color: CREATIVE.inkStrong,
-                    boxShadow: 'inset 0 2px 4px rgba(249,115,22,.12)'
-                  }}
-                >
-                  {saudeScore}%
-                </span>
+              <div style={{ fontSize: 12, fontWeight: 600, color: CREATIVE.muted, marginTop: 2 }}>
+                {alertas.length === 0 ? 'Sem alertas críticos' : `${alertas.length} ponto(s) de atenção`}
               </div>
             </div>
-
-            <div style={{ display: 'grid', gap: 10 }}>
-              {alertas.length > 0 ? (
-                alertas.map((alerta) => (
-                  <div
-                    key={alerta.title}
-                    style={{
-                      borderRadius: 16,
-                      padding: '12px 14px',
-                      background: '#ffffff',
-                      border: `1px solid ${CREATIVE.accentBorder}`,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                      <strong style={{ fontSize: 13, color: CREATIVE.inkStrong }}>{alerta.title}</strong>
-                      <span style={{ fontSize: 12, color: CREATIVE.accentStrong }}>{alerta.value}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: CREATIVE.muted, lineHeight: 1.5, marginTop: 4 }}>
-                      {alerta.description}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div
-                  style={{
-                    borderRadius: 16,
-                    padding: '14px 16px',
-                    background: '#e7f9ed',
-                    border: '1px solid rgba(48,209,88,.25)',
-                    fontSize: 13,
-                    lineHeight: 1.55,
-                    color: '#008932',
-                  }}
-                >
-                  Operacao sem alertas criticos neste periodo. Vale usar este espaco para acompanhar quedas de conversao ou gargalos de atendimento.
-                </div>
-              )}
+            <div
+              style={{
+                minWidth: 60,
+                height: 60,
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 15,
+                fontWeight: 800,
+                background: `conic-gradient(${CREATIVE.accent} 0 ${saudeGradientDeg}deg, rgba(249,115,22,.12) ${saudeGradientDeg}deg 360deg)`,
+              }}
+            >
+              <span style={{ width: 46, height: 46, borderRadius: '50%', background: '#ffffff', display: 'grid', placeItems: 'center', color: CREATIVE.inkStrong }}>
+                {saudeScore}%
+              </span>
             </div>
           </div>
         </div>
+
+        {alertas.length > 0 && (
+          <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+            {alertas.map((alerta) => (
+              <Link
+                key={alerta.title}
+                href={alerta.href}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  borderRadius: 999,
+                  padding: '7px 14px',
+                  background: '#ffffff',
+                  border: `1px solid ${CREATIVE.accentBorder}`,
+                  textDecoration: 'none',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: CREATIVE.inkStrong,
+                  boxShadow: '0 1px 3px rgba(0,0,0,.04)',
+                }}
+              >
+                <span aria-hidden style={{ width: 6, height: 6, borderRadius: '50%', background: CREATIVE.accent }} />
+                {alerta.title}
+                <span style={{ color: CREATIVE.accentStrong }}>{alerta.value}</span>
+                <span aria-hidden style={{ color: CREATIVE.softText }}>›</span>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* FILTROS E CONTROLES */}
@@ -409,9 +356,9 @@ export default async function AdminDashboard({
         ].map((card) => (
           <article
             key={card.label}
-            style={{ 
-              borderRadius: 26, padding: '24px 28px', 
-              background: '#ffffff', 
+            style={{
+              borderRadius: 22, padding: '18px 20px',
+              background: '#ffffff',
               boxShadow: CREATIVE.panelShadow,
               position: 'relative'
             }}
@@ -422,20 +369,124 @@ export default async function AdminDashboard({
               </div>
               <span style={{ fontSize: 10, fontWeight: 800, color: card.badgeColor, background: card.badgeBg, padding: '4px 8px', borderRadius: 8 }}>{card.badge}</span>
             </div>
-            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: '-.04em', marginTop: 12, color: '#0a1628', lineHeight: 1 }}>
+            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.03em', marginTop: 10, color: '#1c1c1e', lineHeight: 1 }}>
               {card.value}
             </div>
-            <div style={{ fontSize: 13, marginTop: 10, fontWeight: 600, color: '#8e8e93' }}>
+            <div style={{ fontSize: 12, marginTop: 8, fontWeight: 600, color: '#8e8e93' }}>
               {card.note}
             </div>
           </article>
         ))}
       </section>
 
-      {/* WIDGETS AVANÇADOS */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
-        {/* Recuperação PIX */}
+      {/* MÓDULOS SOB DEMANDA — só aparecem quando o módulo tem dados */}
+      {(adesaoEventos.length > 0 || capacidadeMap.length > 0 || cantinaSaldoTotal > 0) && (
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        {/* Adesão de Eventos */}
+        {adesaoEventos.length > 0 && (
         <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2c2c2e', margin: 0 }}>Adesão de Eventos</h3>
+              <p style={{ fontSize: 12, color: '#8e8e93', margin: '2px 0 0' }}>Engajamento nas compras</p>
+            </div>
+            <span style={{ fontSize: 24 }}>🎟️</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {adesaoEventos.length > 0 ? adesaoEventos.map(({ evento, pagantes, total, adesao }) => (
+              <div key={evento.id}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 8 }}>{evento.nome}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: CREATIVE.accentStrong, background: CREATIVE.accentSoft, padding: '2px 8px', borderRadius: 6, flexShrink: 0 }}>{adesao}%</span>
+                </div>
+                <div style={{ width: '100%', background: '#f2f2f7', height: 10, borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ width: `${adesao}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${CREATIVE.accent}, ${CREATIVE.rose})` }} />
+                </div>
+                <p style={{ fontSize: 10, color: '#8e8e93', marginTop: 4 }}>{pagantes} de {total} alunos aderiram</p>
+              </div>
+            )) : (
+              <div style={{ fontSize: 12, color: '#8e8e93', textAlign: 'center', padding: '24px 0' }}>Nenhum evento ativo.</div>
+            )}
+          </div>
+        </div>
+        )}
+
+        {/* Eventos para vigiar (capacidade) */}
+        {capacidadeMap.length > 0 && (
+        <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2c2c2e', margin: 0 }}>Eventos para vigiar</h3>
+              <p style={{ fontSize: 12, color: '#8e8e93', margin: '2px 0 0' }}>Ocupação e risco de ruptura</p>
+            </div>
+            <span style={{ fontSize: 24 }}>📊</span>
+          </div>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {capacidadeMap.slice(0, 5).map((item) => (
+              <div key={item.id} style={{ display: 'grid', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#1c1c1e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.nome}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#8e8e93', marginTop: 2 }}>{item.ocupados}/{item.capacidade} ingressos ocupados</div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: item.percentual >= 90 ? '#b91c1c' : CREATIVE.accentStrong }}>
+                    {item.percentual}%
+                  </span>
+                </div>
+                <div style={{ height: 8, borderRadius: 999, background: '#e5e5ea', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${item.percentual}%`,
+                      height: '100%',
+                      borderRadius: 999,
+                      background: item.percentual >= 90 ? '#ef4444' : CREATIVE.accent,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        )}
+
+        {/* Saúde da Cantina */}
+        {cantinaSaldoTotal > 0 && (
+        <div style={{ ...panelStyle, background: 'linear-gradient(135deg, #fff3e8, #ffe8cf)', border: 'none', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#3c3c43', margin: 0 }}>Saúde da Cantina</h3>
+              <p style={{ fontSize: 12, color: 'rgba(60,60,67,.7)', margin: '2px 0 0' }}>Saldos depositados</p>
+            </div>
+            <span style={{ fontSize: 24 }}>🍔</span>
+          </div>
+          <div style={{ marginTop: 'auto' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(60,60,67,.6)', marginBottom: 4 }}>Passivo de Carteiras</p>
+            <p style={{ fontSize: 30, fontWeight: 900, color: '#3c3c43', letterSpacing: '-.02em', margin: 0 }}>{fmtBRL(cantinaSaldoTotal)}</p>
+            <p style={{ fontSize: 12, color: 'rgba(60,60,67,.7)', marginTop: 12, lineHeight: 1.55 }}>
+              Valor total "guardado" pela escola nas carteiras digitais dos alunos da cantina.
+            </p>
+          </div>
+        </div>
+        )}
+      </section>
+      )}
+
+      <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(300px, 1fr)', gap: 16, alignItems: 'start' }}>
+        <article style={{ ...panelStyle, display: 'flex', flexDirection: 'column', minHeight: 340 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#2c2c2e', letterSpacing: '-.01em', margin: 0 }}>Receita confirmada</h2>
+              <p style={{ fontSize: 12, color: '#8e8e93', fontWeight: 500, marginTop: 2 }}>Visão consolidada de vendas diárias pagas</p>
+            </div>
+          </div>
+          <div style={{ flex: 1, width: '100%' }}>
+            <SalesChart data={salesSeries} />
+          </div>
+        </article>
+
+        <article style={{ ...panelStyle, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2c2c2e', margin: 0 }}>Recuperação de PIX</h3>
@@ -474,213 +525,10 @@ export default async function AdminDashboard({
               <div style={{ fontSize: 12, color: '#8e8e93', textAlign: 'center', padding: '24px 0' }}>Nenhum PIX pendente recente.</div>
             )}
           </div>
-        </div>
-
-        {/* Adesão de Eventos */}
-        <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2c2c2e', margin: 0 }}>Adesão de Eventos</h3>
-              <p style={{ fontSize: 12, color: '#8e8e93', margin: '2px 0 0' }}>Engajamento nas compras</p>
-            </div>
-            <span style={{ fontSize: 24 }}>🎟️</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {adesaoEventos.length > 0 ? adesaoEventos.map(({ evento, pagantes, total, adesao }) => (
-              <div key={evento.id}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 8 }}>{evento.nome}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: CREATIVE.accentStrong, background: CREATIVE.accentSoft, padding: '2px 8px', borderRadius: 6, flexShrink: 0 }}>{adesao}%</span>
-                </div>
-                <div style={{ width: '100%', background: '#f2f2f7', height: 10, borderRadius: 999, overflow: 'hidden' }}>
-                  <div style={{ width: `${adesao}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${CREATIVE.accent}, ${CREATIVE.rose})` }} />
-                </div>
-                <p style={{ fontSize: 10, color: '#8e8e93', marginTop: 4 }}>{pagantes} de {total} alunos aderiram</p>
-              </div>
-            )) : (
-              <div style={{ fontSize: 12, color: '#8e8e93', textAlign: 'center', padding: '24px 0' }}>Nenhum evento ativo.</div>
-            )}
-          </div>
-        </div>
-
-        {/* Saúde da Cantina */}
-        <div style={{ ...panelStyle, background: 'linear-gradient(135deg, #fff3e8, #ffe8cf)', border: 'none', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#3c3c43', margin: 0 }}>Saúde da Cantina</h3>
-              <p style={{ fontSize: 12, color: 'rgba(60,60,67,.7)', margin: '2px 0 0' }}>Saldos depositados</p>
-            </div>
-            <span style={{ fontSize: 24 }}>🍔</span>
-          </div>
-          <div style={{ marginTop: 'auto' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(60,60,67,.6)', marginBottom: 4 }}>Passivo de Carteiras</p>
-            <p style={{ fontSize: 30, fontWeight: 900, color: '#3c3c43', letterSpacing: '-.02em', margin: 0 }}>{fmtBRL(cantinaSaldoTotal)}</p>
-            <p style={{ fontSize: 12, color: 'rgba(60,60,67,.7)', marginTop: 12, lineHeight: 1.55 }}>
-              Valor total "guardado" pela escola nas carteiras digitais dos alunos da cantina.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(320px, 1fr)', gap: 16 }}>
-        <article style={{ ...panelStyle, display: 'flex', flexDirection: 'column', minHeight: 340 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#2c2c2e', letterSpacing: '-.01em', margin: 0 }}>Receita confirmada</h2>
-              <p style={{ fontSize: 12, color: '#8e8e93', fontWeight: 500, marginTop: 2 }}>Visão consolidada de vendas diárias pagas</p>
-            </div>
-          </div>
-          <div style={{ flex: 1, width: '100%' }}>
-            <SalesChart data={salesSeries} />
-          </div>
-        </article>
-
-        <article style={panelStyle}>
-          <PanelHeader
-            eyebrow="Ações"
-            title="Atalhos de gestor"
-            description="Atalhos pensados para operacao diaria em vez de menu puro."
-          />
-
-          <div style={{ display: 'grid', gap: 10 }}>
-            {[
-              { href: '/admin/pedidos', title: 'Acompanhar pedidos', desc: 'Filtrar pagamentos, checar fila e destravar atendimento.' },
-              { href: '/admin/produtos', title: 'Gerenciar catálogo', desc: 'Ativar, pausar, ajustar capacidade e corrigir estoque.' },
-              { href: '/admin/checkin', title: 'Validar ingressos', desc: 'Ir direto para o fluxo de check-in em eventos.' },
-              { href: '/admin/cantina', title: 'Operação da cantina', desc: 'Carteiras, consumo e status dos pedidos em um unico lugar.' },
-            ].map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                style={{
-                  textDecoration: 'none',
-                  color: '#1c1c1e',
-                  borderRadius: 18,
-                  padding: '16px 20px',
-                  background: '#f6f6f8',
-                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,.04)',
-                  transition: 'all .2s'
-                }}
-              >
-                <div style={{ fontSize: 15, fontWeight: 900 }}>{action.title}</div>
-                <div style={{ fontSize: 12, lineHeight: 1.55, color: '#8e8e93', marginTop: 4 }}>{action.desc}</div>
-              </Link>
-            ))}
-          </div>
         </article>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.25fr) minmax(280px, .95fr)', gap: 16 }}>
-        <article style={panelStyle}>
-          <PanelHeader
-            eyebrow="Mix de vendas"
-            title="Top produtos no periodo"
-            description="O objetivo aqui e apoiar decisao comercial: o que vende, o que gira e o que some."
-          />
-
-          <div style={{ display: 'grid', gap: 10 }}>
-            {topProdutos.length > 0 ? (
-              topProdutos.map((produto, index) => (
-                <div
-                  key={produto.nome}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '44px minmax(0, 1fr) auto',
-                    gap: 12,
-                    alignItems: 'center',
-                    borderRadius: 20,
-                    background: '#f6f6f8',
-                    border: 'none',
-                    padding: '14px 16px',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 14,
-                      background: CREATIVE.accentSoft,
-                      display: 'grid',
-                      placeItems: 'center',
-                      fontWeight: 900,
-                      color: CREATIVE.accentStrong,
-                    }}
-                  >
-                    #{index + 1}
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: '#1c1c1e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {produto.nome}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#8e8e93', marginTop: 3 }}>
-                      {produto.vendas} vendas · {fmtBRL(produto.receita)}
-                    </div>
-                  </div>
-                    {(() => {
-                      const meta = CATEGORY_META[produto.categoria as keyof typeof CATEGORY_META] || CATEGORY_META.outros;
-                      return (
-                        <div
-                          style={{
-                            borderRadius: 999,
-                            padding: '4px 10px',
-                            fontSize: 11,
-                            fontWeight: 800,
-                            color: meta.color,
-                            background: `${meta.color}12`,
-                          }}
-                        >
-                          {meta.label}
-                        </div>
-                      );
-                    })()}
-                </div>
-              ))
-            ) : (
-              <EmptyPanel text="Ainda nao ha itens vendidos no periodo para formar ranking." />
-            )}
-          </div>
-        </article>
-
-        <article style={panelStyle}>
-          <PanelHeader
-            eyebrow="Leitura rapida"
-            title="Distribuicao por categoria"
-            description="Mostra onde a loja esta concentrando receita e atencao."
-          />
-
-          <div style={{ display: 'grid', gap: 12 }}>
-            {categoryPerformance.length > 0 ? (
-              categoryPerformance.map((item) => {
-                const meta = CATEGORY_META[item.categoria as keyof typeof CATEGORY_META] || CATEGORY_META.outros;
-                return (
-                <div key={item.categoria} style={{ display: 'grid', gap: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1c1e' }}>
-                      {meta.icon} {meta.label}
-                    </span>
-                    <span style={{ fontSize: 12, color: '#8e8e93', fontWeight: 700 }}>{item.percentual}%</span>
-                  </div>
-                  <div style={{ height: 10, borderRadius: 999, background: '#e5e5ea', overflow: 'hidden' }}>
-                    <div
-                      style={{
-                        width: `${item.percentual}%`,
-                        height: '100%',
-                        borderRadius: 999,
-                        background: meta.color,
-                      }}
-                    />
-                  </div>
-                  <div style={{ fontSize: 11, color: '#8e8e93' }}>{item.vendas} itens vendidos no periodo</div>
-                </div>
-              )})
-            ) : (
-              <EmptyPanel text="Sem volume suficiente para gerar leitura por categoria." />
-            )}
-          </div>
-        </article>
-      </section>
-
-      <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(300px, 1fr)', gap: 16 }}>
+      <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(320px, 1fr)', gap: 16, alignItems: 'start' }}>
         <article style={panelStyle}>
           <div
             style={{
@@ -696,8 +544,8 @@ export default async function AdminDashboard({
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#8e8e93' }}>
                 Operação recente
               </div>
-              <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-.03em', color: '#1c1c1e', margin: '5px 0 0' }}>
-                Pedidos que merecem contexto
+              <h2 style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-.02em', color: '#1c1c1e', margin: '5px 0 0' }}>
+                Pedidos recentes
               </h2>
             </div>
 
@@ -780,25 +628,88 @@ export default async function AdminDashboard({
 
         <article style={panelStyle}>
           <PanelHeader
-            eyebrow="Capacidade"
-            title="Eventos para vigiar"
-            description="Quando o produto tem capacidade, o admin precisa ver ocupacao e risco de ruptura."
+            eyebrow="Mix de vendas"
+            title="Top produtos e categorias"
+            description="O que vende e onde a receita se concentra."
           />
 
-          <div style={{ display: 'grid', gap: 12 }}>
-            {capacidadeMap.length > 0 ? (
-              capacidadeMap.slice(0, 5).map((item) => (
-                <div key={item.id} style={{ display: 'grid', gap: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#1c1c1e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {item.nome}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#8e8e93', marginTop: 2 }}>{item.ocupados}/{item.capacidade} ingressos ocupados</div>
+          <div style={{ display: 'grid', gap: 10 }}>
+            {topProdutos.length > 0 ? (
+              topProdutos.map((produto, index) => (
+                <div
+                  key={produto.nome}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '44px minmax(0, 1fr) auto',
+                    gap: 12,
+                    alignItems: 'center',
+                    borderRadius: 20,
+                    background: '#f6f6f8',
+                    border: 'none',
+                    padding: '14px 16px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 14,
+                      background: CREATIVE.accentSoft,
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontWeight: 900,
+                      color: CREATIVE.accentStrong,
+                    }}
+                  >
+                    #{index + 1}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#1c1c1e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {produto.nome}
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: item.percentual >= 90 ? '#b91c1c' : '#1d4ed8' }}>
-                      {item.percentual}%
+                    <div style={{ fontSize: 12, color: '#8e8e93', marginTop: 3 }}>
+                      {produto.vendas} vendas · {fmtBRL(produto.receita)}
+                    </div>
+                  </div>
+                    {(() => {
+                      const meta = CATEGORY_META[produto.categoria as keyof typeof CATEGORY_META] || CATEGORY_META.outros;
+                      return (
+                        <div
+                          style={{
+                            borderRadius: 999,
+                            padding: '4px 10px',
+                            fontSize: 11,
+                            fontWeight: 800,
+                            color: meta.color,
+                            background: `${meta.color}12`,
+                          }}
+                        >
+                          {meta.label}
+                        </div>
+                      );
+                    })()}
+                </div>
+              ))
+            ) : (
+              <EmptyPanel text="Ainda nao ha itens vendidos no periodo para formar ranking." />
+            )}
+          </div>
+          <div style={{ height: 1, background: '#f2f2f7', margin: '18px 0 14px' }} />
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#8e8e93', marginBottom: 10 }}>
+            Distribuição por categoria
+          </div>
+
+          <div style={{ display: 'grid', gap: 12 }}>
+            {categoryPerformance.length > 0 ? (
+              categoryPerformance.map((item) => {
+                const meta = CATEGORY_META[item.categoria as keyof typeof CATEGORY_META] || CATEGORY_META.outros;
+                return (
+                <div key={item.categoria} style={{ display: 'grid', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1c1e' }}>
+                      {meta.icon} {meta.label}
                     </span>
+                    <span style={{ fontSize: 12, color: '#8e8e93', fontWeight: 700 }}>{item.percentual}%</span>
                   </div>
                   <div style={{ height: 10, borderRadius: 999, background: '#e5e5ea', overflow: 'hidden' }}>
                     <div
@@ -806,18 +717,20 @@ export default async function AdminDashboard({
                         width: `${item.percentual}%`,
                         height: '100%',
                         borderRadius: 999,
-                        background: item.percentual >= 90 ? '#ef4444' : item.percentual >= 70 ? '#ff8d28' : '#3b82f6',
+                        background: meta.color,
                       }}
                     />
                   </div>
+                  <div style={{ fontSize: 11, color: '#8e8e93' }}>{item.vendas} itens vendidos no periodo</div>
                 </div>
-              ))
+              )})
             ) : (
-              <EmptyPanel text="Nenhum produto com capacidade configurada para monitorar agora." />
+              <EmptyPanel text="Sem volume suficiente para gerar leitura por categoria." />
             )}
           </div>
         </article>
       </section>
+
     </div>
   )
 }
@@ -976,31 +889,31 @@ function buildAlerts({
       ? {
           title: 'Fila financeira',
           value: `${aguardando} pedidos`,
-          description: 'Pedidos aguardando podem travar atendimento e gerar ansiedade nas familias.',
+          href: '/admin/pedidos',
         }
       : null,
     urgenciasPrazo > 0
       ? {
           title: 'Janela comercial curta',
           value: `${urgenciasPrazo} produtos`,
-          description: 'Produtos com prazo nos proximos 7 dias precisam de destaque e monitoramento.',
+          href: '/admin/produtos',
         }
       : null,
     esgotados > 0
       ? {
           title: 'Catálogo rompido',
           value: `${esgotados} item(ns)`,
-          description: 'Produtos esgotados merecem decisao: reabrir, ocultar ou comunicar com clareza.',
+          href: '/admin/produtos',
         }
       : null,
     soldOutRisk > 0
       ? {
           title: 'Capacidade no limite',
           value: `${soldOutRisk} eventos`,
-          description: 'Quando a ocupacao passa de 85%, o admin precisa agir antes de frustrar a demanda.',
+          href: '/admin/produtos',
         }
       : null,
-  ].filter(Boolean) as Array<{ title: string; value: string; description: string }>
+  ].filter(Boolean) as Array<{ title: string; value: string; href: string }>
 }
 
 function parseDateInput(value?: string) {
@@ -1082,7 +995,7 @@ function PanelHeader({
       <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: CREATIVE.accentStrong }}>
         {eyebrow}
       </div>
-      <h2 style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-.04em', color: CREATIVE.inkStrong, margin: 0, lineHeight: 1.1 }}>
+      <h2 style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-.02em', color: CREATIVE.inkStrong, margin: 0, lineHeight: 1.1 }}>
         {title}
       </h2>
       <p style={{ fontSize: 14, lineHeight: 1.6, color: '#8e8e93', margin: 0, fontWeight: 500 }}>{description}</p>
@@ -1111,8 +1024,8 @@ function EmptyPanel({ text }: { text: string }) {
 const panelStyle = {
   background: '#ffffff',
   border: `1px solid ${CREATIVE.accentBorder}`,
-  borderRadius: 26,
-  padding: 28,
+  borderRadius: 22,
+  padding: 22,
   boxShadow: CREATIVE.panelShadow,
   position: 'relative'
 } as const
