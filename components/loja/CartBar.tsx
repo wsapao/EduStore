@@ -29,8 +29,8 @@ export function CartBar() {
         onClick={open}
         className="w-full h-[56px] rounded-full flex items-center justify-between px-4 cursor-pointer max-w-[560px] mx-auto active:scale-[0.98] transition-transform duration-200"
         style={{
-          background: 'linear-gradient(135deg, #0091ff, #0088ff)',
-          boxShadow: '0 8px 24px rgba(0,136,255,.45)',
+          background: 'linear-gradient(135deg, #fb923c, #f97316)',
+          boxShadow: '0 8px 24px rgba(249,115,22,.45)',
         }}
       >
         <div className="w-[30px] h-[30px] rounded-full bg-white/25 flex items-center justify-center text-[11px] font-[700] text-white">

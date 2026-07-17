@@ -45,7 +45,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
       
       <div style={{
         position: 'absolute', top: -50, right: -30, width: 160, height: 160,
-        borderRadius: '50%', background: 'rgba(10,132,255,.18)', filter: 'blur(32px)'
+        borderRadius: '50%', background: 'rgba(249,115,22,.16)', filter: 'blur(32px)'
       }} />
 
       <div style={{
@@ -107,7 +107,7 @@ export function StoreHero({ responsavel, escola, selectedAluno, alunos }: StoreH
             </div>
             <button 
               onClick={() => setShowChildSelector(!showChildSelector)}
-              style={{ fontSize: 11, fontWeight: 600, color: '#0091ff', marginTop: 8, background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ fontSize: 11, fontWeight: 600, color: '#fb923c', marginTop: 8, background: 'none', border: 'none', cursor: 'pointer' }}
             >
               Trocar filho ↓
             </button>

@@ -42,7 +42,7 @@ export function BottomNavigation({ showAdminShortcut = false, previewPathname }:
             key={item.href}
             href={item.href}
             className={`flex flex-col items-center justify-center flex-1 py-1.5 rounded-[11px] transition-colors ${
-              isActive ? 'text-[#0088ff]' : 'text-[#8e8e93]'
+              isActive ? 'text-[#f97316]' : 'text-[#8e8e93]'
             }`}
           >
             <div className="relative mb-0.5">

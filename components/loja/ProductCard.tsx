@@ -250,11 +250,11 @@ export function ProductCard({
           disabled={produto.esgotado}
           style={{
             height: 40, padding: '0 16px', borderRadius: 999,
-            background: produto.esgotado ? '#e5e5ea' : inCart ? '#34c759' : '#0088ff',
+            background: produto.esgotado ? '#e5e5ea' : inCart ? '#34c759' : '#f97316',
             border: 'none', fontSize: 12, fontWeight: 600,
             color: produto.esgotado ? '#8e8e93' : 'white',
             display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
-            boxShadow: produto.esgotado ? 'none' : inCart ? '0 3px 10px rgba(52,199,89,.35)' : '0 3px 10px rgba(0,136,255,.35)',
+            boxShadow: produto.esgotado ? 'none' : inCart ? '0 3px 10px rgba(52,199,89,.35)' : '0 3px 10px rgba(249,115,22,.35)',
             transform: isPressing && !produto.esgotado ? 'scale(0.95)' : 'scale(1)',
             transition: 'all 0.2s', cursor: produto.esgotado ? 'not-allowed' : 'pointer'
           }}

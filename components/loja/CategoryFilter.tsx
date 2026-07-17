@@ -115,9 +115,9 @@ export function CategoryFilter({ counts, tabs }: Props) {
               fontWeight: 600,
               flexShrink: 0,
               border: isActive ? '1px solid transparent' : '1px solid rgba(60,60,67,.12)',
-              background: isActive ? '#0088ff' : 'white',
+              background: isActive ? '#f97316' : 'white',
               color: isActive ? 'white' : '#3c3c43',
-              boxShadow: isActive ? '0 3px 10px rgba(0,136,255,.35)' : 'none',
+              boxShadow: isActive ? '0 3px 10px rgba(249,115,22,.35)' : 'none',
               cursor: 'pointer',
             }}
           >

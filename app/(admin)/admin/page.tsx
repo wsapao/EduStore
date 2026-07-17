@@ -61,14 +61,14 @@ const CREATIVE = {
   inkStrong: '#000000',
   muted: '#3c3c43',
   softText: '#6c6c70',
-  accent: '#0088ff',
-  accentStrong: '#1e6ef4',
-  accentSoft: '#e5f2ff',
-  accentBorder: '#b8dcff',
+  accent: '#f97316',
+  accentStrong: '#c2410c',
+  accentSoft: '#fff3e9',
+  accentBorder: '#ffd9b8',
   rose: '#ff2d55',
   roseSoft: '#ffedf2',
-  link: '#1e6ef4',
-  panelShadow: '0 18px 38px rgba(0,136,255,.12), inset 0 1px 0 rgba(255,255,255,.65)',
+  link: '#c2410c',
+  panelShadow: '0 18px 38px rgba(249,115,22,.1), inset 0 1px 0 rgba(255,255,255,.65)',
 } as const
 
 export default async function AdminDashboard({
@@ -254,7 +254,7 @@ export default async function AdminDashboard({
                 { label: 'Aguardando', value: String(aguardando) },
                 { label: 'Ativos', value: `${produtosAtivos}` },
               ].map((item) => (
-                <div key={item.label} style={{ background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', border: `1px solid ${CREATIVE.accentBorder}`, borderRadius: 20, padding: '16px', boxShadow: '0 12px 28px rgba(0,136,255,.08)' }}>
+                <div key={item.label} style={{ background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', border: `1px solid ${CREATIVE.accentBorder}`, borderRadius: 20, padding: '16px', boxShadow: '0 12px 28px rgba(249,115,22,.08)' }}>
                   <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: CREATIVE.softText, marginBottom: 8 }}>
                     {item.label}
                   </div>
@@ -283,8 +283,8 @@ export default async function AdminDashboard({
                   placeItems: 'center',
                   fontSize: 20,
                   fontWeight: 900,
-                  background: `conic-gradient(${CREATIVE.accent} 0 ${saudeGradientDeg}deg, rgba(0,136,255,.12) ${saudeGradientDeg}deg 360deg)`,
-                  boxShadow: '0 0 20px rgba(0,136,255,.18)'
+                  background: `conic-gradient(${CREATIVE.accent} 0 ${saudeGradientDeg}deg, rgba(249,115,22,.12) ${saudeGradientDeg}deg 360deg)`,
+                  boxShadow: '0 0 20px rgba(249,115,22,.18)'
                 }}
               >
                 <span
@@ -296,7 +296,7 @@ export default async function AdminDashboard({
                     display: 'grid',
                     placeItems: 'center',
                     color: CREATIVE.inkStrong,
-                    boxShadow: 'inset 0 2px 4px rgba(0,136,255,.12)'
+                    boxShadow: 'inset 0 2px 4px rgba(249,115,22,.12)'
                   }}
                 >
                   {saudeScore}%
@@ -361,7 +361,7 @@ export default async function AdminDashboard({
                 background: periodoAtual === key ? CREATIVE.accent : '#eef6ff',
                 color: periodoAtual === key ? '#eef6ff' : CREATIVE.accentStrong,
                 border: `1.5px solid ${periodoAtual === key ? CREATIVE.accent : CREATIVE.accentBorder}`,
-                boxShadow: periodoAtual === key ? '0 8px 18px rgba(0,136,255,.22)' : 'none',
+                boxShadow: periodoAtual === key ? '0 8px 18px rgba(249,115,22,.22)' : 'none',
                 transition: 'all .2s'
               }}
             >
@@ -384,7 +384,7 @@ export default async function AdminDashboard({
             label: 'Ticket médio',
             value: fmtBRL(ticketMedio),
             note: aguardando > 0 ? `${aguardando} aguardando` : 'Sem fila',
-            badge: 'Estável', badgeColor: CREATIVE.accentStrong, badgeBg: 'rgba(0,136,255,.12)'
+            badge: 'Estável', badgeColor: CREATIVE.accentStrong, badgeBg: 'rgba(249,115,22,.12)'
           },
           {
             label: 'Base ativa',
