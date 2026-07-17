@@ -112,7 +112,8 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
         
         {/* Hero */}
         <div style={{
-          height: 170, background: theme.bg, position: 'relative', overflow: 'hidden',
+          // Hero mais alto quando há imagem: com contain, 170px deixava o cartaz pequeno demais.
+          height: produto.imagem_url ? 230 : 170, background: theme.bg, position: 'relative', overflow: 'hidden',
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{
@@ -133,14 +134,37 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
           </button>
 
           {produto.imagem_url ? (
+            // Cartazes verticais não cabem em cover sem corte: fundo desfocado
+            // preenche a área e a arte inteira aparece por cima com contain.
             shouldUseOptimizedImage ? (
-              <Image src={produto.imagem_url} alt={produto.nome} fill sizes="100vw" style={{ objectFit: 'cover' }} priority />
+              <>
+                <Image
+                  src={produto.imagem_url}
+                  alt=""
+                  aria-hidden
+                  fill
+                  sizes="100vw"
+                  style={{ objectFit: 'cover', filter: 'blur(24px) saturate(1.1)', transform: 'scale(1.2)', opacity: 0.9 }}
+                />
+                <Image src={produto.imagem_url} alt={produto.nome} fill sizes="100vw" style={{ objectFit: 'contain' }} priority />
+              </>
             ) : (
-              <img
-                src={produto.imagem_url}
-                alt={produto.nome}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              <>
+                <img
+                  src={produto.imagem_url}
+                  alt=""
+                  aria-hidden
+                  style={{
+                    position: 'absolute', inset: 0, width: '100%', height: '100%',
+                    objectFit: 'cover', filter: 'blur(24px) saturate(1.1)', transform: 'scale(1.2)', opacity: 0.9,
+                  }}
+                />
+                <img
+                  src={produto.imagem_url}
+                  alt={produto.nome}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </>
             )
           ) : (
             <span style={{ fontSize: 56, filter: 'drop-shadow(0 5px 14px rgba(0,0,0,.25))', position: 'relative', zIndex: 1 }}>
@@ -157,7 +181,10 @@ export function ProductDetailClient({ produto, variantesDetalhadas, alunos, init
             </div>
           )}
 
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 50, background: 'linear-gradient(to top, white, transparent)' }} />
+          {/* O fade branco só combina com o fundo de gradiente; sobre a foto em contain ele apagaria a base do cartaz. */}
+          {!produto.imagem_url && (
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 50, background: 'linear-gradient(to top, white, transparent)' }} />
+          )}
         </div>
 
         {/* Body */}
