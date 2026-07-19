@@ -92,11 +92,11 @@ export function IntegracoesForm({
       </Card>
 
       {/* CRM */}
-      <Card title="CRM (EduCRM)">
+      <Card title="CRM (XKola CRM)">
         <Toggle
           name="crm_ativo"
           defaultChecked={config.crm_ativo}
-          label="Ativar integração com EduCRM"
+          label="Ativar integração com XKola CRM"
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
           <button type="button" onClick={handleTestCrm} disabled={testingCrm} style={btnSecondary}>
