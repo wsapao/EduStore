@@ -19,12 +19,14 @@ import { LOJA_BRAND_NAME } from '@/lib/loja/brand'
 
 export function AdminShell({
   children,
-  escolaNome,
+  escolas,
+  escolaAtivaId,
   iniciais,
   permissoes,
 }: {
   children: React.ReactNode
-  escolaNome: string
+  escolas: { id: string; nome: string }[]
+  escolaAtivaId: string | null
   iniciais: string
   permissoes: string[]
 }) {
@@ -41,7 +43,7 @@ export function AdminShell({
 
   return (
     <div style={shellStyle}>
-      <AdminSidebar escolaNome={escolaNome} iniciais={iniciais} permissoes={permissoes} theme={theme} />
+      <AdminSidebar escolas={escolas} escolaAtivaId={escolaAtivaId} iniciais={iniciais} permissoes={permissoes} theme={theme} />
 
       <div className={ADMIN_SHELL_MAIN_CLASS_NAME} style={getAdminShellMainStyle()}>
         <header
