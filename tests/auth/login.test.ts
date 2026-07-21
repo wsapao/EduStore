@@ -41,9 +41,20 @@ function setup({
       return {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: permissoes.length ? { papel_id: 'papel-1', suspenso: false } : null,
+            eq: vi.fn().mockResolvedValue({
+              data: permissoes.length
+                ? [{ id: 'v1', escola_id: 'esc-1', papel_id: 'papel-1', created_at: '2026-01-01T00:00:00.000Z' }]
+                : [],
             }),
+          }),
+        }),
+      }
+    }
+    if (table === 'saas_unidade_ativa') {
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null }),
           }),
         }),
       }

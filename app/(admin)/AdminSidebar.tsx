@@ -27,6 +27,7 @@ import { logoutAction } from '@/app/actions/auth'
 import { ADMIN_SIDEBAR_CLASS_NAME } from '@/lib/admin-shell-layout'
 import type { AdminShellTheme } from '@/lib/admin-shell-theme'
 import { LOJA_BRAND_NAME } from '@/lib/loja/brand'
+import { UnitSwitcher } from '@/app/(admin)/UnitSwitcher'
 
 type LinkItem = {
   href: string
@@ -36,12 +37,14 @@ type LinkItem = {
 }
 
 export function AdminSidebar({
-  escolaNome,
+  escolas,
+  escolaAtivaId,
   iniciais,
   permissoes,
   theme,
 }: {
-  escolaNome: string
+  escolas: { id: string; nome: string }[]
+  escolaAtivaId: string | null
   iniciais: string
   permissoes: string[]
   theme: AdminShellTheme
@@ -84,17 +87,20 @@ export function AdminSidebar({
       flexDirection: 'column',
     }}>
       {/* Logo */}
-      <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 40, paddingLeft: 12 }}>
-        <XkolaMark theme={markTheme} size={34} />
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Fora do <Link>: o seletor de unidade (2+ escolas) renderiza um
+          <button>, e elementos interativos não podem ficar aninhados
+          dentro de uma âncora. */}
+      <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 40, paddingLeft: 12 }}>
+        <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+          <XkolaMark theme={markTheme} size={34} />
           <span style={{ fontSize: 16, fontWeight: 900, fontFamily: 'var(--font-bricolage), "Plus Jakarta Sans", sans-serif', color: theme.titleColor, letterSpacing: '-.02em', lineHeight: 1 }}>
             {LOJA_BRAND_NAME}
           </span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: theme.subtitleColor, letterSpacing: '.05em', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>
-            {escolaNome}
-          </span>
+        </Link>
+        <div style={{ marginLeft: 44 }}>
+          <UnitSwitcher escolas={escolas} escolaAtivaId={escolaAtivaId} theme={theme} />
         </div>
-      </Link>
+      </div>
 
       {/* Nav links */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, overflowY: 'auto' }} className="no-scrollbar">
